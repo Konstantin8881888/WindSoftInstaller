@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Drawing;
+using System.Runtime.Versioning;
 using System.Windows.Forms;
 
 namespace WindSoftInstaller
 {
+    [SupportedOSPlatform("windows")]
     public class EulaForm : Form
     {
         private Button btnAccept;

@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace WindSoftInstaller
 {
+    [SupportedOSPlatform("windows")]
     public class AboutForm : Form
     {
         public AboutForm()
@@ -180,7 +182,7 @@ namespace WindSoftInstaller
             AcceptButton = btnClose;
         }
 
-        private void BtnSysReport_Click(object sender, EventArgs e)
+        private void BtnSysReport_Click(object? sender, EventArgs e)
         {
             // Собираем информацию об ОС и .NET
             string os = RuntimeInformation.OSDescription;

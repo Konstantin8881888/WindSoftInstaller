@@ -1,5 +1,8 @@
-﻿namespace WindSoftInstaller
+﻿using System.Runtime.Versioning;
+
+namespace WindSoftInstaller
 {
+    [SupportedOSPlatform("windows")]
     partial class ParamForm : Form
     {
         // После закрытия формы здесь окажутся новые параметры
