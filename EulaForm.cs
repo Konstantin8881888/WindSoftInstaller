@@ -10,12 +10,6 @@ namespace WindSoftInstaller
         private Button btnDecline;
         private TextBox txtEula;
         private Panel btnPanel;
-        private TableLayoutPanel bottomTable;
-        private Button btnSysReport;
-        private Button btnClose;
-        private Label lblSupport;
-        private TextBox txtBtc;
-        private TextBox txtEth;
 
         public bool Accepted { get; private set; }
 

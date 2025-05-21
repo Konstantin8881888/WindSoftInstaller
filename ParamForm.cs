@@ -58,7 +58,7 @@
                 if (string.IsNullOrEmpty(key) && string.IsNullOrEmpty(value))
                     continue;
 
-                // По желанию: можно требовать непустой ключ
+                // Требовать непустой ключ
                 if (string.IsNullOrEmpty(key))
                 {
                     MessageBox.Show("У каждой строки должен быть непустой ключ.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using System.Drawing;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
-using WindSoftInstaller.Properties;
-using System.IO;
 
 namespace WindSoftInstaller
 {
@@ -155,7 +150,7 @@ namespace WindSoftInstaller
                 ReadOnly = true,
                 BorderStyle = BorderStyle.None,
                 BackColor = this.BackColor,
-                Text = "BTC: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+                Text = "BTC: bc1qfamn5mcee7egfl8pu7w85ax7yvj5n9hxz8vxh4",
                 Location = new Point(left, lblSupport.Bottom + vGap),
                 Width = 400
             };
@@ -167,7 +162,7 @@ namespace WindSoftInstaller
                 ReadOnly = true,
                 BorderStyle = BorderStyle.None,
                 BackColor = this.BackColor,
-                Text = "ETH: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+                Text = "ETH: 0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
                 Location = new Point(left, txtBtc.Bottom + vGap),
                 Width = 400
             };

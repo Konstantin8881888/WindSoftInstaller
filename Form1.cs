@@ -208,7 +208,7 @@ namespace WindSoftInstaller
                     {
                         try
                         {
-                            // Ваши длительные действия:
+                            // Длительные действия:
                             while (!process.HasExited)
                             {
                                 token.ThrowIfCancellationRequested();

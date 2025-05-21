@@ -102,7 +102,7 @@ namespace WindSoftInstaller
             this.colParams.DataPropertyName = "ParametersDisplay";
             this.colParams.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
 
-            // Добавляем колонки в нужном порядке
+            // 6) Добавляем колонки в нужном порядке
             this.dataGridViewPrograms.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colSelect,
             this.colIcon,
@@ -213,11 +213,10 @@ namespace WindSoftInstaller
             this.statusTimer = new System.Windows.Forms.Timer();
             this.statusTimer.Interval = 500; // обновлять каждые 500 мс (полсекунды)
             this.statusTimer.Tick += new System.EventHandler(this.StatusTimer_Tick);
-
+            // ────────────────────────────────────────────────────────────────
             // Перенесено из верха для нормальной инициализации остальных элементов
             // Вычисляем Y-координату верхнего края грида: чуть ниже txtInstallPath
             int gridY = txtInstallPath.Bottom + 5;
-
             // Вычисляем Y-координату нижнего края грида: чуть выше btnToggleSelection
             int bottomY = btnToggleSelection.Location.Y - 5;
 
@@ -238,7 +237,6 @@ namespace WindSoftInstaller
             this.lblDonate.Text = "Поддержать проект (BTC и ETH адреса):";
             lblDonate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             this.Controls.Add(this.lblDonate);
-
             // 
             // txtBTC
             // 
@@ -248,12 +246,11 @@ namespace WindSoftInstaller
             this.txtBTC.ReadOnly = true;
             this.txtBTC.Size = new System.Drawing.Size(400, 23);
             this.txtBTC.TabIndex = 7;
-            this.txtBTC.Text = "bc1qxy2kgdygjrsqtzq2n0yrf2493w83f4wll9h6d6";
+            this.txtBTC.Text = "bc1qfamn5mcee7egfl8pu7w85ax7yvj5n9hxz8vxh4";
             this.txtBTC.BackColor = Color.White;
             this.txtBTC.BorderStyle = BorderStyle.FixedSingle;
             this.txtBTC.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             this.Controls.Add(this.txtBTC);
-
             // 
             // txtETH
             // 
@@ -263,7 +260,7 @@ namespace WindSoftInstaller
             this.txtETH.ReadOnly = true;
             this.txtETH.Size = new System.Drawing.Size(400, 23);
             this.txtETH.TabIndex = 8;
-            this.txtETH.Text = "0x6B375102D21d159B1B7D6aF5F23181BD61a29d91";
+            this.txtETH.Text = "0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E";
             this.txtETH.BackColor = Color.White;
             this.txtETH.BorderStyle = BorderStyle.FixedSingle;
             this.txtETH.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
