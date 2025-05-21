@@ -1,5 +1,8 @@
-﻿namespace WindSoftInstaller
+﻿using System.Runtime.Versioning;
+
+namespace WindSoftInstaller
 {
+    [SupportedOSPlatform("windows")]
     internal class AppRepository
     {
         public static List<InstallableApp> LoadApps()

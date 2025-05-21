@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text;
 using IWshRuntimeLibrary;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using File = System.IO.File;
 
 namespace WindSoftInstaller
 {
+    [SupportedOSPlatform("windows")]
     public partial class Form1 : Form
     {
         private readonly List<InstallableApp> apps = AppRepository.LoadApps();
@@ -19,6 +21,8 @@ namespace WindSoftInstaller
         public Form1(ILogger<Form1> logger)
         {
             InitializeComponent();
+            // Проверка на null
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Загружаем иконку из ресурсов
             try
