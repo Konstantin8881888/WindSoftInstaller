@@ -114,7 +114,7 @@ namespace WindSoftInstaller
                 Text = "Системный отчет",
                 Size = new Size(130, 30),
                 Location = new Point(left,
-                    linkEmail.Location.Y + linkEmail.PreferredHeight + 2 * vGap)
+            linkEmail.Location.Y + linkEmail.PreferredHeight + 2 * vGap)
             };
             btnSysReport.Click += BtnSysReport_Click;
             Controls.Add(btnSysReport);
@@ -133,8 +133,10 @@ namespace WindSoftInstaller
             );
             Controls.Add(btnClose);
 
-            int supportTop = linkEmail.Location.Y + linkEmail.PreferredHeight + 3 * vGap;
+            // Перемещаем блок с кошельками ниже кнопки "Системный отчет"
+            int supportTop = btnSysReport.Bottom + vGap;
 
+            // 10) Блок с кошельками
             var lblSupport = new Label
             {
                 Text = "Поддержать проект (адреса кошельков):",
@@ -167,6 +169,13 @@ namespace WindSoftInstaller
                 Width = 400
             };
             Controls.Add(txtEth);
+
+            // Увеличиваем высоту формы, если нужно
+            int requiredHeight = txtEth.Bottom + btnClose.Height + 3 * vGap;
+            if (requiredHeight > 400)
+            {
+                Size = new Size(450, requiredHeight);
+            }
 
             AcceptButton = btnClose;
         }
