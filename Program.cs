@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Versioning;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions; // для NullLogger
@@ -6,6 +7,7 @@ using WindSoftInstaller;
 
 namespace WindSoftInstaller
 {
+    [SupportedOSPlatform("windows")]
     static class Program
     {
         [STAThread]
