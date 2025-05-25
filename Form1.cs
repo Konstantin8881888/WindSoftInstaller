@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using IWshRuntimeLibrary;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 using File = System.IO.File;
@@ -25,6 +24,8 @@ namespace WindSoftInstaller
             InitializeComponent();
             // Проверка на null
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            CleanupOldTemp(Properties.Settings.Default.LastInstallPath, _logger);
 
             // Загружаем иконку из ресурсов
             try
@@ -201,9 +202,15 @@ namespace WindSoftInstaller
                     throw new FileNotFoundException($"Архив не найден: {archivePath}");
                 }
 
-                // 2. Создание уникальной временной папки
-                tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+                // 2. Создаем временную папку ВНУТРИ выбранной папки установки
+                //tempDir = Path.Combine(installPath, "Temp", Guid.NewGuid().ToString());
+                // Добавлен префикс WSI_ для всех временных папок для безопасной чистки
+                tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
+
+                // Убедимся, что родительская папка существует
+                Directory.CreateDirectory(Path.GetDirectoryName(tempDir)!);
                 Directory.CreateDirectory(tempDir);
+
                 _logger.LogDebug("Создана временная папка: {TempDir}", tempDir);
 
                 // 3. Извлечение файла из архива
@@ -310,12 +317,58 @@ namespace WindSoftInstaller
                     {
                         Directory.Delete(tempDir, recursive: true);
                         _logger.LogDebug("Временная папка удалена: {TempDir}", tempDir);
+
+                        // Дополнительно: удаляем родительскую папку Temp, если она пустая
+                        var parentTempDir = Path.GetDirectoryName(tempDir);
+                        if (Directory.Exists(parentTempDir))
+                        {
+                            if (!Directory.EnumerateFileSystemEntries(parentTempDir).Any())
+                            {
+                                Directory.Delete(parentTempDir);
+                                _logger.LogDebug("Родительская временная папка удалена: {parentTempDir}", parentTempDir);
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Ошибка удаления временной папки");
                     }
                 }
+            }
+        }
+
+        //Дополнительный чистильщик временной папки (на случай аварийного завершения)
+        private static void CleanupOldTemp(string installPath, ILogger<Form1> logger)
+        {
+            string tempRoot = Path.Combine(installPath, "Temp");
+            if (!Directory.Exists(tempRoot)) return;
+
+            logger.LogWarning("Обнаружены остаточные данные в папке Temp {tempRoot}", tempRoot);
+            foreach (var dir in Directory.GetDirectories(tempRoot, "WSI_*"))
+            {
+                try
+                {
+                    Directory.Delete(dir, recursive: true);
+                    logger.LogDebug("Временная папка удалена: {dir}", dir);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Ошибка удаления остаточной временной папки");
+                }
+            }
+
+            // Пытаемся удалить саму папку Temp, если пустая
+            try
+            {
+                if (!Directory.EnumerateFileSystemEntries(tempRoot).Any())
+                {
+                    Directory.Delete(tempRoot);
+                    logger.LogDebug("Родительская временная папка удалена: {tempRoot}", tempRoot);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Не удалось удалить остаточную папку Temp");
             }
         }
 

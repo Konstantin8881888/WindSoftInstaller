@@ -1,6 +1,5 @@
 ﻿using System.Runtime.Versioning;
 using SharpCompress.Archives;
-using SharpCompress.Common;
 
 namespace WindSoftInstaller
 {
