@@ -1,17 +1,14 @@
-﻿using System;
-using System.Drawing;
-using System.Runtime.Versioning;
-using System.Windows.Forms;
+﻿using System.Runtime.Versioning;
 
 namespace WindSoftInstaller
 {
     [SupportedOSPlatform("windows")]
     public class EulaForm : Form
     {
-        private Button btnAccept;
-        private Button btnDecline;
-        private TextBox txtEula;
-        private Panel btnPanel;
+        private readonly Button btnAccept;
+        private readonly Button btnDecline;
+        private readonly TextBox txtEula;
+        private readonly Panel btnPanel;
 
         public bool Accepted { get; private set; }
 

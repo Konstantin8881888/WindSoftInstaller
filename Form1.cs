@@ -1,10 +1,11 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
-using IWshRuntimeLibrary;
 using Microsoft.Extensions.Logging;
+using SharpCompress.Archives;
 using File = System.IO.File;
 
 namespace WindSoftInstaller
@@ -23,6 +24,8 @@ namespace WindSoftInstaller
             InitializeComponent();
             // Проверка на null
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+            CleanupOldTemp(Properties.Settings.Default.LastInstallPath, _logger);
 
             // Загружаем иконку из ресурсов
             try
@@ -46,9 +49,13 @@ namespace WindSoftInstaller
             byte[] iconBytes = Properties.Resources.logo;
             using (var stream = new System.IO.MemoryStream(iconBytes))
             {
-                this.Icon = new System.Drawing.Icon(stream);
+                // (проверка на null):
+                if (stream != null)
+                {
+                    using var icon = new Icon(stream);
+                    this.Icon = (Icon)icon.Clone(); // Явное приведение типа
+                }
             }
-            _logger = logger;
             // Восстанавливаем последний путь, если он задан
             var saved = Properties.Settings.Default.LastInstallPath;
             if (!string.IsNullOrWhiteSpace(saved) && Directory.Exists(saved))
@@ -72,7 +79,11 @@ namespace WindSoftInstaller
                     try
                     {
                         var sysIcon = Icon.ExtractAssociatedIcon(fullPath);
-                        app.Icon = sysIcon?.ToBitmap();
+                        // Явная проверка
+                        if (sysIcon != null)
+                        {
+                            app.Icon = sysIcon.ToBitmap();
+                        }
                         _logger.LogDebug("Иконка для {App} успешно извлечена", app.Name);
                     }
                     catch (Exception ex)
@@ -98,26 +109,44 @@ namespace WindSoftInstaller
         private void CreateShortcut(string targetPath, string shortcutName)
         {
             _logger.LogDebug("Создаём ярлык {Shortcut} → {Target}", shortcutName, targetPath);
+
             if (!File.Exists(targetPath))
             {
-                _logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", shortcutName, targetPath);
+                _logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", targetPath, shortcutName);
                 throw new FileNotFoundException($"Целевой файл для ярлыка не найден: {targetPath}");
             }
 
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
 
+            object? shellObject = null;
+            object? shortcutObject = null;
+
             try
             {
-                dynamic shell = new WshShell();
-                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                Type? shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("COM-класс WScript.Shell не найден");
+                shellObject = Activator.CreateInstance(shellType);
+                if (shellObject == null)
+                {
+                    throw new InvalidOperationException("Ошибка создания COM-объекта");
+                }
+
+                dynamic shell = shellObject;
+                shortcutObject = shell.CreateShortcut(shortcutPath);
+
+                if (shortcutObject == null)
+                {
+                    throw new InvalidOperationException("Ошибка создания ярлыка");
+                }
+
+                dynamic shortcut = shortcutObject;
 
                 shortcut.TargetPath = targetPath;
                 shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
-                shortcut.WindowStyle = 1; // Обычное окно
-                // При желании можно также:
+                shortcut.WindowStyle = 1;
                 // shortcut.IconLocation = targetPath;
                 shortcut.Save();
+
                 _logger.LogInformation("Ярлык {Shortcut} успешно создан", shortcutName);
             }
             catch (Exception ex)
@@ -130,7 +159,15 @@ namespace WindSoftInstaller
                     MessageBoxIcon.Error
                 );
             }
+            finally
+            {
+                // корректное освобождение COM-объектов
+                if (shortcutObject != null)
+                    Marshal.ReleaseComObject(shortcutObject);
 
+                if (shellObject != null)
+                    Marshal.ReleaseComObject(shellObject);
+            }
         }
 
         private void OnAboutClick(object sender, EventArgs e)
@@ -154,90 +191,184 @@ namespace WindSoftInstaller
         private async Task InstallAppAsync(InstallableApp app, string installPath, CancellationToken token)
         {
             _logger.LogDebug("Начало InstallAppAsync для {App}", app.Name);
+            string? tempDir = null;
+
             try
             {
-                string sourcePath = Path.Combine(Application.StartupPath, app.ExecutablePath);
-
-                if (!File.Exists(sourcePath))
+                // 1. Путь к архиву и проверка его существования
+                string archivePath = Path.Combine(Application.StartupPath, "Installers.7z");
+                if (!File.Exists(archivePath))
                 {
-                    _logger.LogError("Исходный файл не найден для {App}: {Path}", app.Name, sourcePath);
-                    throw new FileNotFoundException($"Файл установщика не найден: {sourcePath}");
+                    throw new FileNotFoundException($"Архив не найден: {archivePath}");
                 }
 
+                // 2. Создаем временную папку ВНУТРИ выбранной папки установки
+                //tempDir = Path.Combine(installPath, "Temp", Guid.NewGuid().ToString());
+                // Добавлен префикс WSI_ для всех временных папок для безопасной чистки
+                tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
+
+                // Убедимся, что родительская папка существует
+                Directory.CreateDirectory(Path.GetDirectoryName(tempDir)!);
+                Directory.CreateDirectory(tempDir);
+
+                _logger.LogDebug("Создана временная папка: {TempDir}", tempDir);
+
+                // 3. Извлечение файла из архива
+                string sourcePath = string.Empty;
+                using (var archive = ArchiveFactory.Open(archivePath))
+                {
+                    var entry = archive.Entries.FirstOrDefault(e =>
+                        e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase)) ?? throw new FileNotFoundException($"Файл {app.ExecutablePath} не найден в архиве");
+                    sourcePath = Path.Combine(tempDir, app.ExecutablePath);
+                    entry!.WriteToFile(sourcePath);
+                    _logger.LogInformation("Файл {File} извлечён в {Path}", app.ExecutablePath, sourcePath);
+                }
+
+                // 4. Проверка успешности извлечения
+                if (!File.Exists(sourcePath))
+                {
+                    throw new FileNotFoundException("Ошибка извлечения файла из архива");
+                }
 
                 token.ThrowIfCancellationRequested();
 
+                // 5. Логика установки (портативная/обычная)
                 if (app.IsPortable)
                 {
                     string targetDir = Path.Combine(installPath, app.Name);
                     Directory.CreateDirectory(targetDir);
-
-                    string destinationFile = Path.Combine(targetDir, Path.GetFileName(app.ExecutablePath));
+                    string destinationFile = Path.Combine(targetDir, Path.GetFileName(sourcePath));
 
                     await Task.Run(() =>
                     {
-                        _logger.LogDebug("{App} — переносим как портативную программу", app.Name);
+                        _logger.LogDebug("{App} - переносим как портативную программу", app.Name);
                         token.ThrowIfCancellationRequested();
+
+                        // Копирование с перезаписью
                         File.Copy(sourcePath, destinationFile, overwrite: true);
-                        token.ThrowIfCancellationRequested();
+                        _logger.LogDebug("Файл скопирован: {Source} → {Dest}", sourcePath, destinationFile);
+
+                        // Создание ярлыка
                         if (!string.IsNullOrWhiteSpace(app.ShortcutName))
+                        {
                             CreateShortcut(destinationFile, app.ShortcutName);
+                        }
                     }, token);
-                    _logger.LogDebug("{App} скопирован в {Dir}", app.Name, Path.Combine(installPath, app.Name));
                 }
                 else
                 {
-                    _logger.LogDebug("{App} — устанавливаем через процесс", app.Name);
+                    _logger.LogDebug("{App} - запуск установщика", app.Name);
+
+                    // 6. Формирование аргументов
                     var arguments = new StringBuilder();
                     foreach (var param in app.CustomParameters.Where(p => !string.IsNullOrWhiteSpace(p.Value)))
                     {
                         arguments.Append($" {param.Value}");
                     }
-                    if (arguments.Length > 0) arguments.Append($" /D=\"\"{installPath}\"\"");
-                    else arguments.Append($"/D=\"\"{installPath}\"\"");
+                    arguments.Append($" /D=\"\"{installPath}\"\"");
 
+                    // 7. Настройка процесса
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = sourcePath,
                         Arguments = arguments.ToString(),
                         UseShellExecute = true,
                         Verb = "runas",
-                        WorkingDirectory = Path.GetDirectoryName(sourcePath)
+                        WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty
                     };
 
+                    // 8. Запуск и асинхронное ожидание
                     using var process = new Process { StartInfo = startInfo };
                     process.Start();
 
-                    await Task.Run(() =>
+                    try
                     {
-                        try
+                        await process.WaitForExitAsync(token);
+                        _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogWarning("Установка {App} отменена", app.Name);
+                        if (!process.HasExited)
                         {
-                            // Длительные действия:
-                            while (!process.HasExited)
-                            {
-                                token.ThrowIfCancellationRequested();
-                                Thread.Sleep(100);
-                            }
-                            _logger.LogDebug("{App} процесс установки запущен", app.Name);
+                            process.Kill();
+                            _logger.LogDebug("Процесс {App} принудительно завершён", app.Name);
                         }
-                        catch (OperationCanceledException)
-                        {
-                            // Поглощаем отмену внутри задачи
-                            _logger.LogWarning("InstallAppAsync для {App} отменён", app.Name);
-                        }
-                    }, token);
+                        throw;
+                    }
                 }
             }
             catch (OperationCanceledException)
             {
-                // Просто выходим, без перехвата дальше
-                _logger.LogWarning("InstallAppAsync для {App} отменён", app.Name);
-                return;
+                _logger.LogWarning("Установка {App} отменена", app.Name);
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Не удалось установить {App}", app.Name);
-                throw;
+                _logger.LogError(ex, "Ошибка установки {App}", app.Name);
+                throw new InvalidOperationException($"Ошибка установки {app.Name}", ex);
+            }
+            finally
+            {
+                // 9. Очистка временных файлов
+                if (tempDir != null && Directory.Exists(tempDir))
+                {
+                    try
+                    {
+                        Directory.Delete(tempDir, recursive: true);
+                        _logger.LogDebug("Временная папка удалена: {TempDir}", tempDir);
+
+                        // Дополнительно: удаляем родительскую папку Temp, если она пустая
+                        var parentTempDir = Path.GetDirectoryName(tempDir);
+                        if (Directory.Exists(parentTempDir))
+                        {
+                            if (!Directory.EnumerateFileSystemEntries(parentTempDir).Any())
+                            {
+                                Directory.Delete(parentTempDir);
+                                _logger.LogDebug("Родительская временная папка удалена: {parentTempDir}", parentTempDir);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Ошибка удаления временной папки");
+                    }
+                }
+            }
+        }
+
+        //Дополнительный чистильщик временной папки (на случай аварийного завершения)
+        private static void CleanupOldTemp(string installPath, ILogger<Form1> logger)
+        {
+            string tempRoot = Path.Combine(installPath, "Temp");
+            if (!Directory.Exists(tempRoot)) return;
+
+            logger.LogWarning("Обнаружены остаточные данные в папке Temp {tempRoot}", tempRoot);
+            foreach (var dir in Directory.GetDirectories(tempRoot, "WSI_*"))
+            {
+                try
+                {
+                    Directory.Delete(dir, recursive: true);
+                    logger.LogDebug("Временная папка удалена: {dir}", dir);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Ошибка удаления остаточной временной папки");
+                }
+            }
+
+            // Пытаемся удалить саму папку Temp, если пустая
+            try
+            {
+                if (!Directory.EnumerateFileSystemEntries(tempRoot).Any())
+                {
+                    Directory.Delete(tempRoot);
+                    logger.LogDebug("Родительская временная папка удалена: {tempRoot}", tempRoot);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Не удалось удалить остаточную папку Temp");
             }
         }
 
@@ -274,7 +405,6 @@ namespace WindSoftInstaller
                     .Cast<DataGridViewRow>()
                     .Where(r => Convert.ToBoolean(r.Cells["colSelect"].Value))
                     .Select(r => r.DataBoundItem as InstallableApp)
-                    .Where(app => app != null)
                     .ToList();
 
                 if (checkedApps.Count == 0)
@@ -364,7 +494,9 @@ namespace WindSoftInstaller
         private void DataGridViewPrograms_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
-            if (dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem is not InstallableApp app) return;
+
+            var row = dataGridViewPrograms.Rows[e.RowIndex];
+            if (row.DataBoundItem is not InstallableApp app || app == null) return;
 
             // Открываем диалог с копией текущих параметров
             using var dlg = new ParamForm(new Dictionary<string, string>(app.CustomParameters));
