@@ -202,8 +202,7 @@ namespace WindSoftInstaller
                     throw new FileNotFoundException($"Архив не найден: {archivePath}");
                 }
 
-                // 2. Создаем временную папку ВНУТРИ выбранной папки установки
-                //tempDir = Path.Combine(installPath, "Temp", Guid.NewGuid().ToString());
+                // 2. Создаем временную папку внутри выбранной папки установки
                 // Добавлен префикс WSI_ для всех временных папок для безопасной чистки
                 tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
 

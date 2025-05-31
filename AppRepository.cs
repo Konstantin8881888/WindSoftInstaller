@@ -16,7 +16,8 @@ namespace WindSoftInstaller
 
             return
             [
-                new() {
+                new() 
+                {
                     Name = "vlc-3.0.21",
                     Description = "Мощный видеопроигрыватель с поддержкой большинства кодеков",
                     ExecutablePath = "vlc-3.0.21.exe",
@@ -26,13 +27,25 @@ namespace WindSoftInstaller
                         { "Язык", "/DE=ru" }
                     }
                 },
-                new() {
+                new() 
+                {
                     Name = "mplayerc",
                     Description = "Быстрый видеоплеер с минималистичным интерфейсом",
                     ExecutablePath = "mplayerc.exe",
                     IsPortable = true,
                     ShortcutName = "MPC"
-                }
+                },
+                new() 
+                {
+                    Name = "GIMP",
+                    Description = "GIMP — растровый графический редактор. Аналог Adobe Photoshop для обработки фото, создания цифрового искусства и дизайна.",
+                    ExecutablePath = "gimp-3.0.4-setup.exe",
+                    CustomParameters =
+                    {
+                        { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" },
+                        { "Язык", "/LANG=russian" }
+                    }
+                },
             ];
         }
 
