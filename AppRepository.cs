@@ -21,10 +21,11 @@ namespace WindSoftInstaller
                     Name = "vlc-3.0.21",
                     Description = "Мощный видеопроигрыватель с поддержкой большинства кодеков",
                     ExecutablePath = "vlc-3.0.21.exe",
+                    PathParameterKey = "/D=",
                     CustomParameters =
                     {
                         { "Режим установки", "/S" },
-                        { "Язык", "/DE=ru" }
+                        { "Язык", "/L=ru" }
                     }
                 },
                 new() 
@@ -40,6 +41,7 @@ namespace WindSoftInstaller
                     Name = "GIMP",
                     Description = "GIMP — растровый графический редактор. Аналог Adobe Photoshop для обработки фото, создания цифрового искусства и дизайна.",
                     ExecutablePath = "gimp-3.0.4-setup.exe",
+                    PathParameterKey = "/DIR=",
                     CustomParameters =
                     {
                         { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" },

@@ -3,8 +3,9 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
+using System.Security.Principal;
 using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using SharpCompress.Archives;
 using File = System.IO.File;
 
@@ -18,6 +19,8 @@ namespace WindSoftInstaller
         int dotCount = 0;
         private CancellationTokenSource? _cts; // Делаем nullable
         private readonly ILogger<Form1> _logger;
+        // поле для сбора имен приложений, у которых не удалось записать в реестр путь
+        private readonly List<string> _registryFailedApps = new();
 
         public Form1(ILogger<Form1> logger)
         {
@@ -101,7 +104,7 @@ namespace WindSoftInstaller
             // Загружаем данные
             dataGridViewPrograms.AutoGenerateColumns = false;
             var bindingList = new BindingList<InstallableApp>(apps);
-            dataGridViewPrograms.DataSource = bindingList;  // привязываем список объектов :contentReference[oaicite:12]{index=12}
+            dataGridViewPrograms.DataSource = bindingList;  // привязываем список объектов
             _logger.LogInformation("DataGridView инициализирована");
 
         }
@@ -191,47 +194,43 @@ namespace WindSoftInstaller
         private async Task InstallAppAsync(InstallableApp app, string installPath, CancellationToken token)
         {
             _logger.LogDebug("Начало InstallAppAsync для {App}", app.Name);
+            // Проверим права Админа:
+            bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+            _logger.LogInformation("Запущено с правами администратора: {IsAdmin}", isAdmin);
             string? tempDir = null;
 
             try
             {
-                // 1. Путь к архиву и проверка его существования
+                // 1. Проверка архива
                 string archivePath = Path.Combine(Application.StartupPath, "Installers.7z");
                 if (!File.Exists(archivePath))
-                {
                     throw new FileNotFoundException($"Архив не найден: {archivePath}");
-                }
 
-                // 2. Создаем временную папку внутри выбранной папки установки
-                // Добавлен префикс WSI_ для всех временных папок для безопасной чистки
+                // 2. Создаём временную папку для распаковки
                 tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
-
-                // Убедимся, что родительская папка существует
                 Directory.CreateDirectory(Path.GetDirectoryName(tempDir)!);
                 Directory.CreateDirectory(tempDir);
-
                 _logger.LogDebug("Создана временная папка: {TempDir}", tempDir);
 
-                // 3. Извлечение файла из архива
-                string sourcePath = string.Empty;
+                // 3. Извлечение нужного EXE из архива
+                string sourcePath;
                 using (var archive = ArchiveFactory.Open(archivePath))
                 {
-                    var entry = archive.Entries.FirstOrDefault(e =>
-                        e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase)) ?? throw new FileNotFoundException($"Файл {app.ExecutablePath} не найден в архиве");
+                    var entry = archive.Entries
+                        .FirstOrDefault(e => e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                        ?? throw new FileNotFoundException($"Файл {app.ExecutablePath} не найден в архиве");
+
                     sourcePath = Path.Combine(tempDir, app.ExecutablePath);
-                    entry!.WriteToFile(sourcePath);
+                    entry.WriteToFile(sourcePath);
                     _logger.LogInformation("Файл {File} извлечён в {Path}", app.ExecutablePath, sourcePath);
                 }
 
-                // 4. Проверка успешности извлечения
                 if (!File.Exists(sourcePath))
-                {
-                    throw new FileNotFoundException("Ошибка извлечения файла из архива");
-                }
+                    throw new FileNotFoundException("Ошибка: файл не найден после извлечения");
 
                 token.ThrowIfCancellationRequested();
 
-                // 5. Логика установки (портативная/обычная)
+                // 4. Если портативная — просто копируем
                 if (app.IsPortable)
                 {
                     string targetDir = Path.Combine(installPath, app.Name);
@@ -240,45 +239,90 @@ namespace WindSoftInstaller
 
                     await Task.Run(() =>
                     {
-                        _logger.LogDebug("{App} - переносим как портативную программу", app.Name);
+                        _logger.LogDebug("{App} — переносим как портативную программу", app.Name);
                         token.ThrowIfCancellationRequested();
-
-                        // Копирование с перезаписью
                         File.Copy(sourcePath, destinationFile, overwrite: true);
-                        _logger.LogDebug("Файл скопирован: {Source} → {Dest}", sourcePath, destinationFile);
 
-                        // Создание ярлыка
                         if (!string.IsNullOrWhiteSpace(app.ShortcutName))
-                        {
                             CreateShortcut(destinationFile, app.ShortcutName);
-                        }
                     }, token);
+
+                    return;
                 }
-                else
+
+                // 5. НЕ портативная (например, VLC, GIMP и т.д.)
+                _logger.LogDebug("{App} — запуск установщика", app.Name);
+
+                // 5.1. Гарантируем существование папки назначения
+                string appInstallPath = Path.Combine(installPath, app.Name);
+                Directory.CreateDirectory(appInstallPath);
+
+                // 5.2. Если это VLC (определяем по имени, можно уточнить условие),
+                //      то создаём ключ в HKLM\SOFTWARE\VideoLAN\VLC\InstallDir и не передаем /D=… в аргументах.
+                bool isVlcInstaller = app.Name.StartsWith("vlc", StringComparison.OrdinalIgnoreCase);
+
+                if (isVlcInstaller)
                 {
-                    _logger.LogDebug("{App} - запуск установщика", app.Name);
-
-                    // 6. Формирование аргументов
-                    var arguments = new StringBuilder();
-                    foreach (var param in app.CustomParameters.Where(p => !string.IsNullOrWhiteSpace(p.Value)))
+                    try
                     {
-                        arguments.Append($" {param.Value}");
+                        // Создаём (или открываем) ветку HKEY_LOCAL_MACHINE\SOFTWARE\VideoLAN\VLC
+                        using (RegistryKey key = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\VideoLAN\VLC"))
+                        {
+                            key.SetValue("InstallDir", appInstallPath, RegistryValueKind.String);
+                        }
+                        _logger.LogInformation("Написали в реестр HKLM\\SOFTWARE\\VideoLAN\\VLC\\InstallDir = {Path}", appInstallPath);
                     }
-                    arguments.Append($" /D=\"\"{installPath}\"\"");
-
-                    // 7. Настройка процесса
-                    var startInfo = new ProcessStartInfo
+                    catch (Exception ex)
                     {
-                        FileName = sourcePath,
-                        Arguments = arguments.ToString(),
-                        UseShellExecute = true,
-                        Verb = "runas",
-                        WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty
-                    };
+                        _logger.LogError(ex, "Не удалось записать ключ InstallDir в реестр для VLC");
+                        // Сохраняем имя этого приложения в список неудачных
+                        _registryFailedApps.Add(app.Name);
+                        return; // <- сразу выходим, установка VLC пропущена
+                    }
+                }
 
-                    // 8. Запуск и асинхронное ожидание
-                    using var process = new Process { StartInfo = startInfo };
-                    process.Start();
+                // 5.3. Формируем аргументы для запуска инсталлятора
+                var argsList = new List<string>();
+
+                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.)
+                foreach (var paramValue in app.CustomParameters.Values
+                             .Where(v => !string.IsNullOrWhiteSpace(v)))
+                {
+                    argsList.Add(paramValue.Trim());
+                }
+
+                // 5.3.2. Если НЕ VLC, добавляем ключ "/D=<путь>"
+                if (!isVlcInstaller)
+                {
+                    string pathArg = app.PathParameterKey + appInstallPath;
+                    if (appInstallPath.Contains(" "))
+                        pathArg = $"{app.PathParameterKey}\"{appInstallPath}\"";
+                    argsList.Add(pathArg);
+                }
+
+                // 5.3.3. Склеиваем всё через пробел (никаких кавычек вокруг finalArgs!)
+                string finalArgs = string.Join(" ", argsList);
+
+                _logger.LogDebug("Формирование аргументов для \"{App}\": {Args}", app.Name, finalArgs);
+                // Если isVlcInstaller == true, finalArgs будет, например, "/S /L=ru"
+                // И VLC возьмёт путь из реестра, а не из /D=
+
+                // 5.4. Настраиваем ProcessStartInfo
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = sourcePath,
+                    Arguments = finalArgs,
+                    UseShellExecute = true,
+                    Verb = "runas",  // поднимаем права для запуска экзешника (UAC)
+                    WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty
+                };
+
+                _logger.LogDebug("Командная строка: {FileName} {Arguments}", startInfo.FileName, startInfo.Arguments);
+
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                        throw new InvalidOperationException("Не удалось запустить процесс установки");
 
                     try
                     {
@@ -296,6 +340,20 @@ namespace WindSoftInstaller
                         throw;
                     }
                 }
+
+                // 5.5. После завершения установки VLC удаляем ключ из реестра
+                if (isVlcInstaller)
+                {
+                    try
+                    {
+                        Registry.LocalMachine.DeleteSubKeyTree(@"SOFTWARE\VideoLAN\VLC", throwOnMissingSubKey: false);
+                        _logger.LogInformation("Ключ реестра HKLM\\SOFTWARE\\VideoLAN\\VLC удалён");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Не удалось удалить ключ реестра HKLM\\SOFTWARE\\VideoLAN\\VLC");
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
@@ -309,7 +367,7 @@ namespace WindSoftInstaller
             }
             finally
             {
-                // 9. Очистка временных файлов
+                // 6. Очистка временных папок
                 if (tempDir != null && Directory.Exists(tempDir))
                 {
                     try
@@ -317,15 +375,12 @@ namespace WindSoftInstaller
                         Directory.Delete(tempDir, recursive: true);
                         _logger.LogDebug("Временная папка удалена: {TempDir}", tempDir);
 
-                        // Дополнительно: удаляем родительскую папку Temp, если она пустая
                         var parentTempDir = Path.GetDirectoryName(tempDir);
-                        if (Directory.Exists(parentTempDir))
+                        if (Directory.Exists(parentTempDir)
+                            && !Directory.EnumerateFileSystemEntries(parentTempDir).Any())
                         {
-                            if (!Directory.EnumerateFileSystemEntries(parentTempDir).Any())
-                            {
-                                Directory.Delete(parentTempDir);
-                                _logger.LogDebug("Родительская временная папка удалена: {parentTempDir}", parentTempDir);
-                            }
+                            Directory.Delete(parentTempDir);
+                            _logger.LogDebug("Родительская временная папка удалена: {ParentTempDir}", parentTempDir);
                         }
                     }
                     catch (Exception ex)
@@ -387,6 +442,8 @@ namespace WindSoftInstaller
             btnInstall.Enabled = false;
             btnToggleSelection.Enabled = false;
             btnCancelInstall.Enabled = true;   // активируем «Отменить»
+            // Сбрасываем список неудачных записей в реестр перед началом
+            _registryFailedApps.Clear();
 
             _cts = new CancellationTokenSource();
 
@@ -454,6 +511,18 @@ namespace WindSoftInstaller
                     }
                 }
 
+                // После цикла проверяем, есть ли приложения, для которых не удалось записать в реестр
+                if (_registryFailedApps.Count > 0)
+                {
+                    string failedList = string.Join(", ", _registryFailedApps);
+                    MessageBox.Show(
+                        $"Нет доступа к реестру для установки следующих программ:\n{failedList}",
+                        "Внимание",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }
+
+                // Если не было отмены или критических ошибок — показываем, что всё готово
                 if (!_cts.Token.IsCancellationRequested)
                 {
                     _logger.LogInformation("Все приложения установлены успешно");

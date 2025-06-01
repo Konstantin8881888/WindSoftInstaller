@@ -10,5 +10,6 @@
         public Dictionary<string, string> CustomParameters { get; set; } = [];
         public string ParametersDisplay => string.Join("; ", CustomParameters.Select(p => $"{p.Key}: {p.Value}")); //свойство для отображения параметров
         public Image? Icon { get; set; }
+        public string PathParameterKey { get; set; } = "/D=";
     }
 }
