@@ -411,6 +411,7 @@ namespace WindSoftInstaller
                     }
                 }
             }
+            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
         }
 
         //Дополнительный чистильщик временной папки (на случай аварийного завершения)
@@ -579,6 +580,39 @@ namespace WindSoftInstaller
             dotCount = (dotCount + 1) % 4;
             // Формируем строку: "Установка", "Установка.", "Установка..", "Установка..."
             lblStatus.Text = "Установка" + new string('.', dotCount);
+        }
+
+        private void DataGridViewPrograms_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
+                return;
+
+            e.Value = "Просмотр";
+            e.FormattingApplied = true;
+        }
+
+        private void DataGridViewPrograms_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
+                return;
+
+            var app = dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem as InstallableApp;
+            if (app == null) return;
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = app.LicenseUrl,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка открытия ссылки на лицензию");
+                MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void DataGridViewPrograms_CellDoubleClick(object sender, DataGridViewCellEventArgs e)

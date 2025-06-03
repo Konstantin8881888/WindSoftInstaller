@@ -126,13 +126,32 @@ namespace WindSoftInstaller
             // Логируем создание колонки colParams
             _logger.LogDebug("Колонка colParams (DataGridViewTextBoxColumn) создана");
 
+            // Колонка размера
+            this.colSize = new DataGridViewTextBoxColumn();
+            this.colSize.Name = "colSize";
+            this.colSize.HeaderText = "Размер (МБ)";
+            this.colSize.DataPropertyName = "SizeMB";
+            this.colSize.DefaultCellStyle.Format = "N2";
+            this.colSize.Width = 80;
+
+            // Колонка лицензии
+            this.colLicense = new DataGridViewLinkColumn();
+            this.colLicense.Name = "colLicense";
+            this.colLicense.HeaderText = "Лицензия";
+            this.colLicense.DataPropertyName = "LicenseUrl";
+            this.colLicense.Width = 100;
+            this.colLicense.ActiveLinkColor = Color.Blue;
+            this.colLicense.LinkBehavior = LinkBehavior.SystemDefault;
+
             // 6) Добавляем колонки в нужном порядке
             this.dataGridViewPrograms.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colSelect,
             this.colIcon,
             this.colName,
             this.colDescription,
-            this.colParams
+            this.colParams,
+            this.colSize,
+            this.colLicense
         });
             // Логируем, что все колонки успешно добавлены
             _logger.LogDebug("Все колонки добавлены в DataGridView");
@@ -149,6 +168,7 @@ namespace WindSoftInstaller
             // Границы и сетка
             dataGridViewPrograms.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             dataGridViewPrograms.GridColor = Color.Silver;
+            dataGridViewPrograms.CellContentClick += DataGridViewPrograms_CellContentClick;
             // 
             // btnToggleSelection
             // 
@@ -260,7 +280,7 @@ namespace WindSoftInstaller
             int bottomY = btnToggleSelection.Location.Y - 5;
 
             dataGridViewPrograms.Location = new Point(1, gridY);
-            dataGridViewPrograms.Size = new Size(933, bottomY - gridY);
+            dataGridViewPrograms.Size = new Size(1068, bottomY - gridY);
             dataGridViewPrograms.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             this.Controls.Add(this.dataGridViewPrograms);// Логируем позиционирование и размер DataGridView
             _logger.LogDebug("DataGridView location set to {Location}, size={Size}",
@@ -317,7 +337,7 @@ namespace WindSoftInstaller
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(933, 630);
+            ClientSize = new Size(1100, 630);
             Controls.Add(lblStatus);
             Controls.Add(progressBar);
             Controls.Add(btnInstall);
@@ -350,5 +370,7 @@ namespace WindSoftInstaller
         private Label lblDonate;
         private TextBox txtBTC;
         private TextBox txtETH;
+        private DataGridViewTextBoxColumn colSize;
+        private DataGridViewLinkColumn colLicense;
     }
 }
