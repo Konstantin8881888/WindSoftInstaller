@@ -50,14 +50,10 @@ namespace WindSoftInstaller
 
             // Используем MemoryStream для конвертации byte[] в Icon
             byte[] iconBytes = Properties.Resources.logo;
-            using (var stream = new System.IO.MemoryStream(iconBytes))
+            using (var stream = new MemoryStream(iconBytes))
             {
-                // (проверка на null):
-                if (stream != null)
-                {
-                    using var icon = new Icon(stream);
-                    this.Icon = (Icon)icon.Clone(); // Явное приведение типа
-                }
+                // Явное указание типа Icon
+                this.Icon = new Icon(stream);
             }
             // Восстанавливаем последний путь, если он задан
             var saved = Properties.Settings.Default.LastInstallPath;
@@ -72,42 +68,51 @@ namespace WindSoftInstaller
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _logger.LogInformation("Form1 загружена, начинаем извлечение иконок для {Count} приложений", apps.Count);
-            // Для каждого app извлекаем иконку из .exe и сохраняем в свойство Icon
+            _logger.LogInformation(
+                "Form1 загружена, начинаем загрузку иконок для {Count} приложений",
+                apps.Count);
+
+            // 1. Папка с иконками (relative к тому, где лежит exe)
+            string iconsFolder = Path.Combine(Application.StartupPath, "Icons");
+
             foreach (var app in apps)
             {
-                string fullPath = Path.Combine(Application.StartupPath, app.ExecutablePath);
-                if (File.Exists(fullPath))
+                try
                 {
-                    try
+                    // Формируем имя .ico по тому же имени EXE
+                    // Например, "vlc-3.0.21.exe" → "vlc-3.0.21.ico"
+                    string icoName = Path.ChangeExtension(app.ExecutablePath, ".ico");
+                    string icoPath = Path.Combine(iconsFolder, icoName);
+
+                    if (File.Exists(icoPath))
                     {
-                        var sysIcon = Icon.ExtractAssociatedIcon(fullPath);
-                        // Явная проверка
-                        if (sysIcon != null)
-                        {
-                            app.Icon = sysIcon.ToBitmap();
-                        }
-                        _logger.LogDebug("Иконка для {App} успешно извлечена", app.Name);
+                        // Если нашли файл, загружаем его
+                        using var ico = new Icon(icoPath);
+                        app.Icon = ico.ToBitmap();
+                        _logger.LogDebug("Иконка для {App} загружена из {Path}", app.Name, icoPath);
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger.LogWarning(ex, "Не удалось извлечь иконку для {App}", app.Name);
+                        _logger.LogWarning("Не найден .ico для {App} по пути {Path}", app.Name, icoPath);
+                        app.Icon = null; // если иконки нет, просто оставляем пустой
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.LogWarning("Файл для иконки не найден: {Path}", fullPath);
+                    _logger.LogWarning(ex, "Не удалось загрузить иконку для {App}", app.Name);
+                    app.Icon = null;
                 }
             }
 
-            _logger.LogInformation("Иконки извлечены, инициализируем DataGridView");
-            // Загружаем данные
+            _logger.LogInformation("Иконки загружены, инициализируем DataGridView");
+
             dataGridViewPrograms.AutoGenerateColumns = false;
             var bindingList = new BindingList<InstallableApp>(apps);
-            dataGridViewPrograms.DataSource = bindingList;  // привязываем список объектов
-            _logger.LogInformation("DataGridView инициализирована");
+            dataGridViewPrograms.DataSource = bindingList;
 
+            _logger.LogInformation("DataGridView инициализирована");
         }
+
 
         private void CreateShortcut(string targetPath, string shortcutName)
         {
