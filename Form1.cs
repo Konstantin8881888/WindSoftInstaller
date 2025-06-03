@@ -14,20 +14,25 @@ namespace WindSoftInstaller
     [SupportedOSPlatform("windows")]
     public partial class Form1 : Form
     {
+        // Список приложений, загружаемый из AppRepository
         private readonly List<InstallableApp> apps = AppRepository.LoadApps();
-        private bool allSelected = false;
-        int dotCount = 0;
-        private CancellationTokenSource? _cts; // Делаем nullable
+        private bool allSelected = false; // флаг для кнопки «Выбрать/Снять выделение»
+        int dotCount = 0; // счётчик для анимации статуса «Установка...»
+        private CancellationTokenSource? _cts; // Делаем nullable // источник токена отмены
         private readonly ILogger<Form1> _logger;
-        // поле для сбора имен приложений, у которых не удалось записать в реестр путь
+        // Список приложений, для которых не удалось записать ключ в реестр
         private readonly List<string> _registryFailedApps = new();
 
         public Form1(ILogger<Form1> logger)
         {
+            // Сначала инициализируем логгер
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger.LogInformation("Form1 constructor: старт");
             InitializeComponent();
             // Проверка на null
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger.LogInformation("Form1 constructor: объект формы создаётся");
 
+            // Очищаем старые временные папки, если они остались от предыдущих неудачных запусков
             CleanupOldTemp(Properties.Settings.Default.LastInstallPath, _logger);
 
             // Загружаем иконку из ресурсов
@@ -39,12 +44,13 @@ namespace WindSoftInstaller
                 {
                     this.Icon = new Icon(stream);
                     this.ShowIcon = true;
+                    _logger.LogDebug("Иконка формы загружена из ресурсов");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка загрузки иконки");
-                // Fallback на иконку по умолчанию
+                // Если не удалось, задаём дефолтную иконку Windows
                 this.Icon = SystemIcons.Application;
             }
 
@@ -60,6 +66,7 @@ namespace WindSoftInstaller
             if (!string.IsNullOrWhiteSpace(saved) && Directory.Exists(saved))
             {
                 txtInstallPath.Text = saved;
+                _logger.LogDebug("Восстановлен последний путь установки: {Path}", saved);
             }
             // Задаём фон формы и единый шрифт
             this.BackColor = Color.LightSteelBlue;
@@ -68,12 +75,12 @@ namespace WindSoftInstaller
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            _logger.LogInformation(
-                "Form1 загружена, начинаем загрузку иконок для {Count} приложений",
-                apps.Count);
+            _logger.LogInformation("Form1_Load: форма загружена, начинаем извлечение иконок для {Count} приложений", apps.Count);
 
             // 1. Папка с иконками (relative к тому, где лежит exe)
+            // На этом этапе мы не лезем в архив — иконки уже лежат в Icons\<имя>.ico
             string iconsFolder = Path.Combine(Application.StartupPath, "Icons");
+            _logger.LogDebug("Иконки будут искаться в папке: {IconsFolder}", iconsFolder);
 
             foreach (var app in apps)
             {
@@ -87,6 +94,7 @@ namespace WindSoftInstaller
                     if (File.Exists(icoPath))
                     {
                         // Если нашли файл, загружаем его
+                        // Загружаем иконку и сохраняем в app.Icon
                         using var ico = new Icon(icoPath);
                         app.Icon = ico.ToBitmap();
                         _logger.LogDebug("Иконка для {App} загружена из {Path}", app.Name, icoPath);
@@ -118,6 +126,7 @@ namespace WindSoftInstaller
         {
             _logger.LogDebug("Создаём ярлык {Shortcut} → {Target}", shortcutName, targetPath);
 
+            // Проверяем, что файл, на который ссылаемся, существует
             if (!File.Exists(targetPath))
             {
                 _logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", targetPath, shortcutName);
@@ -132,6 +141,7 @@ namespace WindSoftInstaller
 
             try
             {
+                // Создаём COM-объект WScript.Shell для работы с ярлыками
                 Type? shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("COM-класс WScript.Shell не найден");
                 shellObject = Activator.CreateInstance(shellType);
                 if (shellObject == null)
@@ -151,8 +161,7 @@ namespace WindSoftInstaller
 
                 shortcut.TargetPath = targetPath;
                 shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
-                shortcut.WindowStyle = 1;
-                // shortcut.IconLocation = targetPath;
+                shortcut.WindowStyle = 1; // обычный режим окна
                 shortcut.Save();
 
                 _logger.LogInformation("Ярлык {Shortcut} успешно создан", shortcutName);
@@ -196,22 +205,29 @@ namespace WindSoftInstaller
             }
         }
 
+        /// Основной метод установки одного приложения (app). 
+        /// Если app.IsPortable == true, то просто копируем папку и создаём ярлык.
+        /// Иначе — распаковываем инсталлятор, формируем аргументы, запускаем процесс, ждём завершения.
         private async Task InstallAppAsync(InstallableApp app, string installPath, CancellationToken token)
         {
             _logger.LogDebug("Начало InstallAppAsync для {App}", app.Name);
-            // Проверим права Админа:
+            // Проверяем, запущено ли приложение от имени администратора (важно для записи в реестр и некоторых инсталляторов)
             bool isAdmin = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
             _logger.LogInformation("Запущено с правами администратора: {IsAdmin}", isAdmin);
-            string? tempDir = null;
+            string? tempDir = null; // папка, куда распакуем exe из архива
 
             try
             {
-                // 1. Проверка архива
+                // 1. Формируем путь к архиву и проверяем его наличие
                 string archivePath = Path.Combine(Application.StartupPath, "Installers.7z");
                 if (!File.Exists(archivePath))
+                {
+                    _logger.LogError("Installers.7z не найден в пути {Archive}", archivePath);
                     throw new FileNotFoundException($"Архив не найден: {archivePath}");
+                }
 
-                // 2. Создаём временную папку для распаковки
+
+                // 2. Создаём временную папку для распаковки (WSI_<GUID>)
                 tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
                 Directory.CreateDirectory(Path.GetDirectoryName(tempDir)!);
                 Directory.CreateDirectory(tempDir);
@@ -230,6 +246,7 @@ namespace WindSoftInstaller
                     _logger.LogInformation("Файл {File} извлечён в {Path}", app.ExecutablePath, sourcePath);
                 }
 
+                // Ещё раз проверяем, что файл действительно оказался где нужно
                 if (!File.Exists(sourcePath))
                     throw new FileNotFoundException("Ошибка: файл не найден после извлечения");
 
