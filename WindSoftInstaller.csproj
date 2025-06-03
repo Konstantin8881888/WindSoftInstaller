@@ -10,6 +10,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+	<ApplicationManifest>app.manifest</ApplicationManifest>
+	<CopyToOutputDirectory>Always</CopyToOutputDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +34,10 @@
     <Content Include="Installers.7z">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+	<!-- Этот блок говорит: “все файлы icons\*.ico копировать в выходную папку рядом с exe” -->
+	<Content Include="Icons\*.ico">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
   </ItemGroup>
 
   <ItemGroup>
