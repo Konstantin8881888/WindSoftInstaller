@@ -76,6 +76,8 @@ namespace WindSoftInstaller
             this.dataGridViewPrograms.AllowUserToAddRows = false;
             // Логируем старт настройки DataGridView (без колонок)
             _logger.LogDebug("DataGridView dataGridViewPrograms создан (пока без колонок)");
+            // Разрешаем изменение состояния чекбоксов
+            dataGridViewPrograms.CellValueChanged += DataGridViewPrograms_CellValueChanged;
 
             // ===== Designer‑Generated Columns =====
             // 1) Checkbox
@@ -224,7 +226,7 @@ namespace WindSoftInstaller
             // 
             // progressBar
             // 
-            progressBar.Location = new Point(1, 490);
+            progressBar.Location = new Point(1, 505);
             progressBar.Margin = new Padding(4, 3, 4, 3);
             progressBar.Name = "progressBar";
             progressBar.Size = new Size(933, 27);
@@ -253,10 +255,21 @@ namespace WindSoftInstaller
             txtInstallPath.Size = new Size(116, 23);
             txtInstallPath.TabIndex = 4;
             // 
+            // Label для отображения суммы размеров файлов
+            // 
+            this.lblTotalSize = new System.Windows.Forms.Label();
+            this.lblTotalSize.AutoSize = true;
+            this.lblTotalSize.Location = new System.Drawing.Point(12, 465); // Позиция над progressBar
+            this.lblTotalSize.Name = "lblTotalSize";
+            this.lblTotalSize.Size = new System.Drawing.Size(200, 15);
+            this.lblTotalSize.TabIndex = 9;
+            this.lblTotalSize.Text = "Общий размер: 0.00 МБ";
+            this.Controls.Add(this.lblTotalSize);
+            // 
             // lblStatus
             // 
             lblStatus.AutoSize = true;
-            lblStatus.Location = new Point(12, 472);
+            lblStatus.Location = new Point(12, 485);
             lblStatus.Name = "lblStatus";
             lblStatus.Size = new Size(38, 15);
             lblStatus.TabIndex = 5;
@@ -291,7 +304,7 @@ namespace WindSoftInstaller
             // 
             this.lblDonate = new System.Windows.Forms.Label();
             this.lblDonate.AutoSize = true;
-            this.lblDonate.Location = new System.Drawing.Point(12, 525);
+            this.lblDonate.Location = new System.Drawing.Point(12, 540);
             this.lblDonate.Name = "lblDonate";
             this.lblDonate.Size = new System.Drawing.Size(225, 15);
             this.lblDonate.TabIndex = 6;
@@ -304,7 +317,7 @@ namespace WindSoftInstaller
             // txtBTC
             // 
             this.txtBTC = new System.Windows.Forms.TextBox();
-            this.txtBTC.Location = new System.Drawing.Point(12, 545);
+            this.txtBTC.Location = new System.Drawing.Point(12, 560);
             this.txtBTC.Name = "txtBTC";
             this.txtBTC.ReadOnly = true;
             this.txtBTC.Size = new System.Drawing.Size(400, 23);
@@ -320,7 +333,7 @@ namespace WindSoftInstaller
             // txtETH
             // 
             this.txtETH = new System.Windows.Forms.TextBox();
-            this.txtETH.Location = new System.Drawing.Point(12, 575);
+            this.txtETH.Location = new System.Drawing.Point(12, 590);
             this.txtETH.Name = "txtETH";
             this.txtETH.ReadOnly = true;
             this.txtETH.Size = new System.Drawing.Size(400, 23);
@@ -337,7 +350,7 @@ namespace WindSoftInstaller
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1100, 630);
+            ClientSize = new Size(1100, 660);
             Controls.Add(lblStatus);
             Controls.Add(progressBar);
             Controls.Add(btnInstall);
@@ -372,5 +385,6 @@ namespace WindSoftInstaller
         private TextBox txtETH;
         private DataGridViewTextBoxColumn colSize;
         private DataGridViewLinkColumn colLicense;
+        private Label lblTotalSize;
     }
 }
