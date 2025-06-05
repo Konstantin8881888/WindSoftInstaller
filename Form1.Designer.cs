@@ -170,6 +170,8 @@ namespace WindSoftInstaller
             // Границы и сетка
             dataGridViewPrograms.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             dataGridViewPrograms.GridColor = Color.Silver;
+            // Подписываемся на события форматирования и кликов
+            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
             dataGridViewPrograms.CellContentClick += DataGridViewPrograms_CellContentClick;
             // 
             // btnToggleSelection

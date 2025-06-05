@@ -65,8 +65,26 @@ namespace WindSoftInstaller
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" },
+                { "Режим установки", "/VERYSILENT" },
+                { "Без окон", "/SUPPRESSMSGBOXES" },
+                { "Без перезагрузки", "/NORESTART" },
+                { "Откл SmartScreen", "/SP-" },
                 { "Язык", "/LANG=russian" }
+            }
+        },
+        new()
+        {
+            Name = "Paint.NET",
+            Description = "Мощный редактор изображений с поддержкой слоёв и плагинов",
+            ExecutablePath = "paint.net.5.1.8.install.x64.exe",
+            SizeMB = Math.Round(fileSizes["paint.net.5.1.8.install.x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.getpaint.net/license.html",
+            PathParameterKey = "TARGETDIR=",
+            CustomParameters =
+            {
+                { "Режим установки: тихий", "/auto" },
+                { "Пропустить конфигурации", "/skipConfig" },
+                { "Язык", "/language=ru" }
             }
         },
     ];

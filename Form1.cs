@@ -497,6 +497,31 @@ namespace WindSoftInstaller
                 // Обновляем сумму
                 CalculateAndShowTotalSize();
             }
+
+            // Обработка кликов по ссылкам лицензии
+            if (e.RowIndex >= 0 && e.ColumnIndex == colLicense.Index)
+            {
+                var app = dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem as InstallableApp;
+                if (app == null) return;
+
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = app.LicenseUrl,
+                        UseShellExecute = true
+                    });
+                    _logger.LogInformation($"Ошибка открытия ссылки на лицензию {app.LicenseUrl}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка открытия ссылки на лицензию");
+                    MessageBox.Show($"Ошибка: {ex.Message}\nURL: {app.LicenseUrl}",
+                        "Ошибка",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void UpdateTotalSize()
