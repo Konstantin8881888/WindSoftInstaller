@@ -87,6 +87,36 @@ namespace WindSoftInstaller
                 { "Язык", "/language=ru" }
             }
         },
+        new()
+        {
+            Name = "Shotcut",
+            Description = "Мощный видеоредактор с открытым исходным кодом и поддержкой всех форматов",
+            ExecutablePath = "shotcut-win64-250511.exe",
+            SizeMB = Math.Round(fileSizes["shotcut-win64-250511.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/mltframework/shotcut/blob/master/COPYING",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Без перезагрузки", "/NORESTART" },
+                { "Для текущего пользователя", "/CURRENTUSER" },
+                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+            }
+        },
+        new()
+        {
+            Name = "VSDC Free Video Editor",
+            Description = "Бесплатный нелинейный видеоредактор VSDC Free Video Editor",
+            ExecutablePath = "video_editor_x64.exe",
+            SizeMB = Math.Round(fileSizes["video_editor_x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.videosoftdev.com/terms-and-conditions",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Без перезагрузки", "/NORESTART" },
+            }
+        },
     ];
         }
 
