@@ -75,6 +75,12 @@ namespace WindSoftInstaller
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Добавляем обработчик изменения значений
+            dataGridViewPrograms.CellValueChanged += DataGridViewPrograms_CellValueChanged;
+
+            // Инициализируем сумму при загрузке
+            CalculateAndShowTotalSize();
+
             _logger.LogInformation("Form1_Load: форма загружена, начинаем извлечение иконок для {Count} приложений", apps.Count);
 
             // 1. Папка с иконками (relative к тому, где лежит exe)
@@ -411,6 +417,7 @@ namespace WindSoftInstaller
                     }
                 }
             }
+            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
         }
 
         //Дополнительный чистильщик временной папки (на случай аварийного завершения)
@@ -455,6 +462,82 @@ namespace WindSoftInstaller
 
             allSelected = !allSelected;
             btnToggleSelection.Text = allSelected ? "Снять выделение" : "Выбрать все";
+            // Обновляем сумму
+            CalculateAndShowTotalSize();
+        }
+
+        private void CalculateAndShowTotalSize()
+        {
+            double totalSize = 0;
+
+            foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
+            {
+                // Проверяем, что строка не является новой (пустой) строкой
+                if (!row.IsNewRow &&
+                    row.Cells["colSelect"].Value != null &&
+                    Convert.ToBoolean(row.Cells["colSelect"].Value) &&
+                    row.DataBoundItem is InstallableApp app)
+                {
+                    totalSize += app.SizeMB;
+                }
+            }
+
+            lblTotalSize.Text = $"Общий размер выбранных программ: {totalSize:N2} МБ";
+        }
+
+        private void DataGridViewPrograms_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // Обрабатываем клик только по колонке с чекбоксом
+            if (e.RowIndex >= 0 && e.ColumnIndex == colSelect.Index)
+            {
+                // Обновляем значение чекбокса
+                var cell = dataGridViewPrograms.Rows[e.RowIndex].Cells[e.ColumnIndex];
+                cell.Value = !(cell.Value is bool val && val);
+
+                // Обновляем сумму
+                CalculateAndShowTotalSize();
+            }
+
+            // Обработка кликов по ссылкам лицензии
+            if (e.RowIndex >= 0 && e.ColumnIndex == colLicense.Index)
+            {
+                var app = dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem as InstallableApp;
+                if (app == null) return;
+
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = app.LicenseUrl,
+                        UseShellExecute = true
+                    });
+                    _logger.LogInformation($"Ошибка открытия ссылки на лицензию {app.LicenseUrl}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка открытия ссылки на лицензию");
+                    MessageBox.Show($"Ошибка: {ex.Message}\nURL: {app.LicenseUrl}",
+                        "Ошибка",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void UpdateTotalSize()
+        {
+            double totalSize = 0;
+
+            foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
+            {
+                if (row.Cells["colSelect"].Value is true &&
+                    row.DataBoundItem is InstallableApp app)
+                {
+                    totalSize += app.SizeMB;
+                }
+            }
+
+            lblTotalSize.Text = $"Общий размер выбранных программ: {totalSize:N2} МБ";
         }
 
         private async void BtnInstall_Click(object sender, EventArgs e)
@@ -581,9 +664,27 @@ namespace WindSoftInstaller
             lblStatus.Text = "Установка" + new string('.', dotCount);
         }
 
+        private void DataGridViewPrograms_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
+                return;
+
+            e.Value = "Просмотр";
+            e.FormattingApplied = true;
+        }
+
+        private void DataGridViewPrograms_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+            // Обновляем сумму при изменении состояния чекбокса
+            if (e.ColumnIndex == colSelect.Index && e.RowIndex >= 0)
+            {
+                UpdateTotalSize();
+            }
+        }
+
         private void DataGridViewPrograms_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0) return;
+            if (e.RowIndex < 0 || e.ColumnIndex == colSelect.Index) return;
 
             var row = dataGridViewPrograms.Rows[e.RowIndex];
             if (row.DataBoundItem is not InstallableApp app || app == null) return;
