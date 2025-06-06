@@ -47,13 +47,32 @@ namespace WindSoftInstaller
         },
         new()
         {
-            Name = "mplayerc",
-            Description = "Быстрый видеоплеер с минималистичным интерфейсом",
-            ExecutablePath = "mplayerc.exe",
-            SizeMB = Math.Round(fileSizes["mplayerc.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://mpc-hc.org/licenses/",
-            IsPortable = true,
-            ShortcutName = "MPC"
+            Name = "MPC-HC",
+            Description = "Media Player Classic Home Cinema — лёгкий медиа-плеер",
+            // Укажите точное имя оффлайн-инсталлятора из вашего архива Installers.7z
+            ExecutablePath = "MPC-HC.1.7.13.x64.exe",
+            SizeMB = Math.Round(fileSizes["MPC-HC.1.7.13.x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/mpc-hc/mpc-hc/blob/develop/COPYING.txt",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                { "Язык", "/LANG=Russian" }
+            }
+        },
+        new()
+        {
+            Name = "SMPlayer",
+            Description = "SMPlayer — кроссплатформенный медиаплеер. Программа представляет собой графическую оболочку для MPlayer.",
+            ExecutablePath = "smplayer-24.5.0-x64-unsigned.exe",
+            SizeMB = Math.Round(fileSizes["smplayer-24.5.0-x64-unsigned.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/smplayer-dev/smplayer?tab=GPL-2.0-1-ov-file#readme",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            }
         },
         new()
         {
@@ -115,6 +134,89 @@ namespace WindSoftInstaller
             {
                 { "Тихая установка", "/VERYSILENT" },
                 { "Без перезагрузки", "/NORESTART" },
+            }
+        },
+        new()
+        {
+            Name = "Google Chrome",
+            Description = "Браузер Google Chrome",
+            ExecutablePath = "googlechromestandaloneenterprise64.msi",
+            SizeMB = Math.Round(fileSizes["googlechromestandaloneenterprise64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.google.com/chrome/terms/",
+            PathParameterKey = "INSTALLDIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/qn" }
+            }
+        },
+        //new()
+        //{
+        //    Name = "Mozilla Firefox",
+        //    Description = "Браузер Mozilla Firefox",
+        //    ExecutablePath = "Firefox Setup 139.0.1.exe",
+        //    SizeMB = Math.Round(fileSizes["Firefox Setup 139.0.1.exe"] / (1024.0 * 1024.0), 2),
+        //    LicenseUrl = "https://www.mozilla.org/en-US/legal/",
+        //    PathParameterKey = "/InstallDir=",
+        //    CustomParameters =
+        //    {
+        //        { "Тихая установка", "/S" },
+        //        // Отключение установки как браузера по умолчанию
+        //        { "Не устанавливать по умолчанию", "/NoMakeDefaultBrowser" },
+        //        // Установка в указанную директорию
+        //        { "Путь установки", "/InstallDir=" },
+        //        // Отключение проверки браузера по умолчанию
+        //        { "Отключить проверку по умолчанию", "/NoDefaultBrowserCheck" }
+        //    }
+        //},
+        new()
+        {
+            Name = "Opera",
+            Description = "Браузер Opera",
+            ExecutablePath = "Opera_119.0.5497.70_Setup_x64.exe",
+            SizeMB = Math.Round(fileSizes["Opera_119.0.5497.70_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.opera.com/legal",
+            PathParameterKey = "--installfolder=",
+            CustomParameters =
+            {
+                { "Тихая установка", "--silent" },
+                // Установка только для текущего пользователя; если нужно для всех, поставить allusers=1
+                { "Только текущий пользователь", "--allusers=0" },
+                { "Язык установки", "--language=ru" },
+                // Отключаем автозапуск после установки
+                { "Не запускать после установки", "--launchopera=0" },
+                // Ярлык на рабочем столе (по умолчанию Opera его создаёт, но продублировать не вредно)
+                { "Создать ярлык", "--desktopshortcut=1" },
+                // Отключаем автообновления (если нужно)
+                //{ "Отключить автообновления", "--no-update" }
+            }
+        },
+        new()
+        {
+            Name = "Audacity",
+            Description = "Бесплатный аудиоредактор для записи и редактирования звука",
+            ExecutablePath = "audacity-win-3.7.3-64bit.exe",
+            SizeMB = Math.Round(fileSizes["audacity-win-3.7.3-64bit.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.audacityteam.org/about/license/",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Скрытая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                // Отключение ассоциации с файлами
+                { "Отключить ассоциацию", "/ASSOCIATE=0" }
+            }
+        },
+        new()
+        {
+            Name = "LMMS",
+            Description = "LMMS — цифровая аудио рабочая станция (NSIS-инсталлятор)",
+            ExecutablePath = "lmms-1.2.2-win64.exe",
+            SizeMB = Math.Round(fileSizes["lmms-1.2.2-win64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/LMMS/lmms/blob/master/LICENSE.txt",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
             }
         },
     ];
