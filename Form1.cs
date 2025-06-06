@@ -377,6 +377,21 @@ namespace WindSoftInstaller
                     {
                         await process.WaitForExitAsync(token);
                         _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
+                        // <<< Здесь добавляем создание ярлыка для LMMS >>>
+                        if (app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Предполагаем, что главный exe-файл называется "lmms.exe"
+                            string exePath = Path.Combine(appInstallPath, "lmms.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для LMMS: {ExePath}", exePath);
+                                CreateShortcut(exePath, "LMMS");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не удалось найти lmms.exe по пути {ExePath}", exePath);
+                            }
+                        }
                     }
                     catch (OperationCanceledException)
                     {

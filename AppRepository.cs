@@ -187,7 +187,19 @@ namespace WindSoftInstaller
                 { "Отключить ассоциацию", "/ASSOCIATE=0" }
             }
         },
-
+        new()
+        {
+            Name = "LMMS",
+            Description = "LMMS — цифровая аудио рабочая станция (NSIS-инсталлятор)",
+            ExecutablePath = "lmms-1.2.2-win64.exe",
+            SizeMB = Math.Round(fileSizes["lmms-1.2.2-win64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/LMMS/lmms/blob/master/LICENSE.txt",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            }
+        },
     ];
         }
 
