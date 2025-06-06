@@ -47,13 +47,32 @@ namespace WindSoftInstaller
         },
         new()
         {
-            Name = "mplayerc",
-            Description = "Быстрый видеоплеер с минималистичным интерфейсом",
-            ExecutablePath = "mplayerc.exe",
-            SizeMB = Math.Round(fileSizes["mplayerc.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://mpc-hc.org/licenses/",
-            IsPortable = true,
-            ShortcutName = "MPC"
+            Name = "MPC-HC",
+            Description = "Media Player Classic Home Cinema — лёгкий медиа-плеер",
+            // Укажите точное имя оффлайн-инсталлятора из вашего архива Installers.7z
+            ExecutablePath = "MPC-HC.1.7.13.x64.exe",
+            SizeMB = Math.Round(fileSizes["MPC-HC.1.7.13.x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/mpc-hc/mpc-hc/blob/develop/COPYING.txt",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                { "Язык", "/LANG=Russian" }
+            }
+        },
+        new()
+        {
+            Name = "SMPlayer",
+            Description = "SMPlayer — кроссплатформенный медиаплеер. Программа представляет собой графическую оболочку для MPlayer.",
+            ExecutablePath = "smplayer-24.5.0-x64-unsigned.exe",
+            SizeMB = Math.Round(fileSizes["smplayer-24.5.0-x64-unsigned.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/smplayer-dev/smplayer?tab=GPL-2.0-1-ov-file#readme",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            }
         },
         new()
         {
