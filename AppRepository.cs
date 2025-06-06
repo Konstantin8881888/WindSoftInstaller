@@ -117,6 +117,77 @@ namespace WindSoftInstaller
                 { "Без перезагрузки", "/NORESTART" },
             }
         },
+        new()
+        {
+            Name = "Google Chrome",
+            Description = "Браузер Google Chrome",
+            ExecutablePath = "googlechromestandaloneenterprise64.msi",
+            SizeMB = Math.Round(fileSizes["googlechromestandaloneenterprise64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.google.com/chrome/terms/",
+            PathParameterKey = "INSTALLDIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/qn" }
+            }
+        },
+        //new()
+        //{
+        //    Name = "Mozilla Firefox",
+        //    Description = "Браузер Mozilla Firefox",
+        //    ExecutablePath = "Firefox Setup 139.0.1.exe",
+        //    SizeMB = Math.Round(fileSizes["Firefox Setup 139.0.1.exe"] / (1024.0 * 1024.0), 2),
+        //    LicenseUrl = "https://www.mozilla.org/en-US/legal/",
+        //    PathParameterKey = "/InstallDir=",
+        //    CustomParameters =
+        //    {
+        //        { "Тихая установка", "/S" },
+        //        // Отключение установки как браузера по умолчанию
+        //        { "Не устанавливать по умолчанию", "/NoMakeDefaultBrowser" },
+        //        // Установка в указанную директорию
+        //        { "Путь установки", "/InstallDir=" },
+        //        // Отключение проверки браузера по умолчанию
+        //        { "Отключить проверку по умолчанию", "/NoDefaultBrowserCheck" }
+        //    }
+        //},
+        new()
+        {
+            Name = "Opera",
+            Description = "Браузер Opera",
+            ExecutablePath = "Opera_119.0.5497.70_Setup_x64.exe",
+            SizeMB = Math.Round(fileSizes["Opera_119.0.5497.70_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.opera.com/legal",
+            PathParameterKey = "--installfolder=",
+            CustomParameters =
+            {
+                { "Тихая установка", "--silent" },
+                // Установка только для текущего пользователя; если нужно для всех, поставить allusers=1
+                { "Только текущий пользователь", "--allusers=0" },
+                { "Язык установки", "--language=ru" },
+                // Отключаем автозапуск после установки
+                { "Не запускать после установки", "--launchopera=0" },
+                // Ярлык на рабочем столе (по умолчанию Opera его создаёт, но продублировать не вредно)
+                { "Создать ярлык", "--desktopshortcut=1" },
+                // Отключаем автообновления (если нужно)
+                //{ "Отключить автообновления", "--no-update" }
+            }
+        },
+        new()
+        {
+            Name = "Audacity",
+            Description = "Бесплатный аудиоредактор для записи и редактирования звука",
+            ExecutablePath = "audacity-win-3.7.3-64bit.exe",
+            SizeMB = Math.Round(fileSizes["audacity-win-3.7.3-64bit.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.audacityteam.org/about/license/",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Скрытая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                // Отключение ассоциации с файлами
+                { "Отключить ассоциацию", "/ASSOCIATE=0" }
+            }
+        },
+
     ];
         }
 

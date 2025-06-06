@@ -335,15 +335,36 @@ namespace WindSoftInstaller
                 // Если isVlcInstaller == true, finalArgs будет, например, "/S /L=ru"
                 // И VLC возьмёт путь из реестра, а не из /D=
 
-                // 5.4. Настраиваем ProcessStartInfo
-                var startInfo = new ProcessStartInfo
+                // 5.4. Настраиваем ProcessStartInfo в зависимости от расширения файла
+                var startInfo = new ProcessStartInfo();
+                string extension = Path.GetExtension(sourcePath) ?? string.Empty;
+
+                // Если это MSI-файл (Chrome Enterprise MSI или Firefox Enterprise MSI)
+                if (extension.Equals(".msi", StringComparison.OrdinalIgnoreCase))
                 {
-                    FileName = sourcePath,
-                    Arguments = finalArgs,
-                    UseShellExecute = true,
-                    Verb = "runas",  // поднимаем права для запуска экзешника (UAC)
-                    WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty
-                };
+                    // Запускаем msiexec.exe
+                    startInfo.FileName = "msiexec.exe";
+
+                    // Собираем аргументы: /i "<путь_к_msi>" + всё из finalArgs,
+                    // где finalArgs уже содержит "/qn INSTALLDIR=\"<appInstallPath>\""
+                    startInfo.Arguments = $"/i \"{sourcePath}\" {finalArgs}";
+
+                    // Чтобы поднять права
+                    startInfo.UseShellExecute = true;
+                    startInfo.Verb = "runas";
+                    startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
+                }
+                else
+                {
+                    // Иначе — это обычный EXE (например, Opera, Shotcut, VSDC и т.д.)
+                    startInfo.FileName = sourcePath;
+                    startInfo.Arguments = finalArgs;
+
+                    // Права тоже требуются, если нужен UAC
+                    startInfo.UseShellExecute = true;
+                    startInfo.Verb = "runas";
+                    startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
+                }
 
                 _logger.LogDebug("Командная строка: {FileName} {Arguments}", startInfo.FileName, startInfo.Arguments);
 
