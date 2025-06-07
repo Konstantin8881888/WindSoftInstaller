@@ -392,6 +392,36 @@ namespace WindSoftInstaller
                                 _logger.LogWarning("Не удалось найти lmms.exe по пути {ExePath}", exePath);
                             }
                         }
+                        // <<< Создание ярлыка для HandBrake >>>
+                        if (app.Name.Equals("HandBrake", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "HandBrake.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для HandBrake: {ExePath}", exePath);
+                                CreateShortcut(exePath, "HandBrake");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден HandBrake.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // <<< Создание ярлыка для Clementine >>>
+                        if (app.Name.Equals("Clementine", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "Clementine.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Clementine: {ExePath}", exePath);
+                                CreateShortcut(exePath, "Clementine");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден Clementine.exe по пути {ExePath}", exePath);
+                            }
+                        }
                     }
                     catch (OperationCanceledException)
                     {

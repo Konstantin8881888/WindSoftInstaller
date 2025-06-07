@@ -219,6 +219,76 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/S" }
             }
         },
+        new()
+        {
+            Name = "HandBrake",
+            Description = "HandBrake — бесплатный видеотранскодер (GPL)",
+            ExecutablePath = "HandBrake-1.9.2-x86_64-Win_GUI.exe",
+            SizeMB = Math.Round(fileSizes["HandBrake-1.9.2-x86_64-Win_GUI.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://github.com/HandBrake/HandBrake/blob/master/COPYING",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            }
+        },
+        new()
+        {
+            Name = "XMedia Recode",
+            Description = "XMedia Recode — универсальный аудио/видео конвертер",
+            ExecutablePath = "XMediaRecode3612_x64_setup.exe",
+            SizeMB = Math.Round(fileSizes["XMediaRecode3612_x64_setup.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.xmedia-recode.de/en/",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                { "Язык", "/LANG=Russian" },
+                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+            }
+        },
+        new()
+        {
+            Name = "OpenShot",
+            Description = "OpenShot Video Editor — бесплатный видеоредактор и конвертер",
+            ExecutablePath = "OpenShot-v3.3.0-x86_64.exe",
+            SizeMB = Math.Round(fileSizes["OpenShot-v3.3.0-x86_64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+            }
+        },
+        new()
+        {
+            Name = "AIMP",
+            Description = "AIMP — бесплатный аудиоплеер",
+            ExecutablePath = "aimp_5.40.2675_w64.exe",
+            SizeMB = Math.Round(fileSizes["aimp_5.40.2675_w64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.aimp.ru/?do=eula&os=windows",
+            PathParameterKey = "/AUTO=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/SILENT" },
+            }
+        },
+        new()
+        {
+            Name = "Clementine",
+            Description = "Современный музыкальный проигрыватель и библиотека для организации коллекции",
+            ExecutablePath = "ClementineSetup-1.4.1-18-g4ab6f35ec.exe",
+            SizeMB = Math.Round(fileSizes["ClementineSetup-1.4.1-18-g4ab6f35ec.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                 { "Режим установки", "/S" }
+            }
+        },
     ];
         }
 
