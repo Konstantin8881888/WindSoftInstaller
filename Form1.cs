@@ -284,6 +284,7 @@ namespace WindSoftInstaller
                 // 5.1. Гарантируем существование папки назначения
                 string appInstallPath = Path.Combine(installPath, app.Name);
                 Directory.CreateDirectory(appInstallPath);
+                _logger.LogInformation("Путь установки для {App}: {Path}", app.Name, appInstallPath);
 
                 // 5.2. Если это VLC (определяем по имени, можно уточнить условие),
                 //      то создаём ключ в HKLM\SOFTWARE\VideoLAN\VLC\InstallDir и не передаем /D=… в аргументах.
@@ -312,15 +313,19 @@ namespace WindSoftInstaller
                 // 5.3. Формируем аргументы для запуска инсталлятора
                 var argsList = new List<string>();
 
-                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.)
+                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.), подставляя {InstallDir} для MSI
                 foreach (var paramValue in app.CustomParameters.Values
-                             .Where(v => !string.IsNullOrWhiteSpace(v)))
+                    .Where(v => !string.IsNullOrWhiteSpace(v)))
                 {
-                    argsList.Add(paramValue.Trim());
+                    // Заменяем плейсхолдер {InstallDir} на реальный путь
+                    string p = paramValue.Replace("{InstallDir}", appInstallPath);
+                    argsList.Add(p.Trim());
                 }
 
-                // 5.3.2. Если НЕ VLC, добавляем ключ "/D=<путь>"
-                if (!isVlcInstaller)
+                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC
+                if (!isVlcInstaller
+                    && !string.IsNullOrWhiteSpace(app.PathParameterKey)
+                    && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
                 {
                     string pathArg = app.PathParameterKey + appInstallPath;
                     if (appInstallPath.Contains(" "))
@@ -420,6 +425,21 @@ namespace WindSoftInstaller
                             else
                             {
                                 _logger.LogWarning("Не найден Clementine.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // Создание ярлыка для Inkscape
+                        if (app.Name.Equals("Inkscape", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "inkscape.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Inkscape: {ExePath}", exePath);
+                                CreateShortcut(exePath, "Inkscape");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден inkscape.exe по пути {ExePath}", exePath);
                             }
                         }
                     }
@@ -730,7 +750,7 @@ namespace WindSoftInstaller
             lblStatus.Text = "Установка" + new string('.', dotCount);
         }
 
-        private void DataGridViewPrograms_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        private void DataGridViewPrograms_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
                 return;
@@ -739,7 +759,7 @@ namespace WindSoftInstaller
             e.FormattingApplied = true;
         }
 
-        private void DataGridViewPrograms_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private void DataGridViewPrograms_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
         {
             // Обновляем сумму при изменении состояния чекбокса
             if (e.ColumnIndex == colSelect.Index && e.RowIndex >= 0)

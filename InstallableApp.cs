@@ -13,5 +13,5 @@
         public string PathParameterKey { get; set; } = "/D=";
         public required double SizeMB { get; set; } // Размер в мегабайтах
         public required string LicenseUrl { get; set; } // Ссылка на лицензию
-    }
+     }
 }

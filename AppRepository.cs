@@ -24,7 +24,7 @@ namespace WindSoftInstaller
                 {
                     if (!entry.IsDirectory)
                     {
-                        fileSizes[entry.Key] = entry.Size;
+                        fileSizes[entry.Key!] = entry.Size;
                     }
                 }
             }
@@ -287,6 +287,82 @@ namespace WindSoftInstaller
             CustomParameters =
             {
                  { "Режим установки", "/S" }
+            }
+        },
+        new()
+        {
+            Name = "7-Zip",
+            Description = "Мощный архиватор с высокой степенью сжатия и поддержкой множества форматов",
+            ExecutablePath = "7z2409-x64.exe",
+            SizeMB = Math.Round(fileSizes["7z2409-x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.7-zip.org/license.txt",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Режим установки", "/S" },
+                { "Контекстное меню", "/NoShell=0" }
+            }
+        },
+        new()
+        {
+            Name = "qBittorrent",
+            Description = "Мощный клиент для торрент-загрузок с открытым исходным кодом",
+            ExecutablePath = "qbittorrent_5.1.0_x64_setup.exe", // Уточните версию!
+            SizeMB = Math.Round(fileSizes["qbittorrent_5.1.0_x64_setup.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-2.0.html",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Режим установки", "/S" },
+                { "Задачи", "/NOADDTOSTART" },
+                { "Ассоциации", "/ASSOCIATE" }
+            }
+        },
+        new()
+        {
+            Name = "HWMonitor",
+            Description = "Мониторинг температуры, напряжения и скорости вентиляторов компонентов ПК",
+            ExecutablePath = "hwi64_826.exe",
+            SizeMB = Math.Round(fileSizes["hwi64_826.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.cpuid.com/softwares/hwmonitor.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "VerySilent",    "/VERYSILENT" },
+                { "SuppressMsgs",  "/SUPPRESSMSGBOXES" },
+                { "NoRestart",     "/NORESTART" }
+            }
+        },
+        new()
+        {
+            Name = "LibreOffice",
+            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
+            ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
+            SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
+            // PathParameterKey не нужен для MSI‑разветвления ???
+            PathParameterKey = "", // MSI не использует /D=
+                    CustomParameters =
+            {
+                { "Quiet",      "/qn" },
+                { "Components", "ADDLOCAL=ALL" },
+                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
+            }
+        },
+        new()
+        {
+            Name = "PDF‑XChange Editor",
+            Description = "PDF‑редактор с аннотациями и редактированием текста",
+            ExecutablePath = "EditorV10.x64.msi",
+            SizeMB = Math.Round(fileSizes["EditorV10.x64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.tracker-software.com/PDFXLicense.pdf",
+            PathParameterKey = "", // для MSI путь будет добавлен в CustomParameters
+            CustomParameters =
+            {
+                { "Тихая установка", "/quiet" },
+                { "Без перезагрузки", "/norestart" },
+                { "Язык", "EDITOR_LANGUAGE=ru-RU" },
+                { "Путь установки", "INSTALLLOCATION=\"{InstallDir}\"" }
             }
         },
     ];
