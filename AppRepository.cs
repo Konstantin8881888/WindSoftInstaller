@@ -353,8 +353,8 @@ namespace WindSoftInstaller
         {
             Name = "PDF‑XChange Editor",
             Description = "PDF‑редактор с аннотациями и редактированием текста",
-            ExecutablePath = "EditorV10.x64.msi",
-            SizeMB = Math.Round(fileSizes["EditorV10.x64.msi"] / (1024.0 * 1024.0), 2),
+            ExecutablePath = "PDF-XChangex64.msi",
+            SizeMB = Math.Round(fileSizes["PDF-XChangex64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.tracker-software.com/PDFXLicense.pdf",
             PathParameterKey = "", // для MSI путь будет добавлен в CustomParameters
             CustomParameters =
@@ -365,6 +365,24 @@ namespace WindSoftInstaller
                 { "Путь установки", "INSTALLLOCATION=\"{InstallDir}\"" }
             }
         },
+        new InstallableApp()
+        {
+            Name = "ClamWin",
+            Description = "ClamWin Free Antivirus (GPL)",
+            ExecutablePath = "clamwin-0.103.2.1-setup.exe",
+            SizeMB = Math.Round(fileSizes["clamwin-0.103.2.1-setup.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.clamwin.com/",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+                { "Язык", "/LANG=Russian" },
+                { "Компоненты", "/COMPONENTS=\"main,context_menu,russian\"" },
+                { "Отключить SmartScreen", "/SP-" }
+            },
+            ShortcutName = "ClamWin"
+        },
+
     ];
         }
 

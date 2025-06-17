@@ -427,21 +427,22 @@ namespace WindSoftInstaller
                                 _logger.LogWarning("Не найден Clementine.exe по пути {ExePath}", exePath);
                             }
                         }
-                        // Создание ярлыка для Inkscape
-                        if (app.Name.Equals("Inkscape", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        // <<< Создание ярлыка для ClamWin >>>
+                        if (app.Name.Equals("ClamWin", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
                         {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "inkscape.exe");
+                            // Путь к ClamWin.exe (обычно находится в подкаталоге \bin)
+                            string exePath = Path.Combine(appInstallPath, "bin", "ClamWin.exe");
                             if (File.Exists(exePath))
                             {
-                                _logger.LogDebug("Создаём ярлык для Inkscape: {ExePath}", exePath);
-                                CreateShortcut(exePath, "Inkscape");
+                                _logger.LogDebug("Создаём ярлык для ClamWin: {ExePath}", exePath);
+                                CreateShortcut(exePath, "ClamWin");
                             }
                             else
                             {
-                                _logger.LogWarning("Не найден inkscape.exe по пути {ExePath}", exePath);
+                                _logger.LogWarning("Не найден ClamWin.exe по пути {ExePath}", exePath);
                             }
                         }
+
                     }
                     catch (OperationCanceledException)
                     {
