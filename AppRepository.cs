@@ -388,12 +388,31 @@ namespace WindSoftInstaller
             Description = "Портативный антивирусный сканер для экстренной проверки системы",
             ExecutablePath = "EmsisoftEmergencyKit.zip",  // теперь ZIP
             SizeMB = Math.Round(fileSizes["EmsisoftEmergencyKit.zip"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.emsisoft.com/en/legal/eula/",
+            LicenseUrl = "https://www.emsisoft.com/en/eula/?utm_source=chatgpt.com",
             IsPortable = true,
             ShortcutName = "Emsisoft Emergency Kit",
             ShortcutRelativePath = "Start Scanner.exe"
             // CustomParameters и PathParameterKey не нужны — универсальная распаковка ZIP сработает
-        }
+        },
+        new InstallableApp
+        {
+            Name = "Cryptomator",
+            Description = "Шифрование папок и облаков (FUSE‑тома)",
+            ExecutablePath = "Cryptomator-1.16.0-x64.msi",
+            SizeMB = Math.Round(fileSizes["Cryptomator-1.16.0-x64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/cryptomator/cryptomator/blob/master/LICENSE",
+            PathParameterKey = "",  // для MSI не используем отдельный ключ
+            CustomParameters =
+            {
+                { "Тихая установка", "/quiet" },
+                { "Без перезагрузки", "/norestart" },
+                // если MSI принимает INSTALLDIR:
+                { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
+                // или, если свойство называется TARGETDIR, замените на:
+                // { "Путь установки", "TARGETDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName = "Cryptomator"
+        },
     ];
         }
 

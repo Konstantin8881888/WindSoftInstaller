@@ -479,6 +479,22 @@ namespace WindSoftInstaller
                                 _logger.LogWarning("Не найден ClamWin.exe по пути {ExePath}", exePath);
                             }
                         }
+                        // <<< Создание ярлыка для Cryptomator >>>
+                        if (app.Name.Equals("Cryptomator", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            string exePath = Path.Combine(appInstallPath, "Cryptomator.exe");
+                            if (!File.Exists(exePath))
+                                exePath = Path.Combine(appInstallPath, "bin", "Cryptomator.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Cryptomator: {Exe}", exePath);
+                                CreateShortcut(exePath, "Cryptomator");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден Cryptomator.exe в {Dir}", appInstallPath);
+                            }
+                        }
 
                     }
                     catch (OperationCanceledException)
