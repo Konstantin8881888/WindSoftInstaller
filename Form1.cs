@@ -7,6 +7,7 @@ using System.Security.Principal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SharpCompress.Archives;
+using SharpCompress.Common;
 using File = System.IO.File;
 
 namespace WindSoftInstaller
@@ -258,22 +259,58 @@ namespace WindSoftInstaller
 
                 token.ThrowIfCancellationRequested();
 
-                // 4. Если портативная — просто копируем
+                // 4. Если портативная — распаковываем ZIP/7z
                 if (app.IsPortable)
                 {
                     string targetDir = Path.Combine(installPath, app.Name);
                     Directory.CreateDirectory(targetDir);
-                    string destinationFile = Path.Combine(targetDir, Path.GetFileName(sourcePath));
 
-                    await Task.Run(() =>
+                    // Выясняем расширение
+                    string ext = Path.GetExtension(sourcePath).ToLowerInvariant();
+                    if (ext == ".zip" || ext == ".7z")
                     {
-                        _logger.LogDebug("{App} — переносим как портативную программу", app.Name);
-                        token.ThrowIfCancellationRequested();
-                        File.Copy(sourcePath, destinationFile, overwrite: true);
+                        _logger.LogDebug("{App} — распаковка архива {Zip}", app.Name, Path.GetFileName(sourcePath));
+                        using var archive = ArchiveFactory.Open(sourcePath);
+                        foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                        {
+                            string outPath = Path.Combine(targetDir, entry.Key);
+                            Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
+                            entry.WriteToFile(outPath, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
+                        }
+                    }
+                    else
+                    {
+                        // Для других portable (exe) просто копируем
+                        string destFile = Path.Combine(targetDir, Path.GetFileName(sourcePath));
+                        _logger.LogDebug("{App} — копирование portable EXE {File}", app.Name, Path.GetFileName(sourcePath));
+                        File.Copy(sourcePath, destFile, overwrite: true);
+                    }
 
-                        if (!string.IsNullOrWhiteSpace(app.ShortcutName))
-                            CreateShortcut(destinationFile, app.ShortcutName);
-                    }, token);
+                    // После распаковки создаём ярлык на главный exe
+                    // 1) Определяем относительный путь к EXE
+                    string relPath = app.ShortcutRelativePath
+                        ?? Directory.EnumerateFiles(targetDir, "*.exe", SearchOption.TopDirectoryOnly)
+                                    .Select(Path.GetFileName)
+                                    .FirstOrDefault()
+                        ?? string.Empty;
+
+                    if (!string.IsNullOrEmpty(relPath))
+                    {
+                        string exePath = Path.Combine(targetDir, relPath);
+                        if (File.Exists(exePath))
+                        {
+                            _logger.LogDebug("Создаём ярлык для {App}: {Exe}", app.Name, exePath);
+                            CreateShortcut(exePath, app.ShortcutName!);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Не найден {Rel} для {App} в {Dir}", relPath, app.Name, targetDir);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Не удалось определить EXE для создания ярлыка в {Dir}", targetDir);
+                    }
 
                     return;
                 }
@@ -284,6 +321,7 @@ namespace WindSoftInstaller
                 // 5.1. Гарантируем существование папки назначения
                 string appInstallPath = Path.Combine(installPath, app.Name);
                 Directory.CreateDirectory(appInstallPath);
+                _logger.LogInformation("Путь установки для {App}: {Path}", app.Name, appInstallPath);
 
                 // 5.2. Если это VLC (определяем по имени, можно уточнить условие),
                 //      то создаём ключ в HKLM\SOFTWARE\VideoLAN\VLC\InstallDir и не передаем /D=… в аргументах.
@@ -312,15 +350,19 @@ namespace WindSoftInstaller
                 // 5.3. Формируем аргументы для запуска инсталлятора
                 var argsList = new List<string>();
 
-                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.)
+                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.), подставляя {InstallDir} для MSI
                 foreach (var paramValue in app.CustomParameters.Values
-                             .Where(v => !string.IsNullOrWhiteSpace(v)))
+                    .Where(v => !string.IsNullOrWhiteSpace(v)))
                 {
-                    argsList.Add(paramValue.Trim());
+                    // Заменяем плейсхолдер {InstallDir} на реальный путь
+                    string p = paramValue.Replace("{InstallDir}", appInstallPath);
+                    argsList.Add(p.Trim());
                 }
 
-                // 5.3.2. Если НЕ VLC, добавляем ключ "/D=<путь>"
-                if (!isVlcInstaller)
+                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC
+                if (!isVlcInstaller
+                    && !string.IsNullOrWhiteSpace(app.PathParameterKey)
+                    && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
                 {
                     string pathArg = app.PathParameterKey + appInstallPath;
                     if (appInstallPath.Contains(" "))
@@ -392,6 +434,68 @@ namespace WindSoftInstaller
                                 _logger.LogWarning("Не удалось найти lmms.exe по пути {ExePath}", exePath);
                             }
                         }
+                        // <<< Создание ярлыка для HandBrake >>>
+                        if (app.Name.Equals("HandBrake", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "HandBrake.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для HandBrake: {ExePath}", exePath);
+                                CreateShortcut(exePath, "HandBrake");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден HandBrake.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // <<< Создание ярлыка для Clementine >>>
+                        if (app.Name.Equals("Clementine", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "Clementine.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Clementine: {ExePath}", exePath);
+                                CreateShortcut(exePath, "Clementine");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден Clementine.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // <<< Создание ярлыка для ClamWin >>>
+                        if (app.Name.Equals("ClamWin", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к ClamWin.exe (обычно находится в подкаталоге \bin)
+                            string exePath = Path.Combine(appInstallPath, "bin", "ClamWin.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для ClamWin: {ExePath}", exePath);
+                                CreateShortcut(exePath, "ClamWin");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден ClamWin.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // <<< Создание ярлыка для Cryptomator >>>
+                        if (app.Name.Equals("Cryptomator", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            string exePath = Path.Combine(appInstallPath, "Cryptomator.exe");
+                            if (!File.Exists(exePath))
+                                exePath = Path.Combine(appInstallPath, "bin", "Cryptomator.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Cryptomator: {Exe}", exePath);
+                                CreateShortcut(exePath, "Cryptomator");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден Cryptomator.exe в {Dir}", appInstallPath);
+                            }
+                        }
+
                     }
                     catch (OperationCanceledException)
                     {
@@ -700,7 +804,7 @@ namespace WindSoftInstaller
             lblStatus.Text = "Установка" + new string('.', dotCount);
         }
 
-        private void DataGridViewPrograms_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        private void DataGridViewPrograms_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
                 return;
@@ -709,7 +813,7 @@ namespace WindSoftInstaller
             e.FormattingApplied = true;
         }
 
-        private void DataGridViewPrograms_CellValueChanged(object sender, DataGridViewCellEventArgs e)
+        private void DataGridViewPrograms_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
         {
             // Обновляем сумму при изменении состояния чекбокса
             if (e.ColumnIndex == colSelect.Index && e.RowIndex >= 0)

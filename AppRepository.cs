@@ -24,7 +24,7 @@ namespace WindSoftInstaller
                 {
                     if (!entry.IsDirectory)
                     {
-                        fileSizes[entry.Key] = entry.Size;
+                        fileSizes[entry.Key!] = entry.Size;
                     }
                 }
             }
@@ -218,6 +218,200 @@ namespace WindSoftInstaller
             {
                 { "Тихая установка", "/S" }
             }
+        },
+        new()
+        {
+            Name = "HandBrake",
+            Description = "HandBrake — бесплатный видеотранскодер (GPL)",
+            ExecutablePath = "HandBrake-1.9.2-x86_64-Win_GUI.exe",
+            SizeMB = Math.Round(fileSizes["HandBrake-1.9.2-x86_64-Win_GUI.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://github.com/HandBrake/HandBrake/blob/master/COPYING",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            }
+        },
+        new()
+        {
+            Name = "XMedia Recode",
+            Description = "XMedia Recode — универсальный аудио/видео конвертер",
+            ExecutablePath = "XMediaRecode3612_x64_setup.exe",
+            SizeMB = Math.Round(fileSizes["XMediaRecode3612_x64_setup.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.xmedia-recode.de/en/",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                { "Язык", "/LANG=Russian" },
+                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+            }
+        },
+        new()
+        {
+            Name = "OpenShot",
+            Description = "OpenShot Video Editor — бесплатный видеоредактор и конвертер",
+            ExecutablePath = "OpenShot-v3.3.0-x86_64.exe",
+            SizeMB = Math.Round(fileSizes["OpenShot-v3.3.0-x86_64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Не перезагружать", "/NORESTART" },
+                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+            }
+        },
+        new()
+        {
+            Name = "AIMP",
+            Description = "AIMP — бесплатный аудиоплеер",
+            ExecutablePath = "aimp_5.40.2675_w64.exe",
+            SizeMB = Math.Round(fileSizes["aimp_5.40.2675_w64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.aimp.ru/?do=eula&os=windows",
+            PathParameterKey = "/AUTO=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/SILENT" },
+            }
+        },
+        new()
+        {
+            Name = "Clementine",
+            Description = "Современный музыкальный проигрыватель и библиотека для организации коллекции",
+            ExecutablePath = "ClementineSetup-1.4.1-18-g4ab6f35ec.exe",
+            SizeMB = Math.Round(fileSizes["ClementineSetup-1.4.1-18-g4ab6f35ec.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                 { "Режим установки", "/S" }
+            }
+        },
+        new()
+        {
+            Name = "7-Zip",
+            Description = "Мощный архиватор с высокой степенью сжатия и поддержкой множества форматов",
+            ExecutablePath = "7z2409-x64.exe",
+            SizeMB = Math.Round(fileSizes["7z2409-x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.7-zip.org/license.txt",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Режим установки", "/S" },
+                { "Контекстное меню", "/NoShell=0" }
+            }
+        },
+        new()
+        {
+            Name = "qBittorrent",
+            Description = "Мощный клиент для торрент-загрузок с открытым исходным кодом",
+            ExecutablePath = "qbittorrent_5.1.0_x64_setup.exe", // Уточните версию!
+            SizeMB = Math.Round(fileSizes["qbittorrent_5.1.0_x64_setup.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-2.0.html",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Режим установки", "/S" },
+                { "Задачи", "/NOADDTOSTART" },
+                { "Ассоциации", "/ASSOCIATE" }
+            }
+        },
+        new()
+        {
+            Name = "HWMonitor",
+            Description = "Мониторинг температуры, напряжения и скорости вентиляторов компонентов ПК",
+            ExecutablePath = "hwi64_826.exe",
+            SizeMB = Math.Round(fileSizes["hwi64_826.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.cpuid.com/softwares/hwmonitor.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "VerySilent",    "/VERYSILENT" },
+                { "SuppressMsgs",  "/SUPPRESSMSGBOXES" },
+                { "NoRestart",     "/NORESTART" }
+            }
+        },
+        new()
+        {
+            Name = "LibreOffice",
+            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
+            ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
+            SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
+            // PathParameterKey не нужен для MSI‑разветвления ???
+            PathParameterKey = "", // MSI не использует /D=
+                    CustomParameters =
+            {
+                { "Quiet",      "/qn" },
+                { "Components", "ADDLOCAL=ALL" },
+                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
+            }
+        },
+        new()
+        {
+            Name = "PDF‑XChange Editor",
+            Description = "PDF‑редактор с аннотациями и редактированием текста",
+            ExecutablePath = "PDF-XChangex64.msi",
+            SizeMB = Math.Round(fileSizes["PDF-XChangex64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.tracker-software.com/PDFXLicense.pdf",
+            PathParameterKey = "", // для MSI путь будет добавлен в CustomParameters
+            CustomParameters =
+            {
+                { "Тихая установка", "/quiet" },
+                { "Без перезагрузки", "/norestart" },
+                { "Язык", "EDITOR_LANGUAGE=ru-RU" },
+                { "Путь установки", "INSTALLLOCATION=\"{InstallDir}\"" }
+            }
+        },
+        new InstallableApp()
+        {
+            Name = "ClamWin",
+            Description = "Антивирус с открытым исходным кодом.",
+            ExecutablePath = "clamwin-0.103.2.1-setup.exe",
+            SizeMB = Math.Round(fileSizes["clamwin-0.103.2.1-setup.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://github.com/clamwin/clamwin/blob/master/COPYING",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+                { "Язык", "/LANG=Russian" },
+                { "Компоненты", "/COMPONENTS=\"main,context_menu,russian\"" },
+                { "Отключить SmartScreen", "/SP-" }
+            },
+            ShortcutName = "ClamWin"
+        },
+        new InstallableApp()
+        {
+            Name = "Emsisoft Emergency Kit",
+            Description = "Портативный антивирусный сканер для экстренной проверки системы",
+            ExecutablePath = "EmsisoftEmergencyKit.zip",  // теперь ZIP
+            SizeMB = Math.Round(fileSizes["EmsisoftEmergencyKit.zip"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.emsisoft.com/en/eula/?utm_source=chatgpt.com",
+            IsPortable = true,
+            ShortcutName = "Emsisoft Emergency Kit",
+            ShortcutRelativePath = "Start Scanner.exe"
+            // CustomParameters и PathParameterKey не нужны — универсальная распаковка ZIP сработает
+        },
+        new InstallableApp
+        {
+            Name = "Cryptomator",
+            Description = "Шифрование папок и облаков (FUSE‑тома)",
+            ExecutablePath = "Cryptomator-1.16.0-x64.msi",
+            SizeMB = Math.Round(fileSizes["Cryptomator-1.16.0-x64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/cryptomator/cryptomator/blob/master/LICENSE",
+            PathParameterKey = "",  // для MSI не используем отдельный ключ
+            CustomParameters =
+            {
+                { "Тихая установка", "/quiet" },
+                { "Без перезагрузки", "/norestart" },
+                // если MSI принимает INSTALLDIR:
+                { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
+                // или, если свойство называется TARGETDIR, замените на:
+                // { "Путь установки", "TARGETDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName = "Cryptomator"
         },
     ];
         }
