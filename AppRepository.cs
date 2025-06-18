@@ -368,10 +368,10 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "ClamWin",
-            Description = "ClamWin Free Antivirus (GPL)",
+            Description = "Антивирус с открытым исходным кодом.",
             ExecutablePath = "clamwin-0.103.2.1-setup.exe",
             SizeMB = Math.Round(fileSizes["clamwin-0.103.2.1-setup.exe"]/(1024.0*1024.0),2),
-            LicenseUrl = "https://www.clamwin.com/",
+            LicenseUrl = "https://github.com/clamwin/clamwin/blob/master/COPYING",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
@@ -382,7 +382,18 @@ namespace WindSoftInstaller
             },
             ShortcutName = "ClamWin"
         },
-
+        new InstallableApp()
+        {
+            Name = "Emsisoft Emergency Kit",
+            Description = "Портативный антивирусный сканер для экстренной проверки системы",
+            ExecutablePath = "EmsisoftEmergencyKit.zip",  // теперь ZIP
+            SizeMB = Math.Round(fileSizes["EmsisoftEmergencyKit.zip"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.emsisoft.com/en/legal/eula/",
+            IsPortable = true,
+            ShortcutName = "Emsisoft Emergency Kit",
+            ShortcutRelativePath = "Start Scanner.exe"
+            // CustomParameters и PathParameterKey не нужны — универсальная распаковка ZIP сработает
+        }
     ];
         }
 
