@@ -394,7 +394,7 @@ namespace WindSoftInstaller
             ShortcutRelativePath = "Start Scanner.exe"
             // CustomParameters и PathParameterKey не нужны — универсальная распаковка ZIP сработает
         },
-        new InstallableApp
+        new InstallableApp()
         {
             Name = "Cryptomator",
             Description = "Шифрование папок и облаков (FUSE‑тома)",
@@ -412,6 +412,44 @@ namespace WindSoftInstaller
                 // { "Путь установки", "TARGETDIR=\"{InstallDir}\"" }
             },
             ShortcutName = "Cryptomator"
+        },
+        new InstallableApp()
+        {
+            Name = "AES Crypt",
+            Description = "Шифрование отдельных файлов (AES‑256)",
+            ExecutablePath = "aescrypt_gui-4_3_0-patched.msi", // ваш новый MSI
+            SizeMB = Math.Round(fileSizes["aescrypt_gui-4_3_0-patched.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.aescrypt.com/license.html",
+            PathParameterKey = "", // для MSI не используем этот ключ
+            CustomParameters =
+            {
+                { "Тихая установка", "/quiet" },
+                { "Без перезагрузки", "/norestart" },
+                { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName = "AES Crypt"
+        },
+        new InstallableApp()
+        {
+            Name = "KeePass",
+            Description = "Бесплатный менеджер паролей с открытым исходным кодом для безопасного хранения учетных данных. Локальное шифрование (AES-256) и поддержка плагинов.",
+            ExecutablePath = "KeePass-2.58-Setup.exe",
+            SizeMB = Math.Round(fileSizes["KeePass-2.58-Setup.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://keepass.info/help/v2/license.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+                { "Язык", "/LANG=English" } // Временно английский, русский установим позже
+            },
+            ShortcutName = "KeePass",
+            AdditionalFiles = ["Russian.lngx", "KeePass.config.xml"],
+            AdditionalFilesDestinations =
+            {
+                {"Russian.lngx", "Languages\\Russian.lngx" },
+                { "KeePass.config.xml", "KeePass.config.xml" }  // Копируем в корень
+            },
+            LanguageConfig = "Russian" // Указываем язык для конфигурации
         },
     ];
         }
