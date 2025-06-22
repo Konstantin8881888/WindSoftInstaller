@@ -397,7 +397,7 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "Cryptomator",
-            Description = "Шифрование папок и облаков (FUSE‑тома)",
+            Description = "Клиентское шифрование папок и облаков (FUSE‑тома). Автоматически шифрует файлы перед загрузкой в Dropbox/Google Drive.",
             ExecutablePath = "Cryptomator-1.16.0-x64.msi",
             SizeMB = Math.Round(fileSizes["Cryptomator-1.16.0-x64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://github.com/cryptomator/cryptomator/blob/master/LICENSE",
@@ -435,17 +435,46 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "Bitwarden",
-            Description = "Bitwarden — открытый менеджер паролей с возможностью синхронизации.",
+            Description = "Менеджер паролей с открытым кодом, шифрованием AES-256 и синхронизацией. Генерирует сложные пароли, поддерживает 2FA.",
             ExecutablePath = "Bitwarden-Portable-2025.5.1.exe",
             SizeMB = Math.Round(fileSizes["Bitwarden-Portable-2025.5.1.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://bitwarden.com/license/",
+            LicenseUrl = "https://github.com/bitwarden/clients/blob/main/LICENSE_BITWARDEN.txt",
             IsPortable = true,
             ShortcutName = "Bitwarden",
             CustomParameters =
             {
                 { "Режим распаковки", "/VERYSILENT" }
             }
-        }
+        },
+        new InstallableApp
+        {
+            Name = "Wise Disk Cleaner",
+            Description = "Программа для оптимизации дискового пространства с глубоким анализом мусорных файлов. Удаляет временные данные, кэш приложений и дубликаты, ускоряя работу системы.",
+            ExecutablePath = "WDCFree_11.2.3.843.exe",
+            SizeMB = Math.Round(fileSizes["WDCFree_11.2.3.843.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.wisecleaner.com/license-agreement.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" }
+            },
+            ShortcutName = "Wise Disk Cleaner"
+        },
+        new InstallableApp
+        {
+            Name = "BleachBit",
+            Description = "Инструмент для удаления кэша, истории и временных файлов с перезаписью для защиты конфиденциальности.",
+            ExecutablePath = "BleachBit-5.0.0-setup.exe",
+            SizeMB = Math.Round(fileSizes["BleachBit-5.0.0-setup.exe"] / (1024.0*1024.0), 2),
+            LicenseUrl = "https://github.com/bleachbit/bleachbit/blob/master/COPYING",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" },
+                { "Для всех пользователей", "/allusers" }
+            },
+            ShortcutName = "BleachBit"
+        },
     ];
         }
 
