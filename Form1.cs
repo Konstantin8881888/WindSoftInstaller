@@ -284,6 +284,22 @@ namespace WindSoftInstaller
                             entry.WriteToFile(outPath, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                         }
                     }
+                    else if (app.Name.Equals("Bitwarden", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string destinationFile = Path.Combine(targetDir, Path.GetFileName(sourcePath)); // Путь к файлу Bitwarden
+
+                        // Копируем портативную версию Bitwarden в папку назначения
+                        File.Copy(sourcePath, destinationFile, overwrite: true);
+                        _logger.LogDebug("Файл {File} скопирован в {TargetDir}", sourcePath, targetDir);
+
+                        // Создаем ярлык для Bitwarden
+                        if (!string.IsNullOrWhiteSpace(app.ShortcutName))
+                        {
+                            string exePath = destinationFile; // Путь к исполняемому файлу
+                            CreateShortcut(exePath, app.ShortcutName);
+                            _logger.LogDebug("Создан ярлык для {App}: {ExePath}", app.Name, exePath);
+                        }
+                    }
                     else
                     {
                         // Для других portable (exe) просто копируем

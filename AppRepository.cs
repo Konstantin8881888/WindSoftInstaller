@@ -406,28 +406,9 @@ namespace WindSoftInstaller
             {
                 { "Тихая установка", "/quiet" },
                 { "Без перезагрузки", "/norestart" },
-                // если MSI принимает INSTALLDIR:
                 { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
-                // или, если свойство называется TARGETDIR, замените на:
-                // { "Путь установки", "TARGETDIR=\"{InstallDir}\"" }
             },
             ShortcutName = "Cryptomator"
-        },
-        new InstallableApp()
-        {
-            Name = "AES Crypt",
-            Description = "Шифрование отдельных файлов (AES‑256)",
-            ExecutablePath = "aescrypt_gui-4_3_0-patched.msi", // ваш новый MSI
-            SizeMB = Math.Round(fileSizes["aescrypt_gui-4_3_0-patched.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.aescrypt.com/license.html",
-            PathParameterKey = "", // для MSI не используем этот ключ
-            CustomParameters =
-            {
-                { "Тихая установка", "/quiet" },
-                { "Без перезагрузки", "/norestart" },
-                { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
-            },
-            ShortcutName = "AES Crypt"
         },
         new InstallableApp()
         {
@@ -451,6 +432,20 @@ namespace WindSoftInstaller
             },
             LanguageConfig = "Russian" // Указываем язык для конфигурации
         },
+        new InstallableApp()
+        {
+            Name = "Bitwarden",
+            Description = "Bitwarden — открытый менеджер паролей с возможностью синхронизации.",
+            ExecutablePath = "Bitwarden-Portable-2025.5.1.exe",
+            SizeMB = Math.Round(fileSizes["Bitwarden-Portable-2025.5.1.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://bitwarden.com/license/",
+            IsPortable = true,
+            ShortcutName = "Bitwarden",
+            CustomParameters =
+            {
+                { "Режим распаковки", "/VERYSILENT" }
+            }
+        }
     ];
         }
 
