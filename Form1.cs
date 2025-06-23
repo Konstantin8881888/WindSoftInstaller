@@ -1,9 +1,11 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SharpCompress.Archives;
@@ -22,7 +24,8 @@ namespace WindSoftInstaller
         private CancellationTokenSource? _cts; // Делаем nullable // источник токена отмены
         private readonly ILogger<Form1> _logger;
         // Список приложений, для которых не удалось записать ключ в реестр
-        private readonly List<string> _registryFailedApps = new();
+        private readonly List<string> _registryFailedApps = [];
+        int exitCode = -1; // Инициализируем код выхода значением по умолчанию
 
         public Form1(ILogger<Form1> logger)
         {
@@ -57,11 +60,8 @@ namespace WindSoftInstaller
 
             // Используем MemoryStream для конвертации byte[] в Icon
             byte[] iconBytes = Properties.Resources.logo;
-            using (var stream = new MemoryStream(iconBytes))
-            {
-                // Явное указание типа Icon
-                this.Icon = new Icon(stream);
-            }
+            using var iconStream = new MemoryStream(iconBytes);
+            this.Icon = new Icon(iconStream);// Явное указание типа Icon
             // Восстанавливаем последний путь, если он задан
             var saved = Properties.Settings.Default.LastInstallPath;
             if (!string.IsNullOrWhiteSpace(saved) && Directory.Exists(saved))
@@ -140,7 +140,12 @@ namespace WindSoftInstaller
                 throw new FileNotFoundException($"Целевой файл для ярлыка не найден: {targetPath}");
             }
 
-            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            string? desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            if (string.IsNullOrEmpty(desktopPath))
+            {
+                _logger.LogError("Не удалось получить путь к рабочему столу.");
+                throw new InvalidOperationException("Не удалось получить путь к рабочему столу");
+            }
             string shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
 
             object? shellObject = null;
@@ -167,7 +172,8 @@ namespace WindSoftInstaller
                 dynamic shortcut = shortcutObject;
 
                 shortcut.TargetPath = targetPath;
-                shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath);
+                string? directory = Path.GetDirectoryName(targetPath);
+                shortcut.WorkingDirectory = directory;
                 shortcut.WindowStyle = 1; // обычный режим окна
                 shortcut.Save();
 
@@ -278,6 +284,23 @@ namespace WindSoftInstaller
                             entry.WriteToFile(outPath, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                         }
                     }
+                    else if (app.Name.Equals("Bitwarden", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string destinationFile = Path.Combine(targetDir, Path.GetFileName(sourcePath)); // Путь к файлу Bitwarden
+
+                        // Копируем портативную версию Bitwarden в папку назначения
+                        File.Copy(sourcePath, destinationFile, overwrite: true);
+                        _logger.LogDebug("Файл {File} скопирован в {TargetDir}", sourcePath, targetDir);
+
+                        // Создаем ярлык для Bitwarden
+                        if (!string.IsNullOrWhiteSpace(app.ShortcutName))
+                        {
+                            string exePath = destinationFile; // Путь к исполняемому файлу
+                            CreateShortcut(exePath, app.ShortcutName);
+                            _logger.LogDebug("Создан ярлык для {App}: {ExePath}", app.Name, exePath);
+                        }
+                    }
+
                     else
                     {
                         // Для других portable (exe) просто копируем
@@ -365,7 +388,7 @@ namespace WindSoftInstaller
                     && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
                 {
                     string pathArg = app.PathParameterKey + appInstallPath;
-                    if (appInstallPath.Contains(" "))
+                    if (appInstallPath.Contains(' '))
                         pathArg = $"{app.PathParameterKey}\"{appInstallPath}\"";
                     argsList.Add(pathArg);
                 }
@@ -419,6 +442,7 @@ namespace WindSoftInstaller
                     {
                         await process.WaitForExitAsync(token);
                         _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
+                        exitCode = process.ExitCode; // Сохраняем код выхода
                         // <<< Здесь добавляем создание ярлыка для LMMS >>>
                         if (app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
                         {
@@ -495,7 +519,34 @@ namespace WindSoftInstaller
                                 _logger.LogWarning("Не найден Cryptomator.exe в {Dir}", appInstallPath);
                             }
                         }
-
+                        // <<< Создание ярлыка для KeePass >>>
+                        if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            string exePath = Path.Combine(appInstallPath, "KeePass.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для KeePass: {Exe}", exePath);
+                                CreateShortcut(exePath, "KeePass");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Файл KeePass.exe не найден в {Path}", appInstallPath);
+                            }
+                        }
+                        // <<< Создание ярлыка для UltraDefrag >>>
+                        if (app.Name.Equals("UltraDefrag", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            string exePath = Path.Combine(appInstallPath, "ufd.gui.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для UltraDefrag: {ExePath}", exePath);
+                                CreateShortcut(exePath, app.ShortcutName!);
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден ufd.gui.exe по пути {ExePath}", exePath);
+                            }
+                        }
                     }
                     catch (OperationCanceledException)
                     {
@@ -520,6 +571,47 @@ namespace WindSoftInstaller
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Не удалось удалить ключ реестра HKLM\\SOFTWARE\\VideoLAN\\VLC");
+                    }
+                }
+                if (exitCode == 0)
+                {
+                    // 5.6. Копирование дополнительных файлов (языковых пакетов и т.д.)
+                    if (app.AdditionalFiles != null && app.AdditionalFiles.Count > 0)
+                    {
+                        _logger.LogDebug("Копирование дополнительных файлов для {App}", app.Name);
+                        using var archive = ArchiveFactory.Open(archivePath);
+                        foreach (string file in app.AdditionalFiles)
+                        {
+                            // Ищем файл без учета регистра и пути
+                            var entry = archive.Entries.FirstOrDefault(e =>
+                                e.Key.EndsWith(file, StringComparison.OrdinalIgnoreCase));
+
+                            if (entry == null)
+                            {
+                                _logger.LogWarning("Файл {File} не найден в архиве для {App}", file, app.Name);
+                                continue;
+                            }
+
+                            // Определяем путь назначения
+                            string destFileName = app.AdditionalFilesDestinations.TryGetValue(file, out string? dest)
+                                ? dest
+                                : Path.GetFileName(file);
+
+                            string destPath = Path.Combine(appInstallPath, destFileName);
+
+                            // Создаем целевую директорию при необходимости
+                            Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+
+                            // Извлекаем файл
+                            entry.WriteToFile(destPath);
+                            _logger.LogInformation("Файл {File} скопирован в {Path}", file, destPath);
+                        }
+                    }
+
+                    // 5.7. Настройка языка - ТОЛЬКО ДЛЯ KEEPASS!
+                    if (app is { Name: "KeePass" })
+                    {
+                        ApplyKeePassConfiguration(appInstallPath);
                     }
                 }
             }
@@ -558,6 +650,70 @@ namespace WindSoftInstaller
                 }
             }
             dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
+        }
+
+        private void ApplyKeePassConfiguration(string installPath)
+        {
+            try
+            {
+                _logger.LogInformation("Применение конфигурации KeePass");
+
+                // Путь к скопированному конфигу в папке установки
+                string sourceConfig = Path.Combine(installPath, "KeePass.config.xml");
+
+                // Проверяем существование файла
+                if (!File.Exists(sourceConfig))
+                {
+                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ НЕ НАЙДЕН В ПАПКЕ УСТАНОВКИ: {Path}", sourceConfig);
+
+                    // Попробуем найти файл вручную
+                    var allFiles = Directory.GetFiles(installPath, "*.config.xml", SearchOption.AllDirectories);
+                    _logger.LogWarning("Найденные файлы конфигурации: {Files}", string.Join(", ", allFiles));
+
+                    return;
+                }
+
+                // Путь к целевому конфигу в AppData
+                string targetConfig = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "KeePass", "KeePass.config.xml"
+                );
+
+                if (!File.Exists(sourceConfig))
+                {
+                    _logger.LogWarning("Файл конфигурации KeePass не найден: {Path}", sourceConfig);
+                    return;
+                }
+
+                // Проверяем содержимое конфига (опционально)
+                string configContent = File.ReadAllText(sourceConfig);
+                if (!configContent.Contains("Russian.lngx"))
+                {
+                    _logger.LogWarning("Конфиг не содержит русский язык! Файл: {Path}", sourceConfig);
+                }
+
+                // Создаем целевую директорию
+                Directory.CreateDirectory(Path.GetDirectoryName(targetConfig)!);
+
+                // Копируем с заменой
+                File.Copy(sourceConfig, targetConfig, overwrite: true);
+                _logger.LogInformation("Конфиг KeePass успешно скопирован в AppData");
+
+                // Удаляем временную копию из папки установки
+                try
+                {
+                    File.Delete(sourceConfig);
+                    _logger.LogDebug("Временный конфиг удалён из папки установки");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось удалить временный конфиг");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка применения конфига KeePass");
+            }
         }
 
         //Дополнительный чистильщик временной папки (на случай аварийного завершения)
@@ -641,8 +797,7 @@ namespace WindSoftInstaller
             // Обработка кликов по ссылкам лицензии
             if (e.RowIndex >= 0 && e.ColumnIndex == colLicense.Index)
             {
-                var app = dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem as InstallableApp;
-                if (app == null) return;
+                if (dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem is not InstallableApp app) return;
 
                 try
                 {
@@ -651,7 +806,10 @@ namespace WindSoftInstaller
                         FileName = app.LicenseUrl,
                         UseShellExecute = true
                     });
-                    _logger.LogInformation($"Ошибка открытия ссылки на лицензию {app.LicenseUrl}");
+                    if (app.LicenseUrl != null)
+                    {
+                        _logger.LogInformation("Ошибка открытия ссылки на лицензию {LicenseUrl}", app.LicenseUrl);
+                    }
                 }
                 catch (Exception ex)
                 {

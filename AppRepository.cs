@@ -394,10 +394,10 @@ namespace WindSoftInstaller
             ShortcutRelativePath = "Start Scanner.exe"
             // CustomParameters и PathParameterKey не нужны — универсальная распаковка ZIP сработает
         },
-        new InstallableApp
+        new InstallableApp()
         {
             Name = "Cryptomator",
-            Description = "Шифрование папок и облаков (FUSE‑тома)",
+            Description = "Клиентское шифрование папок и облаков (FUSE‑тома). Автоматически шифрует файлы перед загрузкой в Dropbox/Google Drive.",
             ExecutablePath = "Cryptomator-1.16.0-x64.msi",
             SizeMB = Math.Round(fileSizes["Cryptomator-1.16.0-x64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://github.com/cryptomator/cryptomator/blob/master/LICENSE",
@@ -406,13 +406,132 @@ namespace WindSoftInstaller
             {
                 { "Тихая установка", "/quiet" },
                 { "Без перезагрузки", "/norestart" },
-                // если MSI принимает INSTALLDIR:
                 { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
-                // или, если свойство называется TARGETDIR, замените на:
-                // { "Путь установки", "TARGETDIR=\"{InstallDir}\"" }
             },
             ShortcutName = "Cryptomator"
         },
+        new InstallableApp()
+        {
+            Name = "KeePass",
+            Description = "Бесплатный менеджер паролей с открытым исходным кодом для безопасного хранения учетных данных. Локальное шифрование (AES-256) и поддержка плагинов.",
+            ExecutablePath = "KeePass-2.58-Setup.exe",
+            SizeMB = Math.Round(fileSizes["KeePass-2.58-Setup.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://keepass.info/help/v2/license.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+                { "Язык", "/LANG=English" } // Временно английский, русский установим позже
+            },
+            ShortcutName = "KeePass",
+            AdditionalFiles = ["Russian.lngx", "KeePass.config.xml"],
+            AdditionalFilesDestinations =
+            {
+                {"Russian.lngx", "Languages\\Russian.lngx" },
+                { "KeePass.config.xml", "KeePass.config.xml" }  // Копируем в корень
+            },
+            LanguageConfig = "Russian" // Указываем язык для конфигурации
+        },
+        new InstallableApp()
+        {
+            Name = "Bitwarden",
+            Description = "Менеджер паролей с открытым кодом, шифрованием AES-256 и синхронизацией. Генерирует сложные пароли, поддерживает 2FA.",
+            ExecutablePath = "Bitwarden-Portable-2025.5.1.exe",
+            SizeMB = Math.Round(fileSizes["Bitwarden-Portable-2025.5.1.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/bitwarden/clients/blob/main/LICENSE_BITWARDEN.txt",
+            IsPortable = true,
+            ShortcutName = "Bitwarden",
+            CustomParameters =
+            {
+                { "Режим распаковки", "/VERYSILENT" }
+            }
+        },
+        new InstallableApp()
+        {
+            Name = "Wise Disk Cleaner",
+            Description = "Программа для оптимизации дискового пространства с глубоким анализом мусорных файлов. Удаляет временные данные, кэш приложений и дубликаты, ускоряя работу системы.",
+            ExecutablePath = "WDCFree_11.2.3.843.exe",
+            SizeMB = Math.Round(fileSizes["WDCFree_11.2.3.843.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.wisecleaner.com/eula.html",
+            PathParameterKey = "/DIR=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/VERYSILENT" }
+            },
+            ShortcutName = "Wise Disk Cleaner"
+        },
+        new InstallableApp()
+        {
+            Name = "BleachBit",
+            Description = "Инструмент для удаления кэша, истории и временных файлов с перезаписью для защиты конфиденциальности.",
+            ExecutablePath = "BleachBit-5.0.0-setup.exe",
+            SizeMB = Math.Round(fileSizes["BleachBit-5.0.0-setup.exe"] / (1024.0*1024.0), 2),
+            LicenseUrl = "https://github.com/bleachbit/bleachbit/blob/master/COPYING",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" },
+                { "Для всех пользователей", "/allusers" }
+            },
+            ShortcutName = "BleachBit"
+        },
+        new InstallableApp()
+        {
+            Name = "UltraDefrag",
+            Description = "Мощный дефрагментатор дисков с открытым исходным кодом",
+            ExecutablePath = "ultradefrag-7.1.4.bin.amd64.exe",
+            SizeMB = Math.Round(fileSizes["ultradefrag-7.1.4.bin.amd64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://ultradefrag.net/en/license",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            },
+            // Ярлык создадим вручную после установки
+            ShortcutName = "UltraDefrag",
+            ShortcutRelativePath = "ufd.gui.exe"
+        },
+        new InstallableApp()
+        {
+            Name = "RetroArch",
+            Description = "Портативный мультисистемный эмулятор (libretro) с поддержкой русского языка",
+            ExecutablePath = "RetroArchPortable.zip",
+            SizeMB = Math.Round(fileSizes["RetroArchPortable.zip"]/(1024.0*1024.0), 2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
+            IsPortable = true,
+            ShortcutRelativePath = "retroarch.exe",
+            ShortcutName = "RetroArch"
+        },
+        //new InstallableApp()
+        //{
+        //    Name               = "PCSX2",
+        //    Description        = "Эмулятор PlayStation 2 (PCSX2 v2.2.0)",
+        //    ExecutablePath     = "pcsx2-v2.2.0-windows-x64-installer.exe",
+        //    SizeMB             = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-installer.exe"]/(1024.0*1024.0), 2),
+        //    LicenseUrl         = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
+        //    PathParameterKey   = "",
+        //    CustomParameters   =
+        //    {
+        //        // ПУТЬ установки первым — чтобы Inno успел его увидеть
+        //        { "Путь установки", "/DIR=\"{InstallDir}\"" },
+        //        { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+        //        { "Язык", "/LANG=Russian" },
+        //    },
+        //    ShortcutName       = "PCSX2",
+        //    ShortcutRelativePath = "pcsx2.exe"
+        //},
+        new InstallableApp()
+        {
+            Name                 = "PCSX2",
+            Description          = "Портативный эмулятор PlayStation 2 (PCSX2 v2.2.0)",
+            ExecutablePath       = "pcsx2-v2.2.0-windows-x64-Qt.7z",  // или PCS...Portable.7z
+            SizeMB               = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-Qt.7z"]/(1024.0*1024.0),2),
+            LicenseUrl           = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
+            IsPortable           = true,
+            ShortcutRelativePath = "pcsx2-qt.exe",
+            ShortcutName         = "PCSX2"
+        },
+
     ];
         }
 
