@@ -446,13 +446,13 @@ namespace WindSoftInstaller
                 { "Режим распаковки", "/VERYSILENT" }
             }
         },
-        new InstallableApp
+        new InstallableApp()
         {
             Name = "Wise Disk Cleaner",
             Description = "Программа для оптимизации дискового пространства с глубоким анализом мусорных файлов. Удаляет временные данные, кэш приложений и дубликаты, ускоряя работу системы.",
             ExecutablePath = "WDCFree_11.2.3.843.exe",
             SizeMB = Math.Round(fileSizes["WDCFree_11.2.3.843.exe"]/(1024.0*1024.0),2),
-            LicenseUrl = "https://www.wisecleaner.com/license-agreement.html",
+            LicenseUrl = "https://www.wisecleaner.com/eula.html",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
@@ -460,7 +460,7 @@ namespace WindSoftInstaller
             },
             ShortcutName = "Wise Disk Cleaner"
         },
-        new InstallableApp
+        new InstallableApp()
         {
             Name = "BleachBit",
             Description = "Инструмент для удаления кэша, истории и временных файлов с перезаписью для защиты конфиденциальности.",
@@ -475,6 +475,63 @@ namespace WindSoftInstaller
             },
             ShortcutName = "BleachBit"
         },
+        new InstallableApp()
+        {
+            Name = "UltraDefrag",
+            Description = "Мощный дефрагментатор дисков с открытым исходным кодом",
+            ExecutablePath = "ultradefrag-7.1.4.bin.amd64.exe",
+            SizeMB = Math.Round(fileSizes["ultradefrag-7.1.4.bin.amd64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://ultradefrag.net/en/license",
+            PathParameterKey = "/D=",
+            CustomParameters =
+            {
+                { "Тихая установка", "/S" }
+            },
+            // Ярлык создадим вручную после установки
+            ShortcutName = "UltraDefrag",
+            ShortcutRelativePath = "ufd.gui.exe"
+        },
+        new InstallableApp()
+        {
+            Name = "RetroArch",
+            Description = "Портативный мультисистемный эмулятор (libretro) с поддержкой русского языка",
+            ExecutablePath = "RetroArchPortable.zip",
+            SizeMB = Math.Round(fileSizes["RetroArchPortable.zip"]/(1024.0*1024.0), 2),
+            LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
+            IsPortable = true,
+            ShortcutRelativePath = "retroarch.exe",
+            ShortcutName = "RetroArch"
+        },
+        //new InstallableApp()
+        //{
+        //    Name               = "PCSX2",
+        //    Description        = "Эмулятор PlayStation 2 (PCSX2 v2.2.0)",
+        //    ExecutablePath     = "pcsx2-v2.2.0-windows-x64-installer.exe",
+        //    SizeMB             = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-installer.exe"]/(1024.0*1024.0), 2),
+        //    LicenseUrl         = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
+        //    PathParameterKey   = "",
+        //    CustomParameters   =
+        //    {
+        //        // ПУТЬ установки первым — чтобы Inno успел его увидеть
+        //        { "Путь установки", "/DIR=\"{InstallDir}\"" },
+        //        { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+        //        { "Язык", "/LANG=Russian" },
+        //    },
+        //    ShortcutName       = "PCSX2",
+        //    ShortcutRelativePath = "pcsx2.exe"
+        //},
+        new InstallableApp()
+        {
+            Name                 = "PCSX2",
+            Description          = "Портативный эмулятор PlayStation 2 (PCSX2 v2.2.0)",
+            ExecutablePath       = "pcsx2-v2.2.0-windows-x64-Qt.7z",  // или PCS...Portable.7z
+            SizeMB               = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-Qt.7z"]/(1024.0*1024.0),2),
+            LicenseUrl           = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
+            IsPortable           = true,
+            ShortcutRelativePath = "pcsx2-qt.exe",
+            ShortcutName         = "PCSX2"
+        },
+
     ];
         }
 

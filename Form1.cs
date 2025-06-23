@@ -300,6 +300,7 @@ namespace WindSoftInstaller
                             _logger.LogDebug("Создан ярлык для {App}: {ExePath}", app.Name, exePath);
                         }
                     }
+
                     else
                     {
                         // Для других portable (exe) просто копируем
@@ -530,6 +531,20 @@ namespace WindSoftInstaller
                             else
                             {
                                 _logger.LogWarning("Файл KeePass.exe не найден в {Path}", appInstallPath);
+                            }
+                        }
+                        // <<< Создание ярлыка для UltraDefrag >>>
+                        if (app.Name.Equals("UltraDefrag", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            string exePath = Path.Combine(appInstallPath, "ufd.gui.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для UltraDefrag: {ExePath}", exePath);
+                                CreateShortcut(exePath, app.ShortcutName!);
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден ufd.gui.exe по пути {ExePath}", exePath);
                             }
                         }
                     }
