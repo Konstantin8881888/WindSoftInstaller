@@ -478,7 +478,7 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "UltraDefrag",
-            Description = "Мощный дефрагментатор дисков с открытым исходным кодом",
+            Description = "Профессиональный дефрагментатор для Windows. Оптимизирует системные файлы, включая загрузочные области, и поддерживает работу из командной строки.",
             ExecutablePath = "ultradefrag-7.1.4.bin.amd64.exe",
             SizeMB = Math.Round(fileSizes["ultradefrag-7.1.4.bin.amd64.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://ultradefrag.net/en/license",
@@ -494,7 +494,7 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "RetroArch",
-            Description = "Портативный мультисистемный эмулятор (libretro) с поддержкой русского языка",
+            Description = "Универсальная платформа для запуска эмуляторов, игр и мультимедиа с поддержкой ретро-консолей. Объединяет различные движки в единый интерфейс с расширенными настройками графики, шейдеров и управления. Подходит для создания унифицированной игровой среды с кросс-платформенной синхронизацией.",
             ExecutablePath = "RetroArchPortable.zip",
             SizeMB = Math.Round(fileSizes["RetroArchPortable.zip"]/(1024.0*1024.0), 2),
             LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
@@ -502,34 +502,71 @@ namespace WindSoftInstaller
             ShortcutRelativePath = "retroarch.exe",
             ShortcutName = "RetroArch"
         },
-        //new InstallableApp()
-        //{
-        //    Name               = "PCSX2",
-        //    Description        = "Эмулятор PlayStation 2 (PCSX2 v2.2.0)",
-        //    ExecutablePath     = "pcsx2-v2.2.0-windows-x64-installer.exe",
-        //    SizeMB             = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-installer.exe"]/(1024.0*1024.0), 2),
-        //    LicenseUrl         = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
-        //    PathParameterKey   = "",
-        //    CustomParameters   =
-        //    {
-        //        // ПУТЬ установки первым — чтобы Inno успел его увидеть
-        //        { "Путь установки", "/DIR=\"{InstallDir}\"" },
-        //        { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
-        //        { "Язык", "/LANG=Russian" },
-        //    },
-        //    ShortcutName       = "PCSX2",
-        //    ShortcutRelativePath = "pcsx2.exe"
-        //},
         new InstallableApp()
         {
-            Name                 = "PCSX2",
-            Description          = "Портативный эмулятор PlayStation 2 (PCSX2 v2.2.0)",
-            ExecutablePath       = "pcsx2-v2.2.0-windows-x64-Qt.7z",  // или PCS...Portable.7z
-            SizeMB               = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-Qt.7z"]/(1024.0*1024.0),2),
-            LicenseUrl           = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
-            IsPortable           = true,
+            Name = "PCSX2",
+            Description = "Эмулятор PlayStation 2 с поддержкой HD-разрешения, улучшенной графикой и сохранениями состояний. Позволяет запускать игры с физических дисков или образов, включает настройки для оптимизации производительности.",
+            ExecutablePath = "pcsx2-v2.2.0-windows-x64-Qt.7z",
+            SizeMB = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-Qt.7z"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
+            IsPortable = true,
             ShortcutRelativePath = "pcsx2-qt.exe",
-            ShortcutName         = "PCSX2"
+            ShortcutName = "PCSX2"
+        },
+        new InstallableApp()
+        {
+            Name = "Microsoft VC++ 2015-2019 Redistributable (x64)",
+            Description = "Необходимые SxS-сборки для приложений на C++ (Afterburner, др.)",
+            SizeMB = Math.Round(fileSizes["vc_redist.x64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
+            ExecutablePath = "vc_redist.x64.exe",
+            PathParameterKey = "",
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "Тихая установка", "/install /quiet /norestart" }
+            },
+            ShortcutName    = null
+        },
+        new InstallableApp()
+        {
+          Name = "Microsoft VC++ 2015-2019 Redistributable (x86)",
+          Description = "SxS-библиотеки x86 для приложений на C++",
+          ExecutablePath = "vc_redist.x86.exe",
+          SizeMB = Math.Round(fileSizes["vc_redist.x86.exe"]/(1024.0*1024.0),2),
+          LicenseUrl  = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
+          PathParameterKey = "",
+          CustomParameters = new Dictionary<string,string>
+          {
+            { "Тихая установка", "/quiet /norestart" }
+          },
+          ShortcutName    = null
+        },
+        new InstallableApp()
+        {
+            Name                 = "MSI Afterburner",
+            Description          = "Портативный мониторинг и разгон видеокарт (без RTSS)",
+            ExecutablePath       = "MSIAfterburnerPortable.zip",
+            SizeMB               = Math.Round(fileSizes["MSIAfterburnerPortable.zip"]/(1024.0*1024.0), 2),
+            LicenseUrl           = "https://www.msi.com/page/eula",
+            IsPortable           = true,
+            ShortcutRelativePath = "MSIAfterburner.exe",
+            ShortcutName         = "MSI Afterburner"
+        },
+        new InstallableApp()
+        {
+          Name = "RivaTuner Statistics Server",
+          Description = "Сервер статистики для MSI Afterburner (независимый)",
+          ExecutablePath = "RTSSSetup736.exe",
+          SizeMB = Math.Round(fileSizes["RTSSSetup736.exe"]/(1024.0*1024.0),2),
+          LicenseUrl = "https://www.msi.com/page/eula",
+          PathParameterKey = "/D=",
+          CustomParameters = new Dictionary<string,string>
+          {
+                { "Тихая установка", "/S" },
+                //{ "Language", "/LANG=1049" }// Похоже не работает. Исправлено заменой конф-файла
+          },
+          ShortcutName = "RTSS",
+          ShortcutRelativePath = "RTSS.exe"
         },
 
     ];
@@ -544,6 +581,20 @@ namespace WindSoftInstaller
             string outputPath = Path.Combine(outputDir, fileName);
             entry.WriteToFile(outputPath);
             return outputPath;
+        }
+
+        // Извлекает шаблонный файл из Installers.7z и возвращает полный путь к нему в temp-папке.
+        public static string ExtractTemplate(string templateName, string tempDir)
+        {
+            string archivePath = Path.Combine(Application.StartupPath, "Installers.7z");
+            using var archive = ArchiveFactory.Open(archivePath);
+            var entry = archive.Entries
+                .FirstOrDefault(e => e.Key.Equals(templateName, StringComparison.OrdinalIgnoreCase))
+                ?? throw new FileNotFoundException($"Шаблон {templateName} не найден в архиве");
+
+            string outPath = Path.Combine(tempDir, Path.GetFileName(templateName));
+            entry.WriteToFile(outPath);
+            return outPath;
         }
     }
 }

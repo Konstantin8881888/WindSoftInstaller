@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
+using System.Text;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
@@ -308,6 +309,16 @@ namespace WindSoftInstaller
                         _logger.LogDebug("{App} — копирование portable EXE {File}", app.Name, Path.GetFileName(sourcePath));
                         File.Copy(sourcePath, destFile, overwrite: true);
                     }
+                    // Правка языка для MSI Afterburner
+                    if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string templateCfg = AppRepository.ExtractTemplate("MSIAfterburner.cfg", tempDir);
+                        string profilesDir = Path.Combine(targetDir, "Profiles");
+                        Directory.CreateDirectory(profilesDir);
+                        File.Copy(templateCfg,
+                                  Path.Combine(profilesDir, "MSIAfterburner.cfg"),
+                                  overwrite: true);
+                    }
 
                     // После распаковки создаём ярлык на главный exe
                     // 1) Определяем относительный путь к EXE
@@ -382,8 +393,9 @@ namespace WindSoftInstaller
                     argsList.Add(p.Trim());
                 }
 
-                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC
+                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC и НЕ-RivaTuner Statistics Server
                 if (!isVlcInstaller
+                    && !app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
                     && !string.IsNullOrWhiteSpace(app.PathParameterKey)
                     && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
                 {
@@ -391,6 +403,12 @@ namespace WindSoftInstaller
                     if (appInstallPath.Contains(' '))
                         pathArg = $"{app.PathParameterKey}\"{appInstallPath}\"";
                     argsList.Add(pathArg);
+                }
+                // 5.3.2-b. Спец-обработка для RivaTuner Statistics Server (NSIS): всегда без кавычек
+                else if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase))
+                {
+                    // просто /D=<путь> без оборачивания
+                    argsList.Add(app.PathParameterKey + appInstallPath);
                 }
 
                 // 5.3.3. Склеиваем всё через пробел (никаких кавычек вокруг finalArgs!)
@@ -443,6 +461,18 @@ namespace WindSoftInstaller
                         await process.WaitForExitAsync(token);
                         _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
                         exitCode = process.ExitCode; // Сохраняем код выхода
+                                                     // После process.WaitForExitAsync(token) и до создания ярлыка
+                        if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
+                            && process.ExitCode == 0)
+                        {
+                            string templateCfg = AppRepository.ExtractTemplate("Config", tempDir);
+                            string profilesDir = Path.Combine(appInstallPath, "Profiles");
+                            Directory.CreateDirectory(profilesDir);
+                            File.Copy(templateCfg,
+                                      Path.Combine(profilesDir, "Config"),
+                                      overwrite: true);
+                        }
+
                         // <<< Здесь добавляем создание ярлыка для LMMS >>>
                         if (app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
                         {
@@ -545,6 +575,21 @@ namespace WindSoftInstaller
                             else
                             {
                                 _logger.LogWarning("Не найден ufd.gui.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // <<< Создание ярлыка для RivaTuner Statistics Server >>>
+                        if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "RTSS.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для RivaTuner Statistics Server: {ExePath}", exePath);
+                                CreateShortcut(exePath, "RivaTuner Statistics Server");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден RTSS.exe по пути {ExePath}", exePath);
                             }
                         }
                     }
