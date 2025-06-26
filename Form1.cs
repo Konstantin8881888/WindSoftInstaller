@@ -426,15 +426,20 @@ namespace WindSoftInstaller
                 {
                     startInfo.FileName = "msiexec.exe";
 
-                    if (app.Name.Equals("Calibre", StringComparison.OrdinalIgnoreCase))
+                    // Для Calibre и для PDFsam Basic используем административную распаковку (/a)
+                    if (app.Name.Equals("Calibre", StringComparison.OrdinalIgnoreCase)
+                     || app.Name.Equals("PDFsam Basic", StringComparison.OrdinalIgnoreCase))
                     {
-                        // административная распаковка для Calibre
-                        startInfo.Arguments =
-                            $"/a \"{sourcePath}\" TARGETDIR=\"{appInstallPath}\" /quiet /norestart";
+                        // собираем все свойства из CustomParameters (в том числе TARGETDIR для PDFsam)
+                        var props = string.Join(" ",
+                            app.CustomParameters.Values.Select(p => p.Replace("{InstallDir}", appInstallPath).Trim()));
+
+                        // /a — административная распаковка, /qn — тихий режим
+                        startInfo.Arguments = $"/a \"{sourcePath}\" /qn {props}";
                     }
                     else
                     {
-                        // обычная установка для остальных MSI
+                        // обычная установка для всех остальных MSI
                         startInfo.Arguments =
                             $"/i \"{sourcePath}\" {finalArgs}";
                     }
@@ -445,6 +450,7 @@ namespace WindSoftInstaller
                 }
                 else
                 {
+                    // EXE-инсталляторы
                     startInfo.FileName = sourcePath;
                     startInfo.Arguments = finalArgs;
                     startInfo.UseShellExecute = true;
@@ -475,36 +481,41 @@ namespace WindSoftInstaller
                                       Path.Combine(profilesDir, "Config"),
                                       overwrite: true);
                         }
-                        // …после await process.WaitForExitAsync(token);
-                        if (app.Name.Equals("Calibre", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+
+                        // После await process.WaitForExitAsync(token) и перед удалением Temp-директории
+                        if (process.ExitCode == 0)
                         {
-                            // 1) Удаляем MSI из папки установки
+                            // 1) Удаляем MSI из папки установки, если он там оказался
                             string installedMsi = Path.Combine(appInstallPath, Path.GetFileName(sourcePath));
                             if (File.Exists(installedMsi))
                             {
                                 try
                                 {
                                     File.Delete(installedMsi);
-                                    _logger.LogDebug("Удалён файл {Msi} из папки установки", installedMsi);
+                                    _logger.LogDebug("Удалён установщик {Msi} из {Dir}", installedMsi, appInstallPath);
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.LogWarning(ex, "Не удалось удалить {Msi}", installedMsi);
+                                    _logger.LogWarning(ex, "Не удалось удалить установщик {Msi}", installedMsi);
                                 }
                             }
 
-                            // 2) Создаём ярлык на calibre.exe в PFiles64\Calibre2
-                            string exePath = Path.Combine(appInstallPath, "PFiles64", "Calibre2", "calibre.exe");
-                            if (File.Exists(exePath))
+                            // 2) Создаём ярлык на главный exe, беря относительный путь из ShortcutRelativePath
+                            if (!string.IsNullOrWhiteSpace(app.ShortcutRelativePath))
                             {
-                                _logger.LogDebug("Создаём ярлык для Calibre: {Exe}", exePath);
-                                CreateShortcut(exePath, "Calibre");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден calibre.exe по пути {Exe}", exePath);
+                                string exePath = Path.Combine(appInstallPath, app.ShortcutRelativePath);
+                                if (File.Exists(exePath))
+                                {
+                                    _logger.LogDebug("Создаём ярлык для {App}: {Exe}", app.Name, exePath);
+                                    CreateShortcut(exePath, app.ShortcutName ?? app.Name);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Не найден {Exe} для {App}", exePath, app.Name);
+                                }
                             }
                         }
+
 
                         // <<< Здесь добавляем создание ярлыка для LMMS >>>
                         if (app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)

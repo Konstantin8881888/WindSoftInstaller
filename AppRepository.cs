@@ -609,7 +609,7 @@ namespace WindSoftInstaller
                 { "Папка установки", "TARGETDIR=\"{InstallDir}\"" }
             },
             ShortcutName        = "Calibre",
-            ShortcutRelativePath= "calibre.exe"
+            ShortcutRelativePath= "PFiles64\\Calibre2\\calibre.exe"
         },
         new InstallableApp()
         {
@@ -625,6 +625,45 @@ namespace WindSoftInstaller
             },
             ShortcutName        = "Zotero",
             ShortcutRelativePath= "zotero.exe"
+        },
+        new InstallableApp()
+        {
+            Name            = "PDFsam Basic",
+            Description     = "Open-source инструмент для разбивки, склейки и поворота PDF-файлов (AGPL v3)",
+            ExecutablePath  = "pdfsam-basic-5.3.1-windows-x64.msi",
+            SizeMB          = Math.Round(fileSizes["pdfsam-basic-5.3.1-windows-x64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl      = "https://github.com/torakiki/pdfsam/blob/develop/LICENSE",
+            PathParameterKey= "",
+            CustomParameters =
+            {
+                // специфичные для PDFsam
+                { "Пропустить страницу благодарностей", "SKIPTHANKSPAGE=Yes" },
+                { "Отключить проверку обновлений",    "CHECK_FOR_UPDATES=false" },
+                // административная распаковка будет использовать TARGETDIR:
+                { "Папка установки", "TARGETDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName         = "PDFsam Basic",
+            ShortcutRelativePath = "PFiles\\PDFsam Basic\\pdfsam.exe"
+        },
+
+        new InstallableApp()
+        {
+            Name            = "PDF24 Creator",
+            Description     = "Бесплатный PDF-редактор и виртуальный принтер (Freeware)",
+            ExecutablePath  = "pdf24-creator-11.27.0-x64.msi",   // ваш скачанный MSI
+            SizeMB          = Math.Round(
+                                 fileSizes["pdf24-creator-11.27.0-x64.msi"]
+                                 / (1024.0 * 1024.0), 2),
+            LicenseUrl      = "https://en.pdf24.org/impressum/",
+            PathParameterKey= "",    // для MSI мы используем только CustomParameters
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "Тихая установка",  "/quiet"  },
+                { "Без перезапуска",   "/norestart" },
+                { "Папка установки",   "INSTALLDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName        = "PDF24 Creator",
+            ShortcutRelativePath= "pdf24-creator.exe"
         },
 
     ];
