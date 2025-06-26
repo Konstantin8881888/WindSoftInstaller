@@ -568,6 +568,21 @@ namespace WindSoftInstaller
           ShortcutName = "RTSS",
           ShortcutRelativePath = "RTSS.exe"
         },
+        new InstallableApp()
+        {
+            Name            = "Anki",
+            Description     = "Система интервальных повторений для карточек (SRS)",
+            ExecutablePath  = "anki-25.02.7-windows-qt6.exe",            // адаптируйте под вашу версию
+            SizeMB          = Math.Round(fileSizes["anki-25.02.7-windows-qt6.exe"]/(1024.0*1024.0),2),
+            LicenseUrl      = "https://github.com/ankitects/anki/blob/main/LICENSE",
+            PathParameterKey= "/D=",
+            CustomParameters= new Dictionary<string,string>
+            {
+                { "Silent install", "/S" }
+            },
+            ShortcutName        = "Anki",
+            ShortcutRelativePath= "anki.exe"
+        },
 
     ];
         }
