@@ -571,17 +571,28 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name            = "Anki",
-            Description     = "Система интервальных повторений для карточек (SRS)",
+            Description     = "Обучение иностранным языкам. Система интервальных повторений для карточек (SRS)",
             ExecutablePath  = "anki-25.02.7-windows-qt6.exe",            // адаптируйте под вашу версию
             SizeMB          = Math.Round(fileSizes["anki-25.02.7-windows-qt6.exe"]/(1024.0*1024.0),2),
             LicenseUrl      = "https://github.com/ankitects/anki/blob/main/LICENSE",
             PathParameterKey= "/D=",
             CustomParameters= new Dictionary<string,string>
             {
-                { "Silent install", "/S" }
+                { "Тихая установка", "/S" }
             },
             ShortcutName        = "Anki",
             ShortcutRelativePath= "anki.exe"
+        },
+        new InstallableApp()
+        {
+            Name                  = "Kiwix Desktop",
+            Description           = "Офлайн-читалка для Wikipedia и Wikibooks через ZIM-архивы",
+            ExecutablePath        = "kiwix-desktop_windows_x64_2.4.1.zip",
+            SizeMB                = Math.Round(fileSizes["kiwix-desktop_windows_x64_2.4.1.zip"] / (1024.0*1024.0), 2),
+            LicenseUrl            = "https://github.com/kiwix/kiwix-desktop/blob/master/LICENSE",
+            IsPortable            = true,
+            ShortcutName          = "Kiwix Desktop",
+            ShortcutRelativePath  = "kiwix.exe"
         },
 
     ];
