@@ -594,6 +594,38 @@ namespace WindSoftInstaller
             ShortcutName          = "Kiwix Desktop",
             ShortcutRelativePath  = "kiwix.exe"
         },
+        new InstallableApp()
+        {
+            Name            = "Calibre",
+            Description     = "Менеджер электронных книг и конвертер форматов",
+            ExecutablePath  = "calibre-64bit-8.5.0.msi",
+            SizeMB          = Math.Round(fileSizes["calibre-64bit-8.5.0.msi"]/(1024.0*1024.0),2),
+            LicenseUrl      = "https://calibre-ebook.com/license",
+            PathParameterKey= "",
+            CustomParameters= new Dictionary<string,string>
+            {
+                { "Quiet",      "/quiet" },
+                { "NoRestart",  "/norestart" },
+                { "Папка установки", "TARGETDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName        = "Calibre",
+            ShortcutRelativePath= "calibre.exe"
+        },
+        new InstallableApp()
+        {
+            Name            = "Zotero",
+            Description     = "Менеджер библиографии и PDF-анализатор для исследователей",
+            ExecutablePath  = "Zotero-7.0.16_x64_setup.exe",
+            SizeMB          = Math.Round(fileSizes["Zotero-7.0.16_x64_setup.exe"]/(1024.0*1024.0),2),
+            LicenseUrl      = "https://www.zotero.org/license/",
+            PathParameterKey= "/D=",
+            CustomParameters= new Dictionary<string,string>
+            {
+                { "Silent", "/S" }
+            },
+            ShortcutName        = "Zotero",
+            ShortcutRelativePath= "zotero.exe"
+        },
 
     ];
         }

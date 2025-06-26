@@ -422,28 +422,31 @@ namespace WindSoftInstaller
                 var startInfo = new ProcessStartInfo();
                 string extension = Path.GetExtension(sourcePath) ?? string.Empty;
 
-                // Если это MSI-файл (Chrome Enterprise MSI или Firefox Enterprise MSI)
                 if (extension.Equals(".msi", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Запускаем msiexec.exe
                     startInfo.FileName = "msiexec.exe";
 
-                    // Собираем аргументы: /i "<путь_к_msi>" + всё из finalArgs,
-                    // где finalArgs уже содержит "/qn INSTALLDIR=\"<appInstallPath>\""
-                    startInfo.Arguments = $"/i \"{sourcePath}\" {finalArgs}";
+                    if (app.Name.Equals("Calibre", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // административная распаковка для Calibre
+                        startInfo.Arguments =
+                            $"/a \"{sourcePath}\" TARGETDIR=\"{appInstallPath}\" /quiet /norestart";
+                    }
+                    else
+                    {
+                        // обычная установка для остальных MSI
+                        startInfo.Arguments =
+                            $"/i \"{sourcePath}\" {finalArgs}";
+                    }
 
-                    // Чтобы поднять права
                     startInfo.UseShellExecute = true;
                     startInfo.Verb = "runas";
                     startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
                 }
                 else
                 {
-                    // Иначе — это обычный EXE (например, Opera, Shotcut, VSDC и т.д.)
                     startInfo.FileName = sourcePath;
                     startInfo.Arguments = finalArgs;
-
-                    // Права тоже требуются, если нужен UAC
                     startInfo.UseShellExecute = true;
                     startInfo.Verb = "runas";
                     startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
@@ -471,6 +474,36 @@ namespace WindSoftInstaller
                             File.Copy(templateCfg,
                                       Path.Combine(profilesDir, "Config"),
                                       overwrite: true);
+                        }
+                        // …после await process.WaitForExitAsync(token);
+                        if (app.Name.Equals("Calibre", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // 1) Удаляем MSI из папки установки
+                            string installedMsi = Path.Combine(appInstallPath, Path.GetFileName(sourcePath));
+                            if (File.Exists(installedMsi))
+                            {
+                                try
+                                {
+                                    File.Delete(installedMsi);
+                                    _logger.LogDebug("Удалён файл {Msi} из папки установки", installedMsi);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, "Не удалось удалить {Msi}", installedMsi);
+                                }
+                            }
+
+                            // 2) Создаём ярлык на calibre.exe в PFiles64\Calibre2
+                            string exePath = Path.Combine(appInstallPath, "PFiles64", "Calibre2", "calibre.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Calibre: {Exe}", exePath);
+                                CreateShortcut(exePath, "Calibre");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден calibre.exe по пути {Exe}", exePath);
+                            }
                         }
 
                         // <<< Здесь добавляем создание ярлыка для LMMS >>>
@@ -590,6 +623,21 @@ namespace WindSoftInstaller
                             else
                             {
                                 _logger.LogWarning("Не найден RTSS.exe по пути {ExePath}", exePath);
+                            }
+                        }
+                        // <<< Создание ярлыка для Zotero >>>
+                        if (app.Name.Equals("Zotero", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        {
+                            // Путь к exe в папке установки
+                            string exePath = Path.Combine(appInstallPath, "zotero.exe");
+                            if (File.Exists(exePath))
+                            {
+                                _logger.LogDebug("Создаём ярлык для Zotero: {ExePath}", exePath);
+                                CreateShortcut(exePath, "Zotero");
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Не найден zotero.exe по пути {ExePath}", exePath);
                             }
                         }
                     }
