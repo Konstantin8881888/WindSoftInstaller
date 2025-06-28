@@ -393,9 +393,16 @@ namespace WindSoftInstaller
                     argsList.Add(p.Trim());
                 }
 
-                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC и НЕ-RivaTuner Statistics Server
-                if (!isVlcInstaller
-                    && !app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
+                // 5.3.2-b. Спец-обработка для RivaTuner Statistics Server (NSIS) и FastStone Image Viewer (Inno Setup): всегда без кавычек
+                if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
+                    || app.Name.Equals("FastStone Image Viewer", StringComparison.OrdinalIgnoreCase))
+                {
+                    // просто /D=<путь> без оборачивания
+                    argsList.Add(app.PathParameterKey + appInstallPath);
+                }
+
+                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC и НЕ-RivaTuner Statistics Server и НЕ-FastStone Image Viewer
+                else if (!isVlcInstaller
                     && !string.IsNullOrWhiteSpace(app.PathParameterKey)
                     && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
                 {
@@ -403,12 +410,6 @@ namespace WindSoftInstaller
                     if (appInstallPath.Contains(' '))
                         pathArg = $"{app.PathParameterKey}\"{appInstallPath}\"";
                     argsList.Add(pathArg);
-                }
-                // 5.3.2-b. Спец-обработка для RivaTuner Statistics Server (NSIS): всегда без кавычек
-                else if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase))
-                {
-                    // просто /D=<путь> без оборачивания
-                    argsList.Add(app.PathParameterKey + appInstallPath);
                 }
 
                 // 5.3.3. Склеиваем всё через пробел (никаких кавычек вокруг finalArgs!)

@@ -629,7 +629,7 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name            = "PDFsam Basic",
-            Description     = "Open-source инструмент для разбивки, склейки и поворота PDF-файлов (AGPL v3)",
+            Description     = "Open-source инструмент для разбивки, склейки и поворота PDF-файлов",
             ExecutablePath  = "pdfsam-basic-5.3.1-windows-x64.msi",
             SizeMB          = Math.Round(fileSizes["pdfsam-basic-5.3.1-windows-x64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl      = "https://github.com/torakiki/pdfsam/blob/develop/LICENSE",
@@ -654,7 +654,7 @@ namespace WindSoftInstaller
             SizeMB          = Math.Round(
                                  fileSizes["pdf24-creator-11.27.0-x64.msi"]
                                  / (1024.0 * 1024.0), 2),
-            LicenseUrl      = "https://en.pdf24.org/impressum/",
+            LicenseUrl      = "https://www.pdf24.org/en/terms-of-use",
             PathParameterKey= "",    // для MSI мы используем только CustomParameters
             CustomParameters = new Dictionary<string,string>
             {
@@ -664,6 +664,40 @@ namespace WindSoftInstaller
             },
             ShortcutName        = "PDF24 Creator",
             ShortcutRelativePath= "pdf24-creator.exe"
+        },
+        new InstallableApp()
+        {
+            Name             = "XnView MP",
+            Description      = "Продвинутый просмотрщик и простой редактор изображений",
+            ExecutablePath   = "XnViewMP-win-x64.exe",
+            SizeMB           = Math.Round(fileSizes["XnViewMP-win-x64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl       = "https://www.xnview.com/en/license/",
+            PathParameterKey = "/dir=",
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "Тихая установка",  "/verysilent" },
+                { "Без перезагрузки",  "/norestart"  },
+                { "Папка установки",   "/dir=\"{InstallDir}\"" }
+            },
+            ShortcutName        = "XnView MP",
+            ShortcutRelativePath= "xnviewmp.exe"
+        },
+        new InstallableApp()
+        {
+            Name             = "FastStone Image Viewer",
+            Description      = "Быстрый и удобный просмотр изображений с базовыми функциями правки",
+            ExecutablePath   = "FSViewerSetup80.exe",
+            SizeMB           = Math.Round(fileSizes["FSViewerSetup80.exe"]/(1024.0*1024.0),2),
+            LicenseUrl       = "/D=",
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "Тихая установка",       "/S" },
+                { "Отключить SmartScreen", "/SP-" },
+                { "Подавить сообщения",     "/SUPPRESSMSGBOXES" },
+                //{ "Папка установки",        "/D={InstallDir}" }
+            },
+            ShortcutName        = "FastStone Image Viewer",
+            ShortcutRelativePath= "FSViewer.exe"
         },
 
     ];
