@@ -965,11 +965,45 @@ namespace WindSoftInstaller
                     return;
                 }
 
+                // Собираем из грида список выбранных приложений
                 var checkedApps = dataGridViewPrograms.Rows
                     .Cast<DataGridViewRow>()
                     .Where(r => Convert.ToBoolean(r.Cells["colSelect"].Value))
                     .Select(r => r.DataBoundItem as InstallableApp)
                     .ToList();
+
+
+                if (checkedApps.Any(a => a.Name == "Marble"))
+                {
+                    // загружаем полный список из репозитория
+                    var allApps = AppRepository.LoadApps();
+
+                    // находим нужные пакеты
+                    var vc2013x86 = allApps.FirstOrDefault(a => a.Name == "VC++ 2013 Redistributable (x86)");
+                    var vc2013x64 = allApps.FirstOrDefault(a => a.Name == "VC++ 2013 Redistributable (x64)");
+
+                    // вставляем их в начало списка установки, если их там нет
+                    if (vc2013x86 != null && !checkedApps.Contains(vc2013x86))
+                        checkedApps.Insert(0, vc2013x86);
+                    if (vc2013x64 != null && !checkedApps.Contains(vc2013x64))
+                        checkedApps.Insert(vc2013x86 != null ? 1 : 0, vc2013x64);
+                }
+
+                if (checkedApps.Any(a => a.Name == "MSI Afterburner"))
+                {
+                    // загружаем полный список из репозитория
+                    var allApps = AppRepository.LoadApps();
+
+                    // находим нужные пакеты
+                    var vc2013x86 = allApps.FirstOrDefault(a => a.Name == "Microsoft VC++ 2015-2019 Redistributable (x86)");
+                    var vc2013x64 = allApps.FirstOrDefault(a => a.Name == "Microsoft VC++ 2015-2019 Redistributable (x64)");
+
+                    // вставляем их в начало списка установки, если их там нет
+                    if (vc2013x86 != null && !checkedApps.Contains(vc2013x86))
+                        checkedApps.Insert(0, vc2013x86);
+                    if (vc2013x64 != null && !checkedApps.Contains(vc2013x64))
+                        checkedApps.Insert(vc2013x86 != null ? 1 : 0, vc2013x64);
+                }
 
                 if (checkedApps.Count == 0)
                 {

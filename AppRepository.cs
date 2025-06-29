@@ -668,7 +668,7 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name             = "XnView MP",
-            Description      = "Продвинутый просмотрщик и простой редактор изображений",
+            Description      = "Универсальный просмотрщик и конвертер изображений с поддержкой RAW, гистограммой и базовыми инструментами редактирования. Позволяет сортировать коллекции, создавать PDF-презентации и применять пакетные преобразования (изменение размера, водяные знаки).",
             ExecutablePath   = "XnViewMP-win-x64.exe",
             SizeMB           = Math.Round(fileSizes["XnViewMP-win-x64.exe"]/(1024.0*1024.0),2),
             LicenseUrl       = "https://www.xnview.com/en/license/",
@@ -685,10 +685,10 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name             = "FastStone Image Viewer",
-            Description      = "Быстрый и удобный просмотр изображений с базовыми функциями правки",
+            Description      = "Лёгкий, но мощный просмотрщик с функциями редактирования: кадрирование, коррекция цвета, ретушь и пакетная обработка. Поддерживает все популярные форматы, включая RAW, и создание PDF-галерей. Особенность — удобный режим полноэкранного просмотра.",
             ExecutablePath   = "FSViewerSetup80.exe",
             SizeMB           = Math.Round(fileSizes["FSViewerSetup80.exe"]/(1024.0*1024.0),2),
-            LicenseUrl       = "/D=",
+            LicenseUrl       = "https://documentation.help/FastStone-Image-Viewer-ru/License.htm",
             CustomParameters = new Dictionary<string,string>
             {
                 { "Тихая установка",       "/S" },
@@ -696,8 +696,46 @@ namespace WindSoftInstaller
                 { "Подавить сообщения",     "/SUPPRESSMSGBOXES" },
                 //{ "Папка установки",        "/D={InstallDir}" }
             },
-            ShortcutName        = "FastStone Image Viewer",
-            ShortcutRelativePath= "FSViewer.exe"
+            ShortcutName     = null
+            //ShortcutRelativePath= "FSViewer.exe"
+        },
+        new InstallableApp()
+        {
+            Name             = "VC++ 2013 Redistributable (x86)",
+            Description      = "Библиотеки CRT (VS2013)",
+            ExecutablePath   = "vcredist_x86.exe",
+            SizeMB           = Math.Round(fileSizes["vcredist_x86.exe"]/(1024.0*1024.0),2),
+            LicenseUrl       = "https://support.microsoft.com/kb/40784",
+            PathParameterKey = "/install /quiet /norestart",  // у этого пакета именно такая комбинация
+            CustomParameters = new Dictionary<string,string>{},
+            ShortcutName     = null
+        },
+        new InstallableApp()
+        {
+            Name             = "VC++ 2013 Redistributable (x64)",
+            Description      = "Библиотеки CRT (VS2013)",
+            ExecutablePath   = "vcredist_x64.exe",
+            SizeMB           = Math.Round(fileSizes["vcredist_x64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl       = "https://support.microsoft.com/kb/40784",
+            PathParameterKey = "/install /quiet /norestart",
+            CustomParameters = new Dictionary<string,string>(),
+            ShortcutName     = null
+        },
+        new InstallableApp()
+        {
+            Name               = "Marble",
+            Description        = "3D‑глобус и атлас на Qt аналог Google Earth, англоязычный",
+            ExecutablePath     = "Marble-setup_2.2.0-1_x64.exe",
+            SizeMB             = Math.Round(fileSizes["Marble-setup_2.2.0-1_x64.exe"]/(1024.0*1024.0), 2),
+            LicenseUrl         = "https://invent.kde.org/education/marble/-/blob/master/LICENSE.txt",
+            PathParameterKey   = "/DIR=",
+            CustomParameters   = new Dictionary<string,string>
+            {
+                { "Тихая установка", "/VERYSILENT" },
+                { "Без перезагрузки", "/NORESTART" }
+            },
+            ShortcutName       = "Marble Globe",
+            ShortcutRelativePath = "marble-qt.exe"
         },
 
     ];
