@@ -772,6 +772,33 @@ namespace WindSoftInstaller
             ShortcutName        = "Geany",
             ShortcutRelativePath = "bin\\geany.exe"
         },
+        new InstallableApp()
+        {
+            Name                 = "muCommander",
+            Description          = "Легкий кроссплатформенный файловый менеджер (GPL 2+)",
+            ExecutablePath       = "mucommander-1.5.2.msi",
+            SizeMB               = Math.Round(fileSizes["mucommander-1.5.2.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl           = "https://www.mucommander.com/license.shtml",
+            PathParameterKey     = "",
+            CustomParameters     = new Dictionary<string,string>
+            {
+                { "Тихая установка",       "/quiet" },
+                { "Без перезапуска",        "/norestart" },
+                { "Папка установки",        "INSTALLDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName         = null
+        },
+        new InstallableApp()
+        {
+            Name = "Double Commander",
+            Description = "Мощный двухпанельный файловый менеджер (GPL 3)",
+            ExecutablePath = "doublecmd.zip",
+            SizeMB = Math.Round(fileSizes["doublecmd.zip"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://doublecmd.sourceforge.io/license.html",
+            IsPortable = true,
+            ShortcutName = "Double Commander",
+            ShortcutRelativePath = "doublecmd.exe"
+        }
 
     ];
         }

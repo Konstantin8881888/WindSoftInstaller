@@ -395,7 +395,9 @@ namespace WindSoftInstaller
 
                 // 5.3.2-b. Спец-обработка для RivaTuner Statistics Server (NSIS) и FastStone Image Viewer (Inno Setup): всегда без кавычек
                 if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
-                    || app.Name.Equals("FastStone Image Viewer", StringComparison.OrdinalIgnoreCase))
+                    //|| app.Name.Equals("Double Commander", StringComparison.OrdinalIgnoreCase) 
+                    || app.Name.Equals("FastStone Image Viewer", StringComparison.OrdinalIgnoreCase)
+                    )
                 {
                     // просто /D=<путь> без оборачивания
                     argsList.Add(app.PathParameterKey + appInstallPath);
