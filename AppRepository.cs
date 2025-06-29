@@ -737,6 +737,41 @@ namespace WindSoftInstaller
             ShortcutName       = "Marble Globe",
             ShortcutRelativePath = "marble-qt.exe"
         },
+        new InstallableApp()
+        {
+            Name                = "Notepad++",
+            Description         = "Текстовый редактор с подсветкой синтаксиса для множества языков программирования и разметки. Отличается легкостью, поддержкой плагинов и удобными инструментами для работы с кодом — сравнением файлов, регулярными выражениями и макросами. Особенно полезен для быстрого редактирования и обработки текстовых данных.",
+            ExecutablePath      = "npp.8.8.Installer.x64.exe",
+            SizeMB              = Math.Round(fileSizes["npp.8.8.Installer.x64.exe"]/(1024.0*1024.0), 2),
+            LicenseUrl          = "https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE",
+            PathParameterKey    = "/D=",
+            CustomParameters    = new Dictionary<string,string>
+            {
+                { "Silent install", "/S" },
+                // Отключить авто­обновление, чтобы не тянуло из интернета
+                { "NoUpdater", "/noUpdater" },
+                { "Language", "-Lru" }
+            },
+            ShortcutName        = "Notepad++",
+            ShortcutRelativePath = "notepad++.exe"
+        },
+
+        new InstallableApp()
+        {
+            Name                = "Geany",
+            Description         = "Легковесный и быстрый текстовый редактор с базовыми функциями IDE, включая подсветку синтаксиса, автодополнение кода и простую навигацию по проекту. Поддерживает множество языков программирования, сохраняя при этом минималистичный интерфейс и низкое потребление ресурсов. Идеален для быстрого редактирования кода на разных платформах.",
+            ExecutablePath      = "geany-2.0_setup.exe",
+            SizeMB              = Math.Round(fileSizes["geany-2.0_setup.exe"]/(1024.0*1024.0), 2),
+            LicenseUrl          = "https://creativecommons.org/licenses/by-sa/4.0/",
+            PathParameterKey    = "/D=",
+            CustomParameters    = new Dictionary<string,string>
+            {
+                { "Silent install", "/S" },
+                { "Language", "/LANG=Russian" }
+            },
+            ShortcutName        = "Geany",
+            ShortcutRelativePath = "bin\\geany.exe"
+        },
 
     ];
         }
