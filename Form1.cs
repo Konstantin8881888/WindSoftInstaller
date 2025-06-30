@@ -1,11 +1,9 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
-using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SharpCompress.Archives;
@@ -19,6 +17,7 @@ namespace WindSoftInstaller
     {
         // Список приложений, загружаемый из AppRepository
         private readonly List<InstallableApp> apps = AppRepository.LoadApps();
+        private readonly Dictionary<string, InstallableApp> appLookup;
         private bool allSelected = false; // флаг для кнопки «Выбрать/Снять выделение»
         int dotCount = 0; // счётчик для анимации статуса «Установка...»
         private CancellationTokenSource? _cts; // Делаем nullable // источник токена отмены
@@ -31,6 +30,11 @@ namespace WindSoftInstaller
         {
             // Сначала инициализируем логгер
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            // Строим словарь для быстрого поиска по имени
+            appLookup = apps
+                .Where(a => !string.IsNullOrWhiteSpace(a.Name))
+                .ToDictionary(a => a.Name, StringComparer.OrdinalIgnoreCase);
+
             _logger.LogInformation("Form1 constructor: старт");
             InitializeComponent();
             // Проверка на null
@@ -43,12 +47,16 @@ namespace WindSoftInstaller
             try
             {
                 var assembly = Assembly.GetExecutingAssembly();
-                using var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico");
-                if (stream != null)
+                using (var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico"))
                 {
-                    this.Icon = new Icon(stream);
-                    this.ShowIcon = true;
-                    _logger.LogDebug("Иконка формы загружена из ресурсов");
+                    if (stream != null)
+                    {
+                        this.Icon?.Dispose();
+                        using (var ico = new Icon(stream))
+                            this.Icon = (Icon)ico.Clone();
+                        this.ShowIcon = true;
+                        _logger.LogDebug("Иконка формы загружена из manifest‑ресурса");
+                    }
                 }
             }
             catch (Exception ex)
@@ -58,10 +66,6 @@ namespace WindSoftInstaller
                 this.Icon = SystemIcons.Application;
             }
 
-            // Используем MemoryStream для конвертации byte[] в Icon
-            byte[] iconBytes = Properties.Resources.logo;
-            using var iconStream = new MemoryStream(iconBytes);
-            this.Icon = new Icon(iconStream);// Явное указание типа Icon
             // Восстанавливаем последний путь, если он задан
             var saved = Properties.Settings.Default.LastInstallPath;
             if (!string.IsNullOrWhiteSpace(saved) && Directory.Exists(saved))
@@ -76,6 +80,8 @@ namespace WindSoftInstaller
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Подписываемся на форматирование ячеек
+            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
             // Добавляем обработчик изменения значений
             dataGridViewPrograms.CellValueChanged += DataGridViewPrograms_CellValueChanged;
 
@@ -102,8 +108,11 @@ namespace WindSoftInstaller
                     {
                         // Если нашли файл, загружаем его
                         // Загружаем иконку и сохраняем в app.Icon
+                        //и гарантированно освобождаем старые Bitmap
                         using var ico = new Icon(icoPath);
-                        app.Icon = ico.ToBitmap();
+                        var bmp = ico.ToBitmap();
+                        app.Icon?.Dispose();
+                        app.Icon = bmp;
                         _logger.LogDebug("Иконка для {App} загружена из {Path}", app.Name, icoPath);
                     }
                     else
@@ -133,48 +142,66 @@ namespace WindSoftInstaller
         {
             _logger.LogDebug("Создаём ярлык {Shortcut} → {Target}", shortcutName, targetPath);
 
-            // Проверяем, что файл, на который ссылаемся, существует
+            // 1) Проверка существования целевого файла
             if (!File.Exists(targetPath))
             {
                 _logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", targetPath, shortcutName);
                 throw new FileNotFoundException($"Целевой файл для ярлыка не найден: {targetPath}");
             }
 
-            string? desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            // 2) Определяем путь к Рабочему столу
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             if (string.IsNullOrEmpty(desktopPath))
             {
                 _logger.LogError("Не удалось получить путь к рабочему столу.");
                 throw new InvalidOperationException("Не удалось получить путь к рабочему столу");
             }
+
             string shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
 
             object? shellObject = null;
             object? shortcutObject = null;
+            Type? shellType = null;
 
             try
             {
-                // Создаём COM-объект WScript.Shell для работы с ярлыками
-                Type? shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("COM-класс WScript.Shell не найден");
-                shellObject = Activator.CreateInstance(shellType);
-                if (shellObject == null)
+                // 3) Получаем COM‑тип WScript.Shell
+                shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType is null)
+                    throw new InvalidOperationException("COM‑класс WScript.Shell не найден");
+
+                // 4) Создаём экземпляр WScript.Shell
+                try
                 {
-                    throw new InvalidOperationException("Ошибка создания COM-объекта");
+                    shellObject = Activator.CreateInstance(shellType);
+                    if (shellObject is null)
+                        throw new InvalidOperationException("Ошибка создания COM‑объекта WScript.Shell");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка создания COM‑объекта WScript.Shell");
+                    throw;
                 }
 
                 dynamic shell = shellObject;
-                shortcutObject = shell.CreateShortcut(shortcutPath);
 
-                if (shortcutObject == null)
+                // 5) Создаём сам объект ярлыка
+                try
                 {
-                    throw new InvalidOperationException("Ошибка создания ярлыка");
+                    shortcutObject = shell.CreateShortcut(shortcutPath);
+                    if (shortcutObject is null)
+                        throw new InvalidOperationException("Ошибка создания объекта ярлыка");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Не удалось создать объект ярлыка через WScript.Shell");
+                    throw;
                 }
 
                 dynamic shortcut = shortcutObject;
-
                 shortcut.TargetPath = targetPath;
-                string? directory = Path.GetDirectoryName(targetPath);
-                shortcut.WorkingDirectory = directory;
-                shortcut.WindowStyle = 1; // обычный режим окна
+                shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath) ?? string.Empty;
+                shortcut.WindowStyle = 1;   // обычный режим
                 shortcut.Save();
 
                 _logger.LogInformation("Ярлык {Shortcut} успешно создан", shortcutName);
@@ -188,13 +215,13 @@ namespace WindSoftInstaller
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
+                // Не подавляем исключение дальше
             }
             finally
             {
-                // корректное освобождение COM-объектов
+                // Всегда освобождаем COM‑объекты, даже при ошибках
                 if (shortcutObject != null)
                     Marshal.ReleaseComObject(shortcutObject);
-
                 if (shellObject != null)
                     Marshal.ReleaseComObject(shellObject);
             }
@@ -242,7 +269,6 @@ namespace WindSoftInstaller
 
                 // 2. Создаём временную папку для распаковки (WSI_<GUID>)
                 tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
-                Directory.CreateDirectory(Path.GetDirectoryName(tempDir)!);
                 Directory.CreateDirectory(tempDir);
                 _logger.LogDebug("Создана временная папка: {TempDir}", tempDir);
 
@@ -308,6 +334,16 @@ namespace WindSoftInstaller
                         _logger.LogDebug("{App} — копирование portable EXE {File}", app.Name, Path.GetFileName(sourcePath));
                         File.Copy(sourcePath, destFile, overwrite: true);
                     }
+                    // Правка языка для MSI Afterburner
+                    if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string templateCfg = AppRepository.ExtractTemplate("MSIAfterburner.cfg", tempDir);
+                        string profilesDir = Path.Combine(targetDir, "Profiles");
+                        Directory.CreateDirectory(profilesDir);
+                        File.Copy(templateCfg,
+                                  Path.Combine(profilesDir, "MSIAfterburner.cfg"),
+                                  overwrite: true);
+                    }
 
                     // После распаковки создаём ярлык на главный exe
                     // 1) Определяем относительный путь к EXE
@@ -370,66 +406,8 @@ namespace WindSoftInstaller
                     }
                 }
 
-                // 5.3. Формируем аргументы для запуска инсталлятора
-                var argsList = new List<string>();
-
-                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.), подставляя {InstallDir} для MSI
-                foreach (var paramValue in app.CustomParameters.Values
-                    .Where(v => !string.IsNullOrWhiteSpace(v)))
-                {
-                    // Заменяем плейсхолдер {InstallDir} на реальный путь
-                    string p = paramValue.Replace("{InstallDir}", appInstallPath);
-                    argsList.Add(p.Trim());
-                }
-
-                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC
-                if (!isVlcInstaller
-                    && !string.IsNullOrWhiteSpace(app.PathParameterKey)
-                    && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
-                {
-                    string pathArg = app.PathParameterKey + appInstallPath;
-                    if (appInstallPath.Contains(' '))
-                        pathArg = $"{app.PathParameterKey}\"{appInstallPath}\"";
-                    argsList.Add(pathArg);
-                }
-
-                // 5.3.3. Склеиваем всё через пробел (никаких кавычек вокруг finalArgs!)
-                string finalArgs = string.Join(" ", argsList);
-
-                _logger.LogDebug("Формирование аргументов для \"{App}\": {Args}", app.Name, finalArgs);
-                // Если isVlcInstaller == true, finalArgs будет, например, "/S /L=ru"
-                // И VLC возьмёт путь из реестра, а не из /D=
-
-                // 5.4. Настраиваем ProcessStartInfo в зависимости от расширения файла
-                var startInfo = new ProcessStartInfo();
-                string extension = Path.GetExtension(sourcePath) ?? string.Empty;
-
-                // Если это MSI-файл (Chrome Enterprise MSI или Firefox Enterprise MSI)
-                if (extension.Equals(".msi", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Запускаем msiexec.exe
-                    startInfo.FileName = "msiexec.exe";
-
-                    // Собираем аргументы: /i "<путь_к_msi>" + всё из finalArgs,
-                    // где finalArgs уже содержит "/qn INSTALLDIR=\"<appInstallPath>\""
-                    startInfo.Arguments = $"/i \"{sourcePath}\" {finalArgs}";
-
-                    // Чтобы поднять права
-                    startInfo.UseShellExecute = true;
-                    startInfo.Verb = "runas";
-                    startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
-                }
-                else
-                {
-                    // Иначе — это обычный EXE (например, Opera, Shotcut, VSDC и т.д.)
-                    startInfo.FileName = sourcePath;
-                    startInfo.Arguments = finalArgs;
-
-                    // Права тоже требуются, если нужен UAC
-                    startInfo.UseShellExecute = true;
-                    startInfo.Verb = "runas";
-                    startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
-                }
+                var builder = new InstallerArgumentsBuilder(app, sourcePath, appInstallPath);
+                var startInfo = builder.BuildStartInfo();
 
                 _logger.LogDebug("Командная строка: {FileName} {Arguments}", startInfo.FileName, startInfo.Arguments);
 
@@ -443,110 +421,68 @@ namespace WindSoftInstaller
                         await process.WaitForExitAsync(token);
                         _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
                         exitCode = process.ExitCode; // Сохраняем код выхода
-                        // <<< Здесь добавляем создание ярлыка для LMMS >>>
-                        if (app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                                                     // После process.WaitForExitAsync(token) и до создания ярлыка
+                        if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
+                            && process.ExitCode == 0)
                         {
-                            // Предполагаем, что главный exe-файл называется "lmms.exe"
-                            string exePath = Path.Combine(appInstallPath, "lmms.exe");
+                            string templateCfg = AppRepository.ExtractTemplate("Config", tempDir);
+                            string profilesDir = Path.Combine(appInstallPath, "Profiles");
+                            Directory.CreateDirectory(profilesDir);
+                            File.Copy(templateCfg,
+                                      Path.Combine(profilesDir, "Config"),
+                                      overwrite: true);
+                        }
+
+                        // После await process.WaitForExitAsync(token) и перед удалением Temp-директории
+                        if (process.ExitCode == 0)
+                        {
+                            // 1) Удаляем MSI из папки установки, если он там оказался
+                            string installedMsi = Path.Combine(appInstallPath, Path.GetFileName(sourcePath));
+                            if (File.Exists(installedMsi))
+                            {
+                                try
+                                {
+                                    File.Delete(installedMsi);
+                                    _logger.LogDebug("Удалён установщик {Msi} из {Dir}", installedMsi, appInstallPath);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, "Не удалось удалить установщик {Msi}", installedMsi);
+                                }
+                            }
+
+                            // 2) Создаём ярлык на главный exe, беря относительный путь из ShortcutRelativePath
+                            if (!string.IsNullOrWhiteSpace(app.ShortcutRelativePath))
+                            {
+                                string exePath = Path.Combine(appInstallPath, app.ShortcutRelativePath);
+                                if (File.Exists(exePath))
+                                {
+                                    _logger.LogDebug("Создаём ярлык для {App}: {Exe}", app.Name, exePath);
+                                    CreateShortcut(exePath, app.ShortcutName ?? app.Name);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Не найден {Exe} для {App}", exePath, app.Name);
+                                }
+                            }
+                        }
+
+
+                        if (process.ExitCode == 0
+                            && ShortcutHelper.TryGetExeRelativePath(app.Name, out var exeRelativePath))
+                        {
+                            string exePath = Path.Combine(appInstallPath, exeRelativePath);
                             if (File.Exists(exePath))
                             {
-                                _logger.LogDebug("Создаём ярлык для LMMS: {ExePath}", exePath);
-                                CreateShortcut(exePath, "LMMS");
+                                _logger.LogDebug("Создаём ярлык для {App}: {Exe}", app.Name, exePath);
+                                CreateShortcut(exePath, app.ShortcutName ?? app.Name);
                             }
                             else
                             {
-                                _logger.LogWarning("Не удалось найти lmms.exe по пути {ExePath}", exePath);
+                                _logger.LogWarning("Не найден {RelExe} для {App} в {Dir}", exeRelativePath, app.Name, appInstallPath);
                             }
                         }
-                        // <<< Создание ярлыка для HandBrake >>>
-                        if (app.Name.Equals("HandBrake", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "HandBrake.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для HandBrake: {ExePath}", exePath);
-                                CreateShortcut(exePath, "HandBrake");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден HandBrake.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для Clementine >>>
-                        if (app.Name.Equals("Clementine", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "Clementine.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для Clementine: {ExePath}", exePath);
-                                CreateShortcut(exePath, "Clementine");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден Clementine.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для ClamWin >>>
-                        if (app.Name.Equals("ClamWin", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к ClamWin.exe (обычно находится в подкаталоге \bin)
-                            string exePath = Path.Combine(appInstallPath, "bin", "ClamWin.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для ClamWin: {ExePath}", exePath);
-                                CreateShortcut(exePath, "ClamWin");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден ClamWin.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для Cryptomator >>>
-                        if (app.Name.Equals("Cryptomator", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            string exePath = Path.Combine(appInstallPath, "Cryptomator.exe");
-                            if (!File.Exists(exePath))
-                                exePath = Path.Combine(appInstallPath, "bin", "Cryptomator.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для Cryptomator: {Exe}", exePath);
-                                CreateShortcut(exePath, "Cryptomator");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден Cryptomator.exe в {Dir}", appInstallPath);
-                            }
-                        }
-                        // <<< Создание ярлыка для KeePass >>>
-                        if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            string exePath = Path.Combine(appInstallPath, "KeePass.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для KeePass: {Exe}", exePath);
-                                CreateShortcut(exePath, "KeePass");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Файл KeePass.exe не найден в {Path}", appInstallPath);
-                            }
-                        }
-                        // <<< Создание ярлыка для UltraDefrag >>>
-                        if (app.Name.Equals("UltraDefrag", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            string exePath = Path.Combine(appInstallPath, "ufd.gui.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для UltraDefrag: {ExePath}", exePath);
-                                CreateShortcut(exePath, app.ShortcutName!);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден ufd.gui.exe по пути {ExePath}", exePath);
-                            }
-                        }
+
                     }
                     catch (OperationCanceledException)
                     {
@@ -649,7 +585,6 @@ namespace WindSoftInstaller
                     }
                 }
             }
-            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
         }
 
         private void ApplyKeePassConfiguration(string installPath)
@@ -678,12 +613,6 @@ namespace WindSoftInstaller
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "KeePass", "KeePass.config.xml"
                 );
-
-                if (!File.Exists(sourceConfig))
-                {
-                    _logger.LogWarning("Файл конфигурации KeePass не найден: {Path}", sourceConfig);
-                    return;
-                }
 
                 // Проверяем содержимое конфига (опционально)
                 string configContent = File.ReadAllText(sourceConfig);
@@ -717,37 +646,38 @@ namespace WindSoftInstaller
         }
 
         //Дополнительный чистильщик временной папки (на случай аварийного завершения)
-        private static void CleanupOldTemp(string installPath, ILogger<Form1> logger)
+        private static void CleanupOldTemp(string installPath, ILogger logger)
         {
             string tempRoot = Path.Combine(installPath, "Temp");
-            if (!Directory.Exists(tempRoot)) return;
+            if (!Directory.Exists(tempRoot))
+                return;
 
             logger.LogWarning("Обнаружены остаточные данные в папке Temp {tempRoot}", tempRoot);
-            foreach (var dir in Directory.GetDirectories(tempRoot, "WSI_*"))
+
+            // Удаляем все подпапки вида WSI_*
+            foreach (var dir in Directory.GetDirectories(tempRoot, "WSI_*", SearchOption.TopDirectoryOnly))
             {
-                try
-                {
-                    Directory.Delete(dir, recursive: true);
-                    logger.LogDebug("Временная папка удалена: {dir}", dir);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Ошибка удаления остаточной временной папки");
-                }
+                TryDeleteDirectory(dir, logger, $"Временная папка удалена: {dir}");
             }
 
-            // Пытаемся удалить саму папку Temp, если пустая
+            // Если после этого Temp пуст, удаляем саму папку
+            if (!Directory.EnumerateFileSystemEntries(tempRoot).Any())
+            {
+                TryDeleteDirectory(tempRoot, logger, $"Родительская временная папка удалена: {tempRoot}", recursive: false);
+            }
+        }
+
+        private static void TryDeleteDirectory(string path, ILogger logger, string successMessage = null, bool recursive = true)
+        {
             try
             {
-                if (!Directory.EnumerateFileSystemEntries(tempRoot).Any())
-                {
-                    Directory.Delete(tempRoot);
-                    logger.LogDebug("Родительская временная папка удалена: {tempRoot}", tempRoot);
-                }
+                Directory.Delete(path, recursive);
+                if (successMessage != null)
+                    logger.LogDebug(successMessage);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Не удалось удалить остаточную папку Temp");
+                logger.LogWarning(ex, "Не удалось удалить папку {Path}", path);
             }
         }
 
@@ -806,10 +736,6 @@ namespace WindSoftInstaller
                         FileName = app.LicenseUrl,
                         UseShellExecute = true
                     });
-                    if (app.LicenseUrl != null)
-                    {
-                        _logger.LogInformation("Ошибка открытия ссылки на лицензию {LicenseUrl}", app.LicenseUrl);
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -820,22 +746,6 @@ namespace WindSoftInstaller
                         MessageBoxIcon.Error);
                 }
             }
-        }
-
-        private void UpdateTotalSize()
-        {
-            double totalSize = 0;
-
-            foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
-            {
-                if (row.Cells["colSelect"].Value is true &&
-                    row.DataBoundItem is InstallableApp app)
-                {
-                    totalSize += app.SizeMB;
-                }
-            }
-
-            lblTotalSize.Text = $"Общий размер выбранных программ: {totalSize:N2} МБ";
         }
 
         private async void BtnInstall_Click(object sender, EventArgs e)
@@ -860,11 +770,41 @@ namespace WindSoftInstaller
                     return;
                 }
 
+                // Собираем из грида список выбранных приложений
                 var checkedApps = dataGridViewPrograms.Rows
                     .Cast<DataGridViewRow>()
                     .Where(r => Convert.ToBoolean(r.Cells["colSelect"].Value))
                     .Select(r => r.DataBoundItem as InstallableApp)
                     .ToList();
+
+
+                if (checkedApps.Any(a => a.Name == "Marble"))
+                {
+                    if (appLookup.TryGetValue("VC++ 2013 Redistributable (x86)", out var vc2013x86)
+                        && !checkedApps.Contains(vc2013x86))
+                    {
+                        checkedApps.Insert(0, vc2013x86);
+                    }
+                    if (appLookup.TryGetValue("VC++ 2013 Redistributable (x64)", out var vc2013x64)
+                        && !checkedApps.Contains(vc2013x64))
+                    {
+                        checkedApps.Insert(vc2013x86 != null ? 1 : 0, vc2013x64);
+                    }
+                }
+
+                if (checkedApps.Any(a => a.Name == "MSI Afterburner"))
+                {
+                    if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x86)", out var vc2015x86)
+                     && !checkedApps.Contains(vc2015x86))
+                    {
+                        checkedApps.Insert(0, vc2015x86);
+                    }
+                    if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x64)", out var vc2015x64)
+                     && !checkedApps.Contains(vc2015x64))
+                    {
+                        checkedApps.Insert(vc2015x86 != null ? 1 : 0, vc2015x64);
+                    }
+                }
 
                 if (checkedApps.Count == 0)
                 {
@@ -892,8 +832,10 @@ namespace WindSoftInstaller
                     }
 
                     _logger.LogInformation("Устанавливается {AppName} ({Index}/{Total})", app.Name, i + 1, total);
-                    lblStatus.Text = $"Устанавливается {app.Name} ({i + 1}/{total})";
-                    progressBar.Value = (int)(((i + 1f) / total) * 100);
+                    Invoke(() => {
+                        lblStatus.Text = $"Устанавливается {app.Name} ({i + 1}/{total})";
+                        progressBar.Value = (int)(((i + 1f) / total) * 100);
+                    });
 
                     try
                     {
@@ -976,7 +918,7 @@ namespace WindSoftInstaller
             // Обновляем сумму при изменении состояния чекбокса
             if (e.ColumnIndex == colSelect.Index && e.RowIndex >= 0)
             {
-                UpdateTotalSize();
+                CalculateAndShowTotalSize();
             }
         }
 
