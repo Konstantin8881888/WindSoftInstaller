@@ -515,7 +515,7 @@ namespace WindSoftInstaller
         },
         new InstallableApp()
         {
-            Name = "Microsoft VC++ 2015-2019 Redistributable (x64)",
+            Name = "Microsoft VC++ 2015-2022 Redistributable (x64)",
             Description = "Необходимые SxS-сборки для приложений на C++ (Afterburner, др.)",
             SizeMB = Math.Round(fileSizes["vc_redist.x64.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
@@ -529,7 +529,7 @@ namespace WindSoftInstaller
         },
         new InstallableApp()
         {
-          Name = "Microsoft VC++ 2015-2019 Redistributable (x86)",
+          Name = "Microsoft VC++ 2015-2022 Redistributable (x86)",
           Description = "SxS-библиотеки x86 для приложений на C++",
           ExecutablePath = "vc_redist.x86.exe",
           SizeMB = Math.Round(fileSizes["vc_redist.x86.exe"]/(1024.0*1024.0),2),

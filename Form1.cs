@@ -17,6 +17,7 @@ namespace WindSoftInstaller
     {
         // Список приложений, загружаемый из AppRepository
         private readonly List<InstallableApp> apps = AppRepository.LoadApps();
+        private readonly Dictionary<string, InstallableApp> appLookup;
         private bool allSelected = false; // флаг для кнопки «Выбрать/Снять выделение»
         int dotCount = 0; // счётчик для анимации статуса «Установка...»
         private CancellationTokenSource? _cts; // Делаем nullable // источник токена отмены
@@ -29,6 +30,11 @@ namespace WindSoftInstaller
         {
             // Сначала инициализируем логгер
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            // Строим словарь для быстрого поиска по имени
+            appLookup = apps
+                .Where(a => !string.IsNullOrWhiteSpace(a.Name))
+                .ToDictionary(a => a.Name, StringComparer.OrdinalIgnoreCase);
+
             _logger.LogInformation("Form1 constructor: старт");
             InitializeComponent();
             // Проверка на null
@@ -848,34 +854,30 @@ namespace WindSoftInstaller
 
                 if (checkedApps.Any(a => a.Name == "Marble"))
                 {
-                    // загружаем полный список из репозитория
-                    var allApps = AppRepository.LoadApps();
-
-                    // находим нужные пакеты
-                    var vc2013x86 = allApps.FirstOrDefault(a => a.Name == "VC++ 2013 Redistributable (x86)");
-                    var vc2013x64 = allApps.FirstOrDefault(a => a.Name == "VC++ 2013 Redistributable (x64)");
-
-                    // вставляем их в начало списка установки, если их там нет
-                    if (vc2013x86 != null && !checkedApps.Contains(vc2013x86))
+                    if (appLookup.TryGetValue("VC++ 2013 Redistributable (x86)", out var vc2013x86)
+                        && !checkedApps.Contains(vc2013x86))
+                    {
                         checkedApps.Insert(0, vc2013x86);
-                    if (vc2013x64 != null && !checkedApps.Contains(vc2013x64))
+                    }
+                    if (appLookup.TryGetValue("VC++ 2013 Redistributable (x64)", out var vc2013x64)
+                        && !checkedApps.Contains(vc2013x64))
+                    {
                         checkedApps.Insert(vc2013x86 != null ? 1 : 0, vc2013x64);
+                    }
                 }
 
                 if (checkedApps.Any(a => a.Name == "MSI Afterburner"))
                 {
-                    // загружаем полный список из репозитория
-                    var allApps = AppRepository.LoadApps();
-
-                    // находим нужные пакеты
-                    var vc2013x86 = allApps.FirstOrDefault(a => a.Name == "Microsoft VC++ 2015-2019 Redistributable (x86)");
-                    var vc2013x64 = allApps.FirstOrDefault(a => a.Name == "Microsoft VC++ 2015-2019 Redistributable (x64)");
-
-                    // вставляем их в начало списка установки, если их там нет
-                    if (vc2013x86 != null && !checkedApps.Contains(vc2013x86))
-                        checkedApps.Insert(0, vc2013x86);
-                    if (vc2013x64 != null && !checkedApps.Contains(vc2013x64))
-                        checkedApps.Insert(vc2013x86 != null ? 1 : 0, vc2013x64);
+                    if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x86)", out var vc2015x86)
+                     && !checkedApps.Contains(vc2015x86))
+                    {
+                        checkedApps.Insert(0, vc2015x86);
+                    }
+                    if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x64)", out var vc2015x64)
+                     && !checkedApps.Contains(vc2015x64))
+                    {
+                        checkedApps.Insert(vc2015x86 != null ? 1 : 0, vc2015x64);
+                    }
                 }
 
                 if (checkedApps.Count == 0)
