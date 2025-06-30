@@ -41,12 +41,16 @@ namespace WindSoftInstaller
             try
             {
                 var assembly = Assembly.GetExecutingAssembly();
-                using var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico");
-                if (stream != null)
+                using (var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico"))
                 {
-                    this.Icon = new Icon(stream);
-                    this.ShowIcon = true;
-                    _logger.LogDebug("Иконка формы загружена из ресурсов");
+                    if (stream != null)
+                    {
+                        this.Icon?.Dispose();
+                        using (var ico = new Icon(stream))
+                            this.Icon = (Icon)ico.Clone();
+                        this.ShowIcon = true;
+                        _logger.LogDebug("Иконка формы загружена из manifest‑ресурса");
+                    }
                 }
             }
             catch (Exception ex)
@@ -56,10 +60,6 @@ namespace WindSoftInstaller
                 this.Icon = SystemIcons.Application;
             }
 
-            // Используем MemoryStream для конвертации byte[] в Icon
-            byte[] iconBytes = Properties.Resources.logo;
-            using var iconStream = new MemoryStream(iconBytes);
-            this.Icon = new Icon(iconStream);// Явное указание типа Icon
             // Восстанавливаем последний путь, если он задан
             var saved = Properties.Settings.Default.LastInstallPath;
             if (!string.IsNullOrWhiteSpace(saved) && Directory.Exists(saved))
@@ -131,48 +131,66 @@ namespace WindSoftInstaller
         {
             _logger.LogDebug("Создаём ярлык {Shortcut} → {Target}", shortcutName, targetPath);
 
-            // Проверяем, что файл, на который ссылаемся, существует
+            // 1) Проверка существования целевого файла
             if (!File.Exists(targetPath))
             {
                 _logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", targetPath, shortcutName);
                 throw new FileNotFoundException($"Целевой файл для ярлыка не найден: {targetPath}");
             }
 
-            string? desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            // 2) Определяем путь к Рабочему столу
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             if (string.IsNullOrEmpty(desktopPath))
             {
                 _logger.LogError("Не удалось получить путь к рабочему столу.");
                 throw new InvalidOperationException("Не удалось получить путь к рабочему столу");
             }
+
             string shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
 
             object? shellObject = null;
             object? shortcutObject = null;
+            Type? shellType = null;
 
             try
             {
-                // Создаём COM-объект WScript.Shell для работы с ярлыками
-                Type? shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("COM-класс WScript.Shell не найден");
-                shellObject = Activator.CreateInstance(shellType);
-                if (shellObject == null)
+                // 3) Получаем COM‑тип WScript.Shell
+                shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType is null)
+                    throw new InvalidOperationException("COM‑класс WScript.Shell не найден");
+
+                // 4) Создаём экземпляр WScript.Shell
+                try
                 {
-                    throw new InvalidOperationException("Ошибка создания COM-объекта");
+                    shellObject = Activator.CreateInstance(shellType);
+                    if (shellObject is null)
+                        throw new InvalidOperationException("Ошибка создания COM‑объекта WScript.Shell");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка создания COM‑объекта WScript.Shell");
+                    throw;
                 }
 
                 dynamic shell = shellObject;
-                shortcutObject = shell.CreateShortcut(shortcutPath);
 
-                if (shortcutObject == null)
+                // 5) Создаём сам объект ярлыка
+                try
                 {
-                    throw new InvalidOperationException("Ошибка создания ярлыка");
+                    shortcutObject = shell.CreateShortcut(shortcutPath);
+                    if (shortcutObject is null)
+                        throw new InvalidOperationException("Ошибка создания объекта ярлыка");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Не удалось создать объект ярлыка через WScript.Shell");
+                    throw;
                 }
 
                 dynamic shortcut = shortcutObject;
-
                 shortcut.TargetPath = targetPath;
-                string? directory = Path.GetDirectoryName(targetPath);
-                shortcut.WorkingDirectory = directory;
-                shortcut.WindowStyle = 1; // обычный режим окна
+                shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath) ?? string.Empty;
+                shortcut.WindowStyle = 1;   // обычный режим
                 shortcut.Save();
 
                 _logger.LogInformation("Ярлык {Shortcut} успешно создан", shortcutName);
@@ -186,13 +204,13 @@ namespace WindSoftInstaller
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
+                // Не подавляем исключение дальше
             }
             finally
             {
-                // корректное освобождение COM-объектов
+                // Всегда освобождаем COM‑объекты, даже при ошибках
                 if (shortcutObject != null)
                     Marshal.ReleaseComObject(shortcutObject);
-
                 if (shellObject != null)
                     Marshal.ReleaseComObject(shellObject);
             }
@@ -785,10 +803,6 @@ namespace WindSoftInstaller
                         FileName = app.LicenseUrl,
                         UseShellExecute = true
                     });
-                    if (app.LicenseUrl != null)
-                    {
-                        _logger.LogInformation("Ошибка открытия ссылки на лицензию {LicenseUrl}", app.LicenseUrl);
-                    }
                 }
                 catch (Exception ex)
                 {
