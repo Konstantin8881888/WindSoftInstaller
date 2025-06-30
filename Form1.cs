@@ -108,8 +108,11 @@ namespace WindSoftInstaller
                     {
                         // Если нашли файл, загружаем его
                         // Загружаем иконку и сохраняем в app.Icon
+                        //и гарантированно освобождаем старые Bitmap
                         using var ico = new Icon(icoPath);
-                        app.Icon = ico.ToBitmap();
+                        var bmp = ico.ToBitmap();
+                        app.Icon?.Dispose();
+                        app.Icon = bmp;
                         _logger.LogDebug("Иконка для {App} загружена из {Path}", app.Name, icoPath);
                     }
                     else
@@ -266,7 +269,6 @@ namespace WindSoftInstaller
 
                 // 2. Создаём временную папку для распаковки (WSI_<GUID>)
                 tempDir = Path.Combine(installPath, "Temp", $"WSI_{Guid.NewGuid()}");
-                Directory.CreateDirectory(Path.GetDirectoryName(tempDir)!);
                 Directory.CreateDirectory(tempDir);
                 _logger.LogDebug("Создана временная папка: {TempDir}", tempDir);
 
@@ -404,85 +406,8 @@ namespace WindSoftInstaller
                     }
                 }
 
-                // 5.3. Формируем аргументы для запуска инсталлятора
-                var argsList = new List<string>();
-
-                // 5.3.1. Добавляем кастомные параметры ("/S", "/L=ru" и т.п.), подставляя {InstallDir} для MSI
-                foreach (var paramValue in app.CustomParameters.Values
-                    .Where(v => !string.IsNullOrWhiteSpace(v)))
-                {
-                    // Заменяем плейсхолдер {InstallDir} на реальный путь
-                    string p = paramValue.Replace("{InstallDir}", appInstallPath);
-                    argsList.Add(p.Trim());
-                }
-
-                // 5.3.2-b. Спец-обработка для RivaTuner Statistics Server (NSIS) и FastStone Image Viewer (Inno Setup): всегда без кавычек
-                if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
-                    //|| app.Name.Equals("Double Commander", StringComparison.OrdinalIgnoreCase) 
-                    || app.Name.Equals("FastStone Image Viewer", StringComparison.OrdinalIgnoreCase)
-                    )
-                {
-                    // просто /D=<путь> без оборачивания
-                    argsList.Add(app.PathParameterKey + appInstallPath);
-                }
-
-                // 5.3.2. Добавляем путь только для НЕ‑MSI и НЕ‑VLC и НЕ-RivaTuner Statistics Server и НЕ-FastStone Image Viewer
-                else if (!isVlcInstaller
-                    && !string.IsNullOrWhiteSpace(app.PathParameterKey)
-                    && !sourcePath.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
-                {
-                    string pathArg = app.PathParameterKey + appInstallPath;
-                    if (appInstallPath.Contains(' '))
-                        pathArg = $"{app.PathParameterKey}\"{appInstallPath}\"";
-                    argsList.Add(pathArg);
-                }
-
-                // 5.3.3. Склеиваем всё через пробел (никаких кавычек вокруг finalArgs!)
-                string finalArgs = string.Join(" ", argsList);
-
-                _logger.LogDebug("Формирование аргументов для \"{App}\": {Args}", app.Name, finalArgs);
-                // Если isVlcInstaller == true, finalArgs будет, например, "/S /L=ru"
-                // И VLC возьмёт путь из реестра, а не из /D=
-
-                // 5.4. Настраиваем ProcessStartInfo в зависимости от расширения файла
-                var startInfo = new ProcessStartInfo();
-                string extension = Path.GetExtension(sourcePath) ?? string.Empty;
-
-                if (extension.Equals(".msi", StringComparison.OrdinalIgnoreCase))
-                {
-                    startInfo.FileName = "msiexec.exe";
-
-                    // Для Calibre и для PDFsam Basic используем административную распаковку (/a)
-                    if (app.Name.Equals("Calibre", StringComparison.OrdinalIgnoreCase)
-                     || app.Name.Equals("PDFsam Basic", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // собираем все свойства из CustomParameters (в том числе TARGETDIR для PDFsam)
-                        var props = string.Join(" ",
-                            app.CustomParameters.Values.Select(p => p.Replace("{InstallDir}", appInstallPath).Trim()));
-
-                        // /a — административная распаковка, /qn — тихий режим
-                        startInfo.Arguments = $"/a \"{sourcePath}\" /qn {props}";
-                    }
-                    else
-                    {
-                        // обычная установка для всех остальных MSI
-                        startInfo.Arguments =
-                            $"/i \"{sourcePath}\" {finalArgs}";
-                    }
-
-                    startInfo.UseShellExecute = true;
-                    startInfo.Verb = "runas";
-                    startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
-                }
-                else
-                {
-                    // EXE-инсталляторы
-                    startInfo.FileName = sourcePath;
-                    startInfo.Arguments = finalArgs;
-                    startInfo.UseShellExecute = true;
-                    startInfo.Verb = "runas";
-                    startInfo.WorkingDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
-                }
+                var builder = new InstallerArgumentsBuilder(app, sourcePath, appInstallPath);
+                var startInfo = builder.BuildStartInfo();
 
                 _logger.LogDebug("Командная строка: {FileName} {Arguments}", startInfo.FileName, startInfo.Arguments);
 
@@ -721,37 +646,38 @@ namespace WindSoftInstaller
         }
 
         //Дополнительный чистильщик временной папки (на случай аварийного завершения)
-        private static void CleanupOldTemp(string installPath, ILogger<Form1> logger)
+        private static void CleanupOldTemp(string installPath, ILogger logger)
         {
             string tempRoot = Path.Combine(installPath, "Temp");
-            if (!Directory.Exists(tempRoot)) return;
+            if (!Directory.Exists(tempRoot))
+                return;
 
             logger.LogWarning("Обнаружены остаточные данные в папке Temp {tempRoot}", tempRoot);
-            foreach (var dir in Directory.GetDirectories(tempRoot, "WSI_*"))
+
+            // Удаляем все подпапки вида WSI_*
+            foreach (var dir in Directory.GetDirectories(tempRoot, "WSI_*", SearchOption.TopDirectoryOnly))
             {
-                try
-                {
-                    Directory.Delete(dir, recursive: true);
-                    logger.LogDebug("Временная папка удалена: {dir}", dir);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Ошибка удаления остаточной временной папки");
-                }
+                TryDeleteDirectory(dir, logger, $"Временная папка удалена: {dir}");
             }
 
-            // Пытаемся удалить саму папку Temp, если пустая
+            // Если после этого Temp пуст, удаляем саму папку
+            if (!Directory.EnumerateFileSystemEntries(tempRoot).Any())
+            {
+                TryDeleteDirectory(tempRoot, logger, $"Родительская временная папка удалена: {tempRoot}", recursive: false);
+            }
+        }
+
+        private static void TryDeleteDirectory(string path, ILogger logger, string successMessage = null, bool recursive = true)
+        {
             try
             {
-                if (!Directory.EnumerateFileSystemEntries(tempRoot).Any())
-                {
-                    Directory.Delete(tempRoot);
-                    logger.LogDebug("Родительская временная папка удалена: {tempRoot}", tempRoot);
-                }
+                Directory.Delete(path, recursive);
+                if (successMessage != null)
+                    logger.LogDebug(successMessage);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Не удалось удалить остаточную папку Temp");
+                logger.LogWarning(ex, "Не удалось удалить папку {Path}", path);
             }
         }
 
@@ -906,8 +832,10 @@ namespace WindSoftInstaller
                     }
 
                     _logger.LogInformation("Устанавливается {AppName} ({Index}/{Total})", app.Name, i + 1, total);
-                    lblStatus.Text = $"Устанавливается {app.Name} ({i + 1}/{total})";
-                    progressBar.Value = (int)(((i + 1f) / total) * 100);
+                    Invoke(() => {
+                        lblStatus.Text = $"Устанавливается {app.Name} ({i + 1}/{total})";
+                        progressBar.Value = (int)(((i + 1f) / total) * 100);
+                    });
 
                     try
                     {
