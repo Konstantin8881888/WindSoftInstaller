@@ -74,6 +74,8 @@ namespace WindSoftInstaller
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Подписываемся на форматирование ячеек
+            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
             // Добавляем обработчик изменения значений
             dataGridViewPrograms.CellValueChanged += DataGridViewPrograms_CellValueChanged;
 
@@ -652,7 +654,6 @@ namespace WindSoftInstaller
                     }
                 }
             }
-            dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
         }
 
         private void ApplyKeePassConfiguration(string installPath)
