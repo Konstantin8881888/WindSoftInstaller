@@ -775,10 +775,10 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name                 = "muCommander",
-            Description          = "Легкий кроссплатформенный файловый менеджер (GPL 2+)",
+            Description          = "Легкий кроссплатформенный файловый менеджер",
             ExecutablePath       = "mucommander-1.5.2.msi",
             SizeMB               = Math.Round(fileSizes["mucommander-1.5.2.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl           = "https://www.mucommander.com/license.shtml",
+            LicenseUrl           = "https://github.com/mucommander/mucommander/blob/master/LICENSE",
             PathParameterKey     = "",
             CustomParameters     = new Dictionary<string,string>
             {
@@ -791,15 +791,44 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "Double Commander",
-            Description = "Мощный двухпанельный файловый менеджер (GPL 3)",
+            Description = "Мощный двухпанельный файловый менеджер",
             ExecutablePath = "doublecmd.zip",
             SizeMB = Math.Round(fileSizes["doublecmd.zip"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://doublecmd.sourceforge.io/license.html",
             IsPortable = true,
             ShortcutName = "Double Commander",
             ShortcutRelativePath = "doublecmd.exe"
-        }
-
+        },
+        new InstallableApp()
+        {
+            Name = "Apache OpenOffice",
+            Description = "Бесплатный офисный пакет с открытым исходным кодом",
+            ExecutablePath = "Apache_OpenOffice_4.1.15_Win_x86_install_ru.exe",
+            SizeMB = Math.Round(fileSizes["Apache_OpenOffice_4.1.15_Win_x86_install_ru.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.openoffice.org/license.html",
+            PathParameterKey = "/D=",
+            CustomParameters = new Dictionary<string, string>
+            {
+                { "Тихая установка", "/S" },
+                { "Язык", "/L=ru" }
+            },
+            ShortcutName = "Apache OpenOffice"
+        },
+        new InstallableApp()
+        {
+            Name = "FreeOffice",
+            Description = "Бесплатный офисный пакет с полной совместимостью MS Office",
+            ExecutablePath = "freeoffice2024.msi", // Или актуальная версия
+            SizeMB = Math.Round(fileSizes["freeoffice2024.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.freeoffice.com/ru/eula",
+            CustomParameters = new Dictionary<string, string>
+            {
+                { "Тихая установка", "/qn" },
+                { "Путь установки", "TARGETDIR=\"{InstallDir}\"" },
+                { "Язык", "LANGUAGE=\"Russian\"" }
+            },
+            ShortcutName = "FreeOffice"
+        },
     ];
         }
 

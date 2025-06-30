@@ -1,12 +1,9 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
-using System.Text;
-using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using SharpCompress.Archives;
@@ -520,140 +517,21 @@ namespace WindSoftInstaller
                         }
 
 
-                        // <<< Здесь добавляем создание ярлыка для LMMS >>>
-                        if (app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
+                        if (process.ExitCode == 0
+                            && ShortcutHelper.TryGetExeRelativePath(app.Name, out var exeRelativePath))
                         {
-                            // Предполагаем, что главный exe-файл называется "lmms.exe"
-                            string exePath = Path.Combine(appInstallPath, "lmms.exe");
+                            string exePath = Path.Combine(appInstallPath, exeRelativePath);
                             if (File.Exists(exePath))
                             {
-                                _logger.LogDebug("Создаём ярлык для LMMS: {ExePath}", exePath);
-                                CreateShortcut(exePath, "LMMS");
+                                _logger.LogDebug("Создаём ярлык для {App}: {Exe}", app.Name, exePath);
+                                CreateShortcut(exePath, app.ShortcutName ?? app.Name);
                             }
                             else
                             {
-                                _logger.LogWarning("Не удалось найти lmms.exe по пути {ExePath}", exePath);
+                                _logger.LogWarning("Не найден {RelExe} для {App} в {Dir}", exeRelativePath, app.Name, appInstallPath);
                             }
                         }
-                        // <<< Создание ярлыка для HandBrake >>>
-                        if (app.Name.Equals("HandBrake", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "HandBrake.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для HandBrake: {ExePath}", exePath);
-                                CreateShortcut(exePath, "HandBrake");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден HandBrake.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для Clementine >>>
-                        if (app.Name.Equals("Clementine", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "Clementine.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для Clementine: {ExePath}", exePath);
-                                CreateShortcut(exePath, "Clementine");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден Clementine.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для ClamWin >>>
-                        if (app.Name.Equals("ClamWin", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к ClamWin.exe (обычно находится в подкаталоге \bin)
-                            string exePath = Path.Combine(appInstallPath, "bin", "ClamWin.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для ClamWin: {ExePath}", exePath);
-                                CreateShortcut(exePath, "ClamWin");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден ClamWin.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для Cryptomator >>>
-                        if (app.Name.Equals("Cryptomator", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            string exePath = Path.Combine(appInstallPath, "Cryptomator.exe");
-                            if (!File.Exists(exePath))
-                                exePath = Path.Combine(appInstallPath, "bin", "Cryptomator.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для Cryptomator: {Exe}", exePath);
-                                CreateShortcut(exePath, "Cryptomator");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден Cryptomator.exe в {Dir}", appInstallPath);
-                            }
-                        }
-                        // <<< Создание ярлыка для KeePass >>>
-                        if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            string exePath = Path.Combine(appInstallPath, "KeePass.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для KeePass: {Exe}", exePath);
-                                CreateShortcut(exePath, "KeePass");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Файл KeePass.exe не найден в {Path}", appInstallPath);
-                            }
-                        }
-                        // <<< Создание ярлыка для UltraDefrag >>>
-                        if (app.Name.Equals("UltraDefrag", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            string exePath = Path.Combine(appInstallPath, "ufd.gui.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для UltraDefrag: {ExePath}", exePath);
-                                CreateShortcut(exePath, app.ShortcutName!);
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден ufd.gui.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для RivaTuner Statistics Server >>>
-                        if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "RTSS.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для RivaTuner Statistics Server: {ExePath}", exePath);
-                                CreateShortcut(exePath, "RivaTuner Statistics Server");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден RTSS.exe по пути {ExePath}", exePath);
-                            }
-                        }
-                        // <<< Создание ярлыка для Zotero >>>
-                        if (app.Name.Equals("Zotero", StringComparison.OrdinalIgnoreCase) && process.ExitCode == 0)
-                        {
-                            // Путь к exe в папке установки
-                            string exePath = Path.Combine(appInstallPath, "zotero.exe");
-                            if (File.Exists(exePath))
-                            {
-                                _logger.LogDebug("Создаём ярлык для Zotero: {ExePath}", exePath);
-                                CreateShortcut(exePath, "Zotero");
-                            }
-                            else
-                            {
-                                _logger.LogWarning("Не найден zotero.exe по пути {ExePath}", exePath);
-                            }
-                        }
+
                     }
                     catch (OperationCanceledException)
                     {
@@ -785,12 +663,6 @@ namespace WindSoftInstaller
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "KeePass", "KeePass.config.xml"
                 );
-
-                if (!File.Exists(sourceConfig))
-                {
-                    _logger.LogWarning("Файл конфигурации KeePass не найден: {Path}", sourceConfig);
-                    return;
-                }
 
                 // Проверяем содержимое конфига (опционально)
                 string configContent = File.ReadAllText(sourceConfig);
