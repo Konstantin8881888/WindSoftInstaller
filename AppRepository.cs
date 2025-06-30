@@ -623,8 +623,7 @@ namespace WindSoftInstaller
             {
                 { "Silent", "/S" }
             },
-            ShortcutName        = "Zotero",
-            ShortcutRelativePath= "zotero.exe"
+            ShortcutName        = null
         },
         new InstallableApp()
         {

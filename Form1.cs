@@ -801,22 +801,6 @@ namespace WindSoftInstaller
             }
         }
 
-        private void UpdateTotalSize()
-        {
-            double totalSize = 0;
-
-            foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
-            {
-                if (row.Cells["colSelect"].Value is true &&
-                    row.DataBoundItem is InstallableApp app)
-                {
-                    totalSize += app.SizeMB;
-                }
-            }
-
-            lblTotalSize.Text = $"Общий размер выбранных программ: {totalSize:N2} МБ";
-        }
-
         private async void BtnInstall_Click(object sender, EventArgs e)
         {
             _logger.LogInformation("Нажата кнопка «Установить»");
@@ -989,7 +973,7 @@ namespace WindSoftInstaller
             // Обновляем сумму при изменении состояния чекбокса
             if (e.ColumnIndex == colSelect.Index && e.RowIndex >= 0)
             {
-                UpdateTotalSize();
+                CalculateAndShowTotalSize();
             }
         }
 
