@@ -47,16 +47,14 @@ namespace WindSoftInstaller
             try
             {
                 var assembly = Assembly.GetExecutingAssembly();
-                using (var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico"))
+                using var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico");
+                if (stream != null)
                 {
-                    if (stream != null)
-                    {
-                        this.Icon?.Dispose();
-                        using (var ico = new Icon(stream))
-                            this.Icon = (Icon)ico.Clone();
-                        this.ShowIcon = true;
-                        _logger.LogDebug("Иконка формы загружена из manifest‑ресурса");
-                    }
+                    this.Icon?.Dispose();
+                    using (var ico = new Icon(stream))
+                        this.Icon = (Icon)ico.Clone();
+                    this.ShowIcon = true;
+                    _logger.LogDebug("Иконка формы загружена из manifest‑ресурса");
                 }
             }
             catch (Exception ex)

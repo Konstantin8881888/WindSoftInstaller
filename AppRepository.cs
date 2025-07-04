@@ -706,7 +706,7 @@ namespace WindSoftInstaller
             SizeMB           = Math.Round(fileSizes["vcredist_x86.exe"]/(1024.0*1024.0),2),
             LicenseUrl       = "https://support.microsoft.com/kb/40784",
             PathParameterKey = "/install /quiet /norestart",  // у этого пакета именно такая комбинация
-            CustomParameters = new Dictionary<string,string>{},
+            CustomParameters = [],
             ShortcutName     = null
         },
         new InstallableApp()
@@ -717,7 +717,7 @@ namespace WindSoftInstaller
             SizeMB           = Math.Round(fileSizes["vcredist_x64.exe"]/(1024.0*1024.0),2),
             LicenseUrl       = "https://support.microsoft.com/kb/40784",
             PathParameterKey = "/install /quiet /norestart",
-            CustomParameters = new Dictionary<string,string>(),
+            CustomParameters = [],
             ShortcutName     = null
         },
         new InstallableApp()

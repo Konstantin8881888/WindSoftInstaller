@@ -13,8 +13,7 @@ namespace WindSoftInstaller
             ["Cryptomator"] = "Cryptomator.exe",
             ["KeePass"] = "KeePass.exe",
             ["UltraDefrag"] = "ufd.gui.exe",
-            ["RivaTuner Statistics Server"] = "RTSS.exe",
-            //["Zotero"] = "zotero.exe"
+            ["RivaTuner Statistics Server"] = "RTSS.exe"
         };
 
         // Если для данного имени приложения известно имя exe, возвращает полный путь и имя для ярлыка. Иначе — null.
