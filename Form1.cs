@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 using File = System.IO.File;
+using System.IO.Compression;
 
 namespace WindSoftInstaller
 {
@@ -307,6 +308,36 @@ namespace WindSoftInstaller
                             Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                             entry.WriteToFile(outPath, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                         }
+                        // 1) Логируем все EXE в корне целевой папки
+                        var exeFiles = Directory.GetFiles(targetDir, "*.exe", SearchOption.TopDirectoryOnly);
+                        _logger.LogDebug("Portable OpenOffice — найдены exe в {Dir}: {List}",
+                                         targetDir,
+                                         string.Join(", ", exeFiles.Select(Path.GetFileName)));
+
+                        // 2) Фильтруем только те, что начинаются с OpenOffice и заканчиваются на Portable.exe
+                        exeFiles = exeFiles
+                            .Where(f => Path.GetFileName(f).StartsWith("OpenOffice", StringComparison.OrdinalIgnoreCase)
+                                     && Path.GetFileName(f).EndsWith("Portable.exe", StringComparison.OrdinalIgnoreCase))
+                            .ToArray();
+
+                        _logger.LogDebug("Portable OpenOffice — после фильтра {Count}: {List}",
+                                         exeFiles.Length,
+                                         string.Join(", ", exeFiles.Select(Path.GetFileName)));
+
+                        // 3) На каждый EXE создаём ярлык
+                        foreach (var exe in exeFiles)
+                        {
+                            string fn = Path.GetFileNameWithoutExtension(exe) // "OpenOfficeCalcPortable"
+                                            .Replace("OpenOffice", "")
+                                            .Replace("Portable", "")
+                                            .Trim();
+                            if (string.IsNullOrEmpty(fn)) fn = "Main";
+                            string label = $"{app.ShortcutName} {fn}";
+                            _logger.LogDebug("Создаём ярлык {Label} → {Exe}", label, exe);
+                            CreateShortcut(exe, label);
+                        }
+
+                        return;
                     }
                     else if (app.Name.Equals("Bitwarden", StringComparison.OrdinalIgnoreCase))
                     {

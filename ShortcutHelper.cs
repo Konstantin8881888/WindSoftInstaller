@@ -1,5 +1,4 @@
 ﻿
-
 namespace WindSoftInstaller
 {
     internal static class ShortcutHelper

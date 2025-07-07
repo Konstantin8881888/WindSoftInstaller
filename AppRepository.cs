@@ -335,22 +335,6 @@ namespace WindSoftInstaller
         },
         new()
         {
-            Name = "LibreOffice",
-            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
-            ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
-            SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
-            // PathParameterKey не нужен для MSI‑разветвления ???
-            PathParameterKey = "", // MSI не использует /D=
-                    CustomParameters =
-            {
-                { "Quiet",      "/qn" },
-                { "Components", "ADDLOCAL=ALL" },
-                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
-            }
-        },
-        new()
-        {
             Name = "PDF‑XChange Editor",
             Description = "PDF‑редактор с аннотациями и редактированием текста",
             ExecutablePath = "PDF-XChangex64.msi",
@@ -769,7 +753,7 @@ namespace WindSoftInstaller
                 { "Language", "/LANG=Russian" }
             },
             ShortcutName        = "Geany",
-            ShortcutRelativePath = "bin\\geany.exe"
+            //ShortcutRelativePath = "bin\\geany.exe"
         },
         new InstallableApp()
         {
@@ -798,36 +782,50 @@ namespace WindSoftInstaller
             ShortcutName = "Double Commander",
             ShortcutRelativePath = "doublecmd.exe"
         },
-        new InstallableApp()
+        new()
         {
-            Name = "Apache OpenOffice",
-            Description = "Бесплатный офисный пакет с открытым исходным кодом",
-            ExecutablePath = "Apache_OpenOffice_4.1.15_Win_x86_install_ru.exe",
-            SizeMB = Math.Round(fileSizes["Apache_OpenOffice_4.1.15_Win_x86_install_ru.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.openoffice.org/license.html",
-            PathParameterKey = "/D=",
-            CustomParameters = new Dictionary<string, string>
+            Name = "LibreOffice",
+            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
+            ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
+            SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
+            // PathParameterKey не нужен для MSI‑разветвления ???
+            PathParameterKey = "", // MSI не использует /D=
+                    CustomParameters =
             {
-                { "Тихая установка", "/S" },
-                { "Язык", "/L=ru" }
-            },
-            ShortcutName = "Apache OpenOffice"
+                { "Quiet",      "/qn" },
+                { "Components", "ADDLOCAL=ALL" },
+                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
+            }
         },
         new InstallableApp()
         {
-            Name = "FreeOffice",
-            Description = "Бесплатный офисный пакет с полной совместимостью MS Office",
-            ExecutablePath = "freeoffice2024.msi", // Или актуальная версия
-            SizeMB = Math.Round(fileSizes["freeoffice2024.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.freeoffice.com/ru/eula",
-            CustomParameters = new Dictionary<string, string>
-            {
-                { "Тихая установка", "/qn" },
-                { "Путь установки", "TARGETDIR=\"{InstallDir}\"" },
-                { "Язык", "LANGUAGE=\"Russian\"" }
-            },
-            ShortcutName = "FreeOffice"
+            Name                  = "Apache OpenOffice Portable",
+            Description           = "Офисный пакет с открытым кодом, включающий текстовый редактор, таблицы, презентации и СУБД. Совместим с форматами Microsoft Office, но использует стандарт ODF. Особенность — работа без подписки и поддержка макросов, хотя интерфейс выглядит устаревшим. Подходит для базовых задач.",
+            ExecutablePath        = "ApacheOpenOfficePortable.zip",
+            SizeMB                = Math.Round(fileSizes["ApacheOpenOfficePortable.zip"] / (1024.0 * 1024.0), 2),
+            LicenseUrl            = "https://portableapps.com/about/legal",
+            IsPortable            = true,
+            ShortcutName          = "OpenOffice",
+            ShortcutRelativePath  = "OpenOfficeBasePortable.exe"
+
         },
+        //new InstallableApp()
+        //{
+        //    Name = "FreeOffice",
+        //    Description = "Бесплатный офисный пакет с полной совместимостью MS Office",
+        //    ExecutablePath = "freeoffice2024.msi",
+        //    SizeMB = Math.Round(fileSizes["freeoffice2024.msi"] / (1024.0 * 1024.0), 2),
+        //    LicenseUrl = "https://www.freeoffice.com/ru/eula",
+        //    PathParameterKey = "",
+        //    CustomParameters = new Dictionary<string, string>
+        //    {
+        //        { "Тихая установка", "/qn" },
+        //        { "Путь установки", $"INSTALLDIR=\"{{InstallDir}}\"" },
+        //        { "Язык", "LANGUAGE=\"Russian\"" }
+        //    },
+        //    ShortcutName = "FreeOffice"
+        //},
     ];
         }
 
