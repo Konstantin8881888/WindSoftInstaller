@@ -166,7 +166,7 @@ namespace WindSoftInstaller
                 ReadOnly = true,
                 BorderStyle = BorderStyle.None,
                 BackColor = this.BackColor,
-                Text = "ETH: 0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
+                Text = "ETH (ERC20): 0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
                 Location = new Point(left, txtBtc.Bottom + vGap),
                 Width = 400
             };

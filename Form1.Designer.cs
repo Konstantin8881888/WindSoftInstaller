@@ -310,7 +310,7 @@ namespace WindSoftInstaller
             this.lblDonate.Name = "lblDonate";
             this.lblDonate.Size = new System.Drawing.Size(225, 15);
             this.lblDonate.TabIndex = 6;
-            this.lblDonate.Text = "Поддержать проект (BTC и ETH адреса):";
+            this.lblDonate.Text = "Поддержать проект (BTC и ETH (ERC20) адреса):";
             lblDonate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             this.Controls.Add(this.lblDonate);
             // Логируем создание и добавление Label lblDonate

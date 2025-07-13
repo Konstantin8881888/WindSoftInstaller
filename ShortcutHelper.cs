@@ -13,6 +13,12 @@ namespace WindSoftInstaller
             ["KeePass"] = "KeePass.exe",
             ["UltraDefrag"] = "ufd.gui.exe",
             ["RivaTuner Statistics Server"] = "RTSS.exe"
+            //["Double Commander"] = "doublecmd.exe",
+            //["Emsisoft Emergency Kit"] = "Start Scanner.exe",
+            //["Kiwix Desktop"] = "kiwix-desktop.exe",
+            //["MSI Afterburner"] = "MSIAfterburner.exe",
+            //["PCSX2"] = "pcsx2-qt.exe",
+            //["RetroArch"] = "retroarch.exe"
         };
 
         // Если для данного имени приложения известно имя exe, возвращает полный путь и имя для ярлыка. Иначе — null.

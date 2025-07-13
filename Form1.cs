@@ -10,6 +10,7 @@ using SharpCompress.Archives;
 using SharpCompress.Common;
 using File = System.IO.File;
 using System.IO.Compression;
+using System.Xml.Linq;
 
 namespace WindSoftInstaller
 {
@@ -301,43 +302,54 @@ namespace WindSoftInstaller
                     if (ext == ".zip" || ext == ".7z")
                     {
                         _logger.LogDebug("{App} — распаковка архива {Zip}", app.Name, Path.GetFileName(sourcePath));
-                        using var archive = ArchiveFactory.Open(sourcePath);
-                        foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
-                        {
+                               using var archive = ArchiveFactory.Open(sourcePath);
+                               foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                                   {
                             string outPath = Path.Combine(targetDir, entry.Key);
                             Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                             entry.WriteToFile(outPath, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
-                        }
-                        // 1) Логируем все EXE в корне целевой папки
-                        var exeFiles = Directory.GetFiles(targetDir, "*.exe", SearchOption.TopDirectoryOnly);
-                        _logger.LogDebug("Portable OpenOffice — найдены exe в {Dir}: {List}",
-                                         targetDir,
-                                         string.Join(", ", exeFiles.Select(Path.GetFileName)));
-
-                        // 2) Фильтруем только те, что начинаются с OpenOffice и заканчиваются на Portable.exe
-                        exeFiles = exeFiles
-                            .Where(f => Path.GetFileName(f).StartsWith("OpenOffice", StringComparison.OrdinalIgnoreCase)
-                                     && Path.GetFileName(f).EndsWith("Portable.exe", StringComparison.OrdinalIgnoreCase))
-                            .ToArray();
-
-                        _logger.LogDebug("Portable OpenOffice — после фильтра {Count}: {List}",
-                                         exeFiles.Length,
-                                         string.Join(", ", exeFiles.Select(Path.GetFileName)));
-
-                        // 3) На каждый EXE создаём ярлык
-                        foreach (var exe in exeFiles)
-                        {
-                            string fn = Path.GetFileNameWithoutExtension(exe) // "OpenOfficeCalcPortable"
-                                            .Replace("OpenOffice", "")
-                                            .Replace("Portable", "")
-                                            .Trim();
-                            if (string.IsNullOrEmpty(fn)) fn = "Main";
-                            string label = $"{app.ShortcutName} {fn}";
-                            _logger.LogDebug("Создаём ярлык {Label} → {Exe}", label, exe);
-                            CreateShortcut(exe, label);
-                        }
-
-                        return;
+                                   }
+                        
+                               // Если это именно OpenOffice Portable — уходим в его детальную ветку
+                               if (app.Name.Equals("Apache OpenOffice Portable", StringComparison.OrdinalIgnoreCase))
+                                   {
+                            var exeFiles = Directory.GetFiles(targetDir, "*.exe", SearchOption.TopDirectoryOnly)
+                                                               .Where(f => Path.GetFileName(f).StartsWith("OpenOffice", StringComparison.OrdinalIgnoreCase)
+                                                                        && Path.GetFileName(f).EndsWith("Portable.exe", StringComparison.OrdinalIgnoreCase))
+                                                               .ToArray();
+                            _logger.LogDebug("OpenOffice Portable — найдено модулей: {Count}", exeFiles.Length);
+                                       foreach (var exe in exeFiles)
+                                           {
+                                var name = Path.GetFileNameWithoutExtension(exe)
+                                                             .Replace("OpenOffice", "")
+                                                             .Replace("Portable", "")
+                                                             .Trim();
+                                               if (string.IsNullOrEmpty(name)) name = "Main";
+                                var label = $"{app.ShortcutName} {name}";
+                                _logger.LogDebug("→ Создаём ярлык {Label}", label);
+                                CreateShortcut(exe, label);
+                                           }
+                                       return;
+                                   }
+                        
+                               // Общий поток для всех других портативных программ
+                               // 1) Ищем exe по ShortcutRelativePath (рекурсивно)
+                        string exePath = Directory.GetFiles(targetDir, app.ShortcutRelativePath ?? string.Empty, SearchOption.AllDirectories)
+                                                .FirstOrDefault()
+                                                // если ShortcutRelativePath не задано или не найдено — берём первый exe
+                                                ?? Directory.GetFiles(targetDir, "*.exe", SearchOption.AllDirectories).FirstOrDefault()
+                                                ?? string.Empty;
+                        
+                               if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                                   {
+                            _logger.LogDebug("Создаём ярлык для {App}: {Exe}", app.Name, exePath);
+                            CreateShortcut(exePath, app.ShortcutName!);
+                                   }
+                               else
+                                   {
+                            _logger.LogWarning("Не найден exe для портативной программы {App}", app.Name);
+                                   }
+                               return;
                     }
                     else if (app.Name.Equals("Bitwarden", StringComparison.OrdinalIgnoreCase))
                     {
