@@ -9,8 +9,6 @@ using Microsoft.Win32;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 using File = System.IO.File;
-using System.IO.Compression;
-using System.Xml.Linq;
 
 namespace WindSoftInstaller
 {
@@ -461,9 +459,23 @@ namespace WindSoftInstaller
                     {
                         await process.WaitForExitAsync(token);
                         _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
-                        exitCode = process.ExitCode; // Сохраняем код выхода
-                                                     // После process.WaitForExitAsync(token) и до создания ярлыка
+                        exitCode = process.ExitCode; // Сохраняем код выхода После process.WaitForExitAsync(token) и до создания ярлыка
+                        // глушим автозапуск HWMonitor
                         if (app.Name.Equals("HWMonitor", StringComparison.OrdinalIgnoreCase))
+                        {
+                            foreach (var proc in Process.GetProcessesByName("HWiNFO64"))
+                            {
+                                try
+                                {
+                                    _logger.LogDebug("Останавливаем запущенный HWMonitor (PID={Id})", proc.Id);
+                                    proc.Kill(true);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, "Не удалось убить процесс HWMonitor PID={Id}", proc.Id);
+                                }
+                            }
+                        }
                         if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
                             && process.ExitCode == 0)
                         {
@@ -725,12 +737,49 @@ namespace WindSoftInstaller
 
         private void BtnToggleSelection_Click(object sender, EventArgs e)
         {
+            bool chromeRequested = false;
+            DialogResult chromeDialogResult = DialogResult.None;
+
             foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
-                row.Cells["colSelect"].Value = !allSelected;
+            {
+                if (row.DataBoundItem is InstallableApp app)
+                {
+                    if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!allSelected) // если сейчас снимаем выделение — не спрашиваем
+                        {
+                            chromeRequested = true;
+                            continue; // временно пропускаем, обработаем позже
+                        }
+                    }
+
+                    row.Cells["colSelect"].Value = !allSelected;
+                }
+            }
+
+            // Отдельно обрабатываем Chrome, если он был найден и мы сейчас выделяем всё
+            if (!allSelected && chromeRequested)
+            {
+                chromeDialogResult = MessageBox.Show(
+                    "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
+                    "Ограничение установки Chrome",
+                    MessageBoxButtons.OKCancel,
+                    MessageBoxIcon.Warning
+                );
+
+                foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
+                {
+                    if (row.DataBoundItem is InstallableApp app &&
+                        app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase))
+                    {
+                        row.Cells["colSelect"].Value = chromeDialogResult == DialogResult.OK;
+                        break;
+                    }
+                }
+            }
 
             allSelected = !allSelected;
             btnToggleSelection.Text = allSelected ? "Снять выделение" : "Выбрать все";
-            // Обновляем сумму
             CalculateAndShowTotalSize();
         }
 
@@ -758,11 +807,39 @@ namespace WindSoftInstaller
             // Обрабатываем клик только по колонке с чекбоксом
             if (e.RowIndex >= 0 && e.ColumnIndex == colSelect.Index)
             {
-                // Обновляем значение чекбокса
-                var cell = dataGridViewPrograms.Rows[e.RowIndex].Cells[e.ColumnIndex];
-                cell.Value = !(cell.Value is bool val && val);
+                var row = dataGridViewPrograms.Rows[e.RowIndex];
+                var cell = row.Cells[e.ColumnIndex];
+                if (row.DataBoundItem is not InstallableApp app) return;
 
-                // Обновляем сумму
+                // Получаем текущее значение до клика
+                bool currentValue = cell.Value is bool val && val;
+
+                // Chrome — особая проверка при попытке включения
+                if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase) && !currentValue)
+                {
+                    var result = MessageBox.Show(
+                        "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
+                        "Ограничение установки Chrome",
+                        MessageBoxButtons.OKCancel,
+                        MessageBoxIcon.Warning
+                    );
+
+                    if (result == DialogResult.Cancel)
+                    {
+                        // Принудительно отменяем автоматическую установку галочки
+                        dataGridViewPrograms.CancelEdit();
+                        cell.Value = false; // На всякий случай
+                        return;
+                    }
+                }
+
+                // Принудительно завершаем текущее редактирование
+                dataGridViewPrograms.CommitEdit(DataGridViewDataErrorContexts.Commit);
+
+                // Инвертируем значение вручную
+                cell.Value = !currentValue;
+
+                // Обновляем сумму выбранных
                 CalculateAndShowTotalSize();
             }
 
