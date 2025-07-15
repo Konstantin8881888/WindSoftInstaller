@@ -463,6 +463,7 @@ namespace WindSoftInstaller
                         _logger.LogDebug("{App} процесс завершён с кодом {Code}", app.Name, process.ExitCode);
                         exitCode = process.ExitCode; // Сохраняем код выхода
                                                      // После process.WaitForExitAsync(token) и до создания ярлыка
+                        if (app.Name.Equals("HWMonitor", StringComparison.OrdinalIgnoreCase))
                         if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
                             && process.ExitCode == 0)
                         {
