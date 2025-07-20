@@ -231,7 +231,7 @@ namespace WindSoftInstaller
             progressBar.Location = new Point(1, 505);
             progressBar.Margin = new Padding(4, 3, 4, 3);
             progressBar.Name = "progressBar";
-            progressBar.Size = new Size(933, 27);
+            progressBar.Size = new Size(100, 27);
             progressBar.TabIndex = 2;
             progressBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             // Логируем создание и добавление ProgressBar
@@ -353,6 +353,8 @@ namespace WindSoftInstaller
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1100, 660);
+            // Коррекция ширины ProgressBar после установки ClientSize
+            progressBar.Width = (this.ClientSize.Width - 3); // Растягиваем на всю ширину минус 3 для красоты.
             Controls.Add(lblStatus);
             Controls.Add(progressBar);
             Controls.Add(btnInstall);
