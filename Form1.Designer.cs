@@ -295,8 +295,10 @@ namespace WindSoftInstaller
             int bottomY = btnToggleSelection.Location.Y - 5;
 
             dataGridViewPrograms.Location = new Point(1, gridY);
-            dataGridViewPrograms.Size = new Size(1068, bottomY - gridY);
-            dataGridViewPrograms.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            // Временно задаем небольшую ширину - будет обновлено позже
+            dataGridViewPrograms.Width = 100;
+            dataGridViewPrograms.Height = bottomY - gridY;
+            dataGridViewPrograms.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             this.Controls.Add(this.dataGridViewPrograms);// Логируем позиционирование и размер DataGridView
             _logger.LogDebug("DataGridView location set to {Location}, size={Size}",
             dataGridViewPrograms.Location, dataGridViewPrograms.Size);
@@ -353,8 +355,39 @@ namespace WindSoftInstaller
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1100, 660);
-            // Коррекция ширины ProgressBar после установки ClientSize
-            progressBar.Width = (this.ClientSize.Width - 3); // Растягиваем на всю ширину минус 3 для красоты.
+            // ===== ПОСЛЕ УСТАНОВКИ ClientSize - КОРРЕКТИРУЕМ РАЗМЕРЫ =====
+            // Обновляем ширину элементов с учетом реального ClientSize
+            int formWidth = ClientSize.Width;
+
+            // DataGridView
+            dataGridViewPrograms.Width = formWidth - 2;
+
+            // ProgressBar
+            progressBar.Location = new Point(1, 505);
+            progressBar.Width = formWidth - 2;
+            progressBar.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+
+            // Обновляем высоту DataGridView (кнопки могли сместиться)
+            int updatedBottomY = btnToggleSelection.Top - 5;
+            dataGridViewPrograms.Height = updatedBottomY - dataGridViewPrograms.Top;
+
+            // ===== ОБРАБОТЧИК RESIZE =====
+            this.Resize += (sender, e) =>
+            {
+                int newWidth = ClientSize.Width - 2;
+
+                // Обновляем ширину элементов
+                dataGridViewPrograms.Width = newWidth;
+                progressBar.Width = newWidth;
+
+                // Обновляем высоту грида
+                int newBottomY = btnToggleSelection.Top - 5;
+                dataGridViewPrograms.Height = newBottomY - dataGridViewPrograms.Top;
+
+                // Принудительное обновление для немедленного отображения изменений
+                dataGridViewPrograms.Refresh();
+                progressBar.Refresh();
+            };
             Controls.Add(lblStatus);
             Controls.Add(progressBar);
             Controls.Add(btnInstall);
