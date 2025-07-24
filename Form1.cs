@@ -339,7 +339,7 @@ namespace WindSoftInstaller
                     }
                 }
 
-                if (checkedApps.Any(a => a.Name == "MSI Afterburner"))
+                if (checkedApps.Any(a => a.Name == "MSI Afterburner") || checkedApps.Any(a => a.Name == "RivaTuner Statistics Server"))
                 {
                     if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x86)", out var vc2015x86)
                      && !checkedApps.Contains(vc2015x86))

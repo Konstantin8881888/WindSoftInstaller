@@ -299,9 +299,10 @@ namespace WindSoftInstaller
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Режим установки", "/S" },
-                { "Контекстное меню", "/NoShell=0" }
-            }
+                { "Режим установки", "/S" }
+            },
+            ShortcutRelativePath = "7zFM.exe",
+            ShortcutName         = "7-Zip"
         },
         new InstallableApp()
         {
@@ -333,7 +334,9 @@ namespace WindSoftInstaller
                 { "VerySilent",    "/VERYSILENT" },
                 { "SuppressMsgs",  "/SUPPRESSMSGBOXES" },
                 { "NoRestart",     "/NORESTART" }
-            }
+            },
+            ShortcutRelativePath = "HWiNFO64.exe",
+            ShortcutName         = "HWMonitor"
         },
         new InstallableApp()
         {
@@ -802,23 +805,7 @@ namespace WindSoftInstaller
             ShortcutName          = "OpenOffice",
             ShortcutRelativePath  = "OpenOfficeBasePortable.exe"
 
-        },
-        //new InstallableApp()
-        //{
-        //    Name = "FreeOffice",
-        //    Description = "Бесплатный офисный пакет с полной совместимостью MS Office",
-        //    ExecutablePath = "freeoffice2024.msi",
-        //    SizeMB = Math.Round(fileSizes["freeoffice2024.msi"] / (1024.0 * 1024.0), 2),
-        //    LicenseUrl = "https://www.freeoffice.com/ru/eula",
-        //    PathParameterKey = "",
-        //    CustomParameters = new Dictionary<string, string>
-        //    {
-        //        { "Тихая установка", "/qn" },
-        //        { "Путь установки", $"INSTALLDIR=\"{{InstallDir}}\"" },
-        //        { "Язык", "LANGUAGE=\"Russian\"" }
-        //    },
-        //    ShortcutName = "FreeOffice"
-        //},
+        }
     ];
         }
 

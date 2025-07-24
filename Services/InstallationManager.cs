@@ -1,10 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SharpCompress.Archives;
 using SharpCompress.Common;
@@ -228,8 +222,60 @@ namespace WindSoftInstaller.Services
 
         private void ApplyKeePassConfiguration(string installPath)
         {
-            // скопирован из Form1… без правок
-            // …
+            try
+            {
+                _logger.LogInformation("Применение конфигурации KeePass");
+
+                // Путь к скопированному конфигу в папке установки
+                string sourceConfig = Path.Combine(installPath, "KeePass.config.xml");
+
+                // Проверяем существование файла
+                if (!File.Exists(sourceConfig))
+                {
+                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ НЕ НАЙДЕН В ПАПКЕ УСТАНОВКИ: {Path}", sourceConfig);
+
+                    // Попробуем найти файл вручную
+                    var allFiles = Directory.GetFiles(installPath, "*.config.xml", SearchOption.AllDirectories);
+                    _logger.LogWarning("Найденные файлы конфигурации: {Files}", string.Join(", ", allFiles));
+
+                    return;
+                }
+
+                // Путь к целевому конфигу в AppData
+                string targetConfig = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "KeePass", "KeePass.config.xml"
+                );
+
+                // Проверяем содержимое конфига (опционально)
+                string configContent = File.ReadAllText(sourceConfig);
+                if (!configContent.Contains("Russian.lngx"))
+                {
+                    _logger.LogWarning("Конфиг не содержит русский язык! Файл: {Path}", sourceConfig);
+                }
+
+                // Создаем целевую директорию
+                Directory.CreateDirectory(Path.GetDirectoryName(targetConfig)!);
+
+                // Копируем с заменой
+                File.Copy(sourceConfig, targetConfig, overwrite: true);
+                _logger.LogInformation("Конфиг KeePass успешно скопирован в AppData");
+
+                // Удаляем временную копию из папки установки
+                try
+                {
+                    File.Delete(sourceConfig);
+                    _logger.LogDebug("Временный конфиг удалён из папки установки");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось удалить временный конфиг");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка применения конфига KeePass");
+            }
         }
 
         private void CleanupTemp(string tempDir)
