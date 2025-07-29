@@ -1,13 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Security.Principal;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
-using SharpCompress.Archives;
-using SharpCompress.Common;
 using WindSoftInstaller.Services;
 using WindSoftInstaller.Utilities;
 using File = System.IO.File;
@@ -52,23 +47,40 @@ namespace WindSoftInstaller
             TempCleaner.Cleanup(Properties.Settings.Default.LastInstallPath, _logger);
 
             // Загружаем иконку из ресурсов
+            _logger.LogInformation("Начало загрузки иконки приложения");
             try
             {
-                var assembly = Assembly.GetExecutingAssembly();
-                using var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico");
-                if (stream != null)
+                // Загружаем иконку напрямую из файла в выходной директории
+                string iconPath = Path.Combine(Application.StartupPath, "Resources", "logo.ico");
+
+                if (File.Exists(iconPath))
                 {
-                    this.Icon?.Dispose();
-                    using (var ico = new Icon(stream))
-                        this.Icon = (Icon)ico.Clone();
-                    this.ShowIcon = true;
-                    _logger.LogDebug("Иконка формы загружена из manifest‑ресурса");
+                    this.Icon = new Icon(iconPath);
+                    _logger.LogDebug("Иконка загружена из файла: {Path}", iconPath);
                 }
+                else
+                {
+                    // Попытка загрузки из ресурсов как запасной вариант
+                    _logger.LogWarning("Файл иконки не найден по пути: {Path}", iconPath);
+
+                    // Или попробовать загрузить как embedded resource
+                    var assembly = Assembly.GetExecutingAssembly();
+                    using var stream = assembly.GetManifestResourceStream("WindSoftInstaller.Resources.logo.ico");
+                    if (stream != null)
+                    {
+                        this.Icon = new Icon(stream);
+                        _logger.LogDebug("Иконка загружена из embedded ресурсов");
+                    }
+                    else
+                    {
+                        throw new FileNotFoundException("Иконка не найдена ни в файловой системе, ни в ресурсах");
+                    }
+                }
+                this.ShowIcon = true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка загрузки иконки");
-                // Если не удалось, задаём дефолтную иконку Windows
                 this.Icon = SystemIcons.Application;
             }
 

@@ -29,8 +29,10 @@ namespace WindSoftInstaller.Services
                 throw new FileNotFoundException($"Не найден {archive7z}");
 
             string tempDir = Path.Combine(installRoot, "Temp", $"WSI_{Guid.NewGuid()}");
-            Directory.CreateDirectory(tempDir);
+            string extractDir = Path.Combine(tempDir, "exe");    // ← изолируем здесь всё, что распакует инсталлятор
+            Directory.CreateDirectory(extractDir);
             _logger.LogDebug("TempDir = {Dir}", tempDir);
+            _logger.LogDebug("ExtractDir = {Dir}", extractDir);
 
             string sourcePath;
             using (var archive = ArchiveFactory.Open(archive7z))
@@ -38,7 +40,7 @@ namespace WindSoftInstaller.Services
                 var entry = archive.Entries
                                    .FirstOrDefault(e => e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase))
                            ?? throw new FileNotFoundException($"В архиве нет {app.ExecutablePath}");
-                sourcePath = Path.Combine(tempDir, app.ExecutablePath);
+                sourcePath = Path.Combine(extractDir, app.ExecutablePath);
                 entry.WriteToFile(sourcePath);
                 _logger.LogInformation("Извлечён {File} → {Dest}", app.ExecutablePath, sourcePath);
             }
@@ -280,8 +282,26 @@ namespace WindSoftInstaller.Services
 
         private void CleanupTemp(string tempDir)
         {
-            try { Directory.Delete(tempDir, recursive: true); }
-            catch (Exception ex) { _logger.LogWarning(ex, "Temp cleanup failed"); }
+            try
+            {
+                // удаляем свою WSI_{GUID} папку
+                Directory.Delete(tempDir, recursive: true);
+                _logger.LogDebug("Удалён временный каталог {Dir}", tempDir);
+
+                // пробуем удалить общий Temp, если он пуст
+                var tempRoot = Path.GetDirectoryName(tempDir); // это ...\installRoot\Temp
+                if (tempRoot is not null
+                    && Directory.Exists(tempRoot)
+                    && !Directory.EnumerateFileSystemEntries(tempRoot).Any())
+                {
+                    Directory.Delete(tempRoot);
+                    _logger.LogDebug("Удалена пустая директория Temp {Dir}", tempRoot);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Temp cleanup failed for {Dir}", tempDir);
+            }
         }
     }
 }

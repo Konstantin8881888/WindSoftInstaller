@@ -303,6 +303,19 @@ namespace WindSoftInstaller
                 int left = txtInstallPath.Left;
                 int top = txtInstallPath.Bottom + 5;
                 int width = this.ClientSize.Width - left - 1;
+
+                // Вычисляем общую ширину кнопок по самому длинному тексту
+                int padding = 20;  // по 10px с каждой стороны
+                int w1 = TextRenderer.MeasureText(btnToggleSelection.Text, btnToggleSelection.Font).Width;
+                int w2 = TextRenderer.MeasureText(btnInstall.Text, btnInstall.Font).Width;
+                int w3 = TextRenderer.MeasureText(btnCancelInstall.Text, btnCancelInstall.Font).Width;
+                int commonW = Math.Max(w1, Math.Max(w2, w3)) + padding;
+
+                // Задаём всем трём кнопкам одинаковый размер
+                btnToggleSelection.Size = new Size(commonW, btnToggleSelection.Height);
+                btnInstall.Size = new Size(commonW, btnInstall.Height);
+                btnCancelInstall.Size = new Size(commonW, btnCancelInstall.Height);
+
                 // Отступы для баннера
                 int bannerMarginTop = 10;  // от txtETH до баннера
                 int bannerMarginBottom = 10;  // от баннера до низа формы
@@ -331,8 +344,8 @@ namespace WindSoftInstaller
                 // 5) Позиционируем нижние контролы без баннера
                 int y = dataGridViewPrograms.Bottom + 5;
                 btnToggleSelection.Location = new Point(left, y);
-                btnInstall.Location = new Point(btnToggleSelection.Right + 5, y);
-                btnCancelInstall.Location = new Point(btnInstall.Right + 5, y);
+                btnInstall.Location = new Point(left + commonW + 5, y);
+                btnCancelInstall.Location = new Point(left + 2 * (commonW + 5), y);
 
                 y = btnToggleSelection.Bottom + 5;
                 lblStatus.Location = new Point(left, y);
