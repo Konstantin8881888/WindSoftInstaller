@@ -149,25 +149,19 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/qn" }
             }
         },
-        //new InstallableApp()
-        //{
-        //    Name = "Mozilla Firefox",
-        //    Description = "Браузер Mozilla Firefox",
-        //    ExecutablePath = "Firefox Setup 139.0.1.exe",
-        //    SizeMB = Math.Round(fileSizes["Firefox Setup 139.0.1.exe"] / (1024.0 * 1024.0), 2),
-        //    LicenseUrl = "https://www.mozilla.org/en-US/legal/",
-        //    PathParameterKey = "/InstallDir=",
-        //    CustomParameters =
-        //    {
-        //        { "Тихая установка", "/S" },
-        //        // Отключение установки как браузера по умолчанию
-        //        { "Не устанавливать по умолчанию", "/NoMakeDefaultBrowser" },
-        //        // Установка в указанную директорию
-        //        { "Путь установки", "/InstallDir=" },
-        //        // Отключение проверки браузера по умолчанию
-        //        { "Отключить проверку по умолчанию", "/NoDefaultBrowserCheck" }
-        //    }
-        //},
+        new InstallableApp()
+        {
+            Name = "Mozilla Firefox",
+            Description = "Браузер Mozilla Firefox",
+            ExecutablePath = "Firefox Setup 141.0.msi",
+            SizeMB = Math.Round(fileSizes["Firefox Setup 141.0.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.mozilla.org/en-US/MPL/2.0/",
+            CustomParameters = new Dictionary<string, string>
+            {
+                { "Тихая установка", "/qn" },
+                { "Путь установки", "INSTALL_DIRECTORY_PATH=\"{InstallDir}\"" }
+            }
+        },
         new InstallableApp()
         {
             Name = "Opera",
