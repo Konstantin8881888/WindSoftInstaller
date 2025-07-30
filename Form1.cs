@@ -96,6 +96,14 @@ namespace WindSoftInstaller
             this.Font = new Font("Segoe UI", 9F);
         }
 
+        private static readonly string[] HiddenApps = new[]
+        {
+            "Microsoft VC++ 2015-2022 Redistributable (x64)",
+            "Microsoft VC++ 2015-2022 Redistributable (x86)",
+            "VC++ 2013 Redistributable (x86)",
+            "VC++ 2013 Redistributable (x64)"
+        };
+
         private void Form1_Load(object sender, EventArgs e)
         {
             // Подписываемся на форматирование ячеек
@@ -149,7 +157,11 @@ namespace WindSoftInstaller
             _logger.LogInformation("Иконки загружены, инициализируем DataGridView");
 
             dataGridViewPrograms.AutoGenerateColumns = false;
-            var bindingList = new BindingList<InstallableApp>(apps);
+            var visibleApps = apps
+                .Where(a => !HiddenApps.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            var bindingList = new BindingList<InstallableApp>(visibleApps);
             dataGridViewPrograms.DataSource = bindingList;
 
             _logger.LogInformation("DataGridView инициализирована");
@@ -173,32 +185,62 @@ namespace WindSoftInstaller
             }
         }
 
-        
+
 
         private void BtnToggleSelection_Click(object sender, EventArgs e)
         {
             bool chromeRequested = false;
             DialogResult chromeDialogResult = DialogResult.None;
 
+            // Если allSelected == false, то мы сейчас переходим к “Выбрать все”
+            bool selectingAll = !allSelected;
+
             foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
             {
-                if (row.DataBoundItem is InstallableApp app)
-                {
-                    if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (!allSelected) // если сейчас снимаем выделение — не спрашиваем
-                        {
-                            chromeRequested = true;
-                            continue; // временно пропускаем, обработаем позже
-                        }
-                    }
+                if (row.DataBoundItem is not InstallableApp app)
+                    continue;
 
-                    row.Cells["colSelect"].Value = !allSelected;
+                // 1) Спец‑логика для Chrome (как было у вас)
+                if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (selectingAll)
+                    {
+                        chromeRequested = true;
+                        continue; // обработаем Chrome после общего перебора
+                    }
+                    else
+                    {
+                        // при снятии выделения не спрашиваем
+                        row.Cells["colSelect"].Value = false;
+                        continue;
+                    }
                 }
+
+                // 2) Проверяем зависимости перед тем, как ставить галочку
+                if (selectingAll
+                    && AppDependencies.TryGetValue(app.Name, out var deps))
+                {
+                    string depList = string.Join(Environment.NewLine, deps);
+                    var dr = MessageBox.Show(
+                        $"При установке «{app.Name}» будут установлены зависимости:{Environment.NewLine}{depList}{Environment.NewLine}{Environment.NewLine}Продолжить?",
+                        "Установка зависимостей",
+                        MessageBoxButtons.OKCancel,
+                        MessageBoxIcon.Question
+                    );
+                    if (dr == DialogResult.Cancel)
+                    {
+                        // пользователь отказался — не ставим галочку
+                        row.Cells["colSelect"].Value = false;
+                        continue;
+                    }
+                }
+
+                // 3) Ставим или снимаем флажок в зависимости от allSelected
+                row.Cells["colSelect"].Value = selectingAll;
             }
 
-            // Отдельно обрабатываем Chrome, если он был найден и мы сейчас выделяем всё
-            if (!allSelected && chromeRequested)
+            // 4) Обрабатываем Chrome отдельно, если мы сейчас “Выбираем все”
+            if (selectingAll && chromeRequested)
             {
                 chromeDialogResult = MessageBox.Show(
                     "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
@@ -206,22 +248,23 @@ namespace WindSoftInstaller
                     MessageBoxButtons.OKCancel,
                     MessageBoxIcon.Warning
                 );
-
                 foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
                 {
-                    if (row.DataBoundItem is InstallableApp app &&
-                        app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase))
+                    if (row.DataBoundItem is InstallableApp app
+                        && app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase))
                     {
-                        row.Cells["colSelect"].Value = chromeDialogResult == DialogResult.OK;
+                        row.Cells["colSelect"].Value = (chromeDialogResult == DialogResult.OK);
                         break;
                     }
                 }
             }
 
-            allSelected = !allSelected;
+            // 5) Меняем состояние кнопки и считаем общий размер
+            allSelected = selectingAll;
             btnToggleSelection.Text = allSelected ? "Снять выделение" : "Выбрать все";
             CalculateAndShowTotalSize();
         }
+
 
         private void CalculateAndShowTotalSize()
         {
@@ -249,12 +292,35 @@ namespace WindSoftInstaller
             {
                 var row = dataGridViewPrograms.Rows[e.RowIndex];
                 var cell = row.Cells[e.ColumnIndex];
-                if (row.DataBoundItem is not InstallableApp app) return;
+                if (row.DataBoundItem is not InstallableApp app)
+                    return;
 
-                // Получаем текущее значение до клика
+                // Получаем текущее значение ДО клика
                 bool currentValue = cell.Value is bool val && val;
 
-                // Chrome — особая проверка при попытке включения
+                // если пытаемся включить и у этого app есть записи в AppDependencies —
+                // спрашиваем пользователя, и при Cancel снимаем флажок и выходим
+                if (!currentValue
+                    && AppDependencies.TryGetValue(app.Name, out var deps))
+                {
+                    string depList = string.Join(Environment.NewLine, deps);
+                    var dr = MessageBox.Show(
+                        $"При установке «{app.Name}» будут установлены зависимости:{Environment.NewLine}{depList}{Environment.NewLine}{Environment.NewLine}Продолжить?",
+                        "Установка зависимостей",
+                        MessageBoxButtons.OKCancel,
+                        MessageBoxIcon.Question
+                    );
+                    if (dr == DialogResult.Cancel)
+                    {
+                        // Снимаем галочку и выходим — приложение не будет отмечено
+                        dataGridViewPrograms.CancelEdit();
+                        cell.Value = false;
+                        CalculateAndShowTotalSize();
+                        return;
+                    }
+                }
+
+                // Chrome — отдельная проверка при попытке включения
                 if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase) && !currentValue)
                 {
                     var result = MessageBox.Show(
@@ -263,31 +329,27 @@ namespace WindSoftInstaller
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Warning
                     );
-
                     if (result == DialogResult.Cancel)
                     {
-                        // Принудительно отменяем автоматическую установку галочки
                         dataGridViewPrograms.CancelEdit();
-                        cell.Value = false; // На всякий случай
+                        cell.Value = false;
+                        CalculateAndShowTotalSize();
                         return;
                     }
                 }
 
-                // Принудительно завершаем текущее редактирование
+                // Фиксируем редактирование в гриде и меняем значение
                 dataGridViewPrograms.CommitEdit(DataGridViewDataErrorContexts.Commit);
-
-                // Инвертируем значение вручную
                 cell.Value = !currentValue;
 
-                // Обновляем сумму выбранных
+                // Обновляем общую сумму
                 CalculateAndShowTotalSize();
             }
 
-            // Обработка кликов по ссылкам лицензии
+            // Обработка кликов по ссылкам лицензии (оставьте без изменений)
             if (e.RowIndex >= 0 && e.ColumnIndex == colLicense.Index)
             {
                 if (dataGridViewPrograms.Rows[e.RowIndex].DataBoundItem is not InstallableApp app) return;
-
                 try
                 {
                     Process.Start(new ProcessStartInfo
@@ -299,13 +361,16 @@ namespace WindSoftInstaller
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Ошибка открытия ссылки на лицензию");
-                    MessageBox.Show($"Ошибка: {ex.Message}\nURL: {app.LicenseUrl}",
+                    MessageBox.Show(
+                        $"Ошибка: {ex.Message}\nURL: {app.LicenseUrl}",
                         "Ошибка",
                         MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
+                        MessageBoxIcon.Error
+                    );
                 }
             }
         }
+
 
         private async void BtnInstall_Click(object sender, EventArgs e)
         {
@@ -447,6 +512,26 @@ namespace WindSoftInstaller
             }
         }
 
+        private static readonly Dictionary<string, string[]> AppDependencies = new()
+        {
+            // Marble требует VC++ 2013 x86 и x64
+            ["Marble"] = new[]
+        {
+            "VC++ 2013 Redistributable (x86)",
+            "VC++ 2013 Redistributable (x64)"
+        },
+            // MSI Afterburner и RivaTuner требуют VC++ 2015–2022 x86 и x64
+            ["MSI Afterburner"] = new[]
+        {
+            "Microsoft VC++ 2015-2022 Redistributable (x86)",
+            "Microsoft VC++ 2015-2022 Redistributable (x64)"
+        },
+            ["RivaTuner Statistics Server"] = new[]
+        {
+            "Microsoft VC++ 2015-2022 Redistributable (x86)",
+            "Microsoft VC++ 2015-2022 Redistributable (x64)"
+        }
+        };
 
         private void BtnCancelInstall_Click(object sender, EventArgs e)
         {
