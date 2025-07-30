@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -22,21 +23,15 @@ namespace WindSoftInstaller
             const int vGap = 10;
 
             //1) Логотип
-            var logoBytes = Properties.Resources._04e64;   // byte[]
-            Image logoImage;
-            using (var ms = new MemoryStream(logoBytes))
+            using var stream = Assembly.GetExecutingAssembly()
+                           .GetManifestResourceStream("WindSoftInstaller.Resources.04e64.ico"); // <- ваше точное имя
+            if (stream != null)
             {
-                logoImage = Image.FromStream(ms);
+                this.Icon?.Dispose();
+                using var ico = new Icon(stream);
+                this.Icon = (Icon)ico.Clone();
+                this.ShowIcon = true;
             }
-
-            var logo = new PictureBox
-            {
-               Image = logoImage,
-               SizeMode = PictureBoxSizeMode.Zoom,
-               Location = new Point(left, 20),
-               Size = new Size(64, 64)
-            };
-            Controls.Add(logo);
 
             // 2) Заголовок
             var lblTitle = new Label
@@ -166,7 +161,7 @@ namespace WindSoftInstaller
                 ReadOnly = true,
                 BorderStyle = BorderStyle.None,
                 BackColor = this.BackColor,
-                Text = "ETH: 0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
+                Text = "ETH (ERC20): 0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
                 Location = new Point(left, txtBtc.Bottom + vGap),
                 Width = 400
             };

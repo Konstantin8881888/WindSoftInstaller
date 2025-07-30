@@ -1,45 +1,37 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 
-namespace WindSoftInstaller
+namespace WindSoftInstaller.Services
 {
-    internal static class ShortcutHelper
+    public class ShortcutService
     {
-        private static readonly Dictionary<string, string> Map = new()
-        {
-            ["LMMS"] = "lmms.exe",
-            ["HandBrake"] = "HandBrake.exe",
-            ["Clementine"] = "Clementine.exe",
-            ["ClamWin"] = Path.Combine("bin", "ClamWin.exe"),  // пример вложенной папки
-            ["Cryptomator"] = "Cryptomator.exe",
-            ["KeePass"] = "KeePass.exe",
-            ["UltraDefrag"] = "ufd.gui.exe",
-            ["RivaTuner Statistics Server"] = "RTSS.exe"
-        };
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
-        public static bool TryGetExeRelativePath(string appName, out string relativePath)
-            => Map.TryGetValue(appName, out relativePath!);
-
-        public static void CreateShortcut(ILogger logger, string targetPath, string shortcutName)
+        public ShortcutService(Microsoft.Extensions.Logging.ILogger logger)
         {
-            logger.LogDebug("Создаём ярлык {Shortcut} → {Target}", shortcutName, targetPath);
+            _logger = logger;
+        }
+
+        public void Create(string targetPath, string shortcutName)
+        {
+            _logger.LogDebug("Создаём ярлык {Shortcut} → {Target}", shortcutName, targetPath);
 
             if (!File.Exists(targetPath))
             {
-                logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", targetPath, shortcutName);
+                _logger.LogError("Целевой файл {Target} для ярлыка {Shortcut} не найден.", targetPath, shortcutName);
                 throw new FileNotFoundException($"Целевой файл для ярлыка не найден: {targetPath}");
             }
 
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             if (string.IsNullOrEmpty(desktopPath))
             {
-                logger.LogError("Не удалось получить путь к рабочему столу.");
+                _logger.LogError("Не удалось получить путь к рабочему столу.");
                 throw new InvalidOperationException("Не удалось получить путь к рабочему столу");
             }
 
             string shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
+            object shellObject = null, shortcutObject = null;
 
-            object? shellObject = null, shortcutObject = null;
             try
             {
                 var shellType = Type.GetTypeFromProgID("WScript.Shell")
@@ -53,15 +45,15 @@ namespace WindSoftInstaller
 
                 dynamic shortcut = shortcutObject;
                 shortcut.TargetPath = targetPath;
-                shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath) ?? string.Empty;
+                shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath)!;
                 shortcut.WindowStyle = 1;
                 shortcut.Save();
 
-                logger.LogInformation("Ярлык {Shortcut} успешно создан", shortcutName);
+                _logger.LogInformation("Ярлык {Shortcut} успешно создан", shortcutName);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Ошибка при создании ярлыка {Shortcut}", shortcutName);
+                _logger.LogError(ex, "Ошибка при создании ярлыка {Shortcut}", shortcutName);
                 MessageBox.Show(
                     $"Ошибка при создании ярлыка \"{shortcutName}\":\n{ex.Message}",
                     "Ошибка",

@@ -31,7 +31,7 @@ namespace WindSoftInstaller
 
             return
             [
-                new()
+        new InstallableApp()
         {
             Name = "vlc-3.0.21",
             Description = "Мощный видеопроигрыватель с поддержкой большинства кодеков",
@@ -45,7 +45,7 @@ namespace WindSoftInstaller
                 { "Язык", "/L=ru" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "MPC-HC",
             Description = "Media Player Classic Home Cinema — лёгкий медиа-плеер",
@@ -61,7 +61,7 @@ namespace WindSoftInstaller
                 { "Язык", "/LANG=Russian" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "SMPlayer",
             Description = "SMPlayer — кроссплатформенный медиаплеер. Программа представляет собой графическую оболочку для MPlayer.",
@@ -74,7 +74,7 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/S" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "GIMP",
             Description = "GIMP — растровый графический редактор. Аналог Adobe Photoshop для обработки фото, создания цифрового искусства и дизайна.",
@@ -91,7 +91,7 @@ namespace WindSoftInstaller
                 { "Язык", "/LANG=russian" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "Paint.NET",
             Description = "Мощный редактор изображений с поддержкой слоёв и плагинов",
@@ -106,7 +106,7 @@ namespace WindSoftInstaller
                 { "Язык", "/language=ru" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "Shotcut",
             Description = "Мощный видеоредактор с открытым исходным кодом и поддержкой всех форматов",
@@ -122,7 +122,7 @@ namespace WindSoftInstaller
                 { "Ярлык на столе", "/MERGETASKS=desktopicon" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "VSDC Free Video Editor",
             Description = "Бесплатный нелинейный видеоредактор VSDC Free Video Editor",
@@ -136,7 +136,7 @@ namespace WindSoftInstaller
                 { "Без перезагрузки", "/NORESTART" },
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "Google Chrome",
             Description = "Браузер Google Chrome",
@@ -149,26 +149,20 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/qn" }
             }
         },
-        //new()
-        //{
-        //    Name = "Mozilla Firefox",
-        //    Description = "Браузер Mozilla Firefox",
-        //    ExecutablePath = "Firefox Setup 139.0.1.exe",
-        //    SizeMB = Math.Round(fileSizes["Firefox Setup 139.0.1.exe"] / (1024.0 * 1024.0), 2),
-        //    LicenseUrl = "https://www.mozilla.org/en-US/legal/",
-        //    PathParameterKey = "/InstallDir=",
-        //    CustomParameters =
-        //    {
-        //        { "Тихая установка", "/S" },
-        //        // Отключение установки как браузера по умолчанию
-        //        { "Не устанавливать по умолчанию", "/NoMakeDefaultBrowser" },
-        //        // Установка в указанную директорию
-        //        { "Путь установки", "/InstallDir=" },
-        //        // Отключение проверки браузера по умолчанию
-        //        { "Отключить проверку по умолчанию", "/NoDefaultBrowserCheck" }
-        //    }
-        //},
-        new()
+        new InstallableApp()
+        {
+            Name = "Mozilla Firefox",
+            Description = "Браузер Mozilla Firefox",
+            ExecutablePath = "Firefox Setup 141.0.msi",
+            SizeMB = Math.Round(fileSizes["Firefox Setup 141.0.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.mozilla.org/en-US/MPL/2.0/",
+            CustomParameters = new Dictionary<string, string>
+            {
+                { "Тихая установка", "/qn" },
+                { "Путь установки", "INSTALL_DIRECTORY_PATH=\"{InstallDir}\"" }
+            }
+        },
+        new InstallableApp()
         {
             Name = "Opera",
             Description = "Браузер Opera",
@@ -190,7 +184,7 @@ namespace WindSoftInstaller
                 //{ "Отключить автообновления", "--no-update" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "Audacity",
             Description = "Бесплатный аудиоредактор для записи и редактирования звука",
@@ -206,7 +200,7 @@ namespace WindSoftInstaller
                 { "Отключить ассоциацию", "/ASSOCIATE=0" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "LMMS",
             Description = "LMMS — цифровая аудио рабочая станция (NSIS-инсталлятор)",
@@ -219,7 +213,7 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/S" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "HandBrake",
             Description = "HandBrake — бесплатный видеотранскодер (GPL)",
@@ -232,7 +226,7 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/S" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "XMedia Recode",
             Description = "XMedia Recode — универсальный аудио/видео конвертер",
@@ -248,7 +242,7 @@ namespace WindSoftInstaller
                 { "Ярлык на столе", "/MERGETASKS=desktopicon" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "OpenShot",
             Description = "OpenShot Video Editor — бесплатный видеоредактор и конвертер",
@@ -263,7 +257,7 @@ namespace WindSoftInstaller
                 { "Ярлык на столе", "/MERGETASKS=desktopicon" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "AIMP",
             Description = "AIMP — бесплатный аудиоплеер",
@@ -276,7 +270,7 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/SILENT" },
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "Clementine",
             Description = "Современный музыкальный проигрыватель и библиотека для организации коллекции",
@@ -289,7 +283,7 @@ namespace WindSoftInstaller
                  { "Режим установки", "/S" }
             }
         },
-        new()
+        new InstallableApp()
         {
             Name = "7-Zip",
             Description = "Мощный архиватор с высокой степенью сжатия и поддержкой множества форматов",
@@ -299,11 +293,12 @@ namespace WindSoftInstaller
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Режим установки", "/S" },
-                { "Контекстное меню", "/NoShell=0" }
-            }
+                { "Режим установки", "/S" }
+            },
+            ShortcutRelativePath = "7zFM.exe",
+            ShortcutName         = "7-Zip"
         },
-        new()
+        new InstallableApp()
         {
             Name = "qBittorrent",
             Description = "Мощный клиент для торрент-загрузок с открытым исходным кодом",
@@ -316,9 +311,11 @@ namespace WindSoftInstaller
                 { "Режим установки", "/S" },
                 { "Задачи", "/NOADDTOSTART" },
                 { "Ассоциации", "/ASSOCIATE" }
-            }
+            },
+            ShortcutName = "qBittorrent",
+            ShortcutRelativePath = "qbittorrent.exe"
         },
-        new()
+        new InstallableApp()
         {
             Name = "HWMonitor",
             Description = "Мониторинг температуры, напряжения и скорости вентиляторов компонентов ПК",
@@ -331,25 +328,11 @@ namespace WindSoftInstaller
                 { "VerySilent",    "/VERYSILENT" },
                 { "SuppressMsgs",  "/SUPPRESSMSGBOXES" },
                 { "NoRestart",     "/NORESTART" }
-            }
+            },
+            ShortcutRelativePath = "HWiNFO64.exe",
+            ShortcutName         = "HWMonitor"
         },
-        new()
-        {
-            Name = "LibreOffice",
-            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
-            ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
-            SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
-            // PathParameterKey не нужен для MSI‑разветвления ???
-            PathParameterKey = "", // MSI не использует /D=
-                    CustomParameters =
-            {
-                { "Quiet",      "/qn" },
-                { "Components", "ADDLOCAL=ALL" },
-                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
-            }
-        },
-        new()
+        new InstallableApp()
         {
             Name = "PDF‑XChange Editor",
             Description = "PDF‑редактор с аннотациями и редактированием текста",
@@ -379,8 +362,7 @@ namespace WindSoftInstaller
                 { "Язык", "/LANG=Russian" },
                 { "Компоненты", "/COMPONENTS=\"main,context_menu,russian\"" },
                 { "Отключить SmartScreen", "/SP-" }
-            },
-            ShortcutName = "ClamWin"
+            }
         },
         new InstallableApp()
         {
@@ -392,7 +374,6 @@ namespace WindSoftInstaller
             IsPortable = true,
             ShortcutName = "Emsisoft Emergency Kit",
             ShortcutRelativePath = "Start Scanner.exe"
-            // CustomParameters и PathParameterKey не нужны — универсальная распаковка ZIP сработает
         },
         new InstallableApp()
         {
@@ -407,8 +388,7 @@ namespace WindSoftInstaller
                 { "Тихая установка", "/quiet" },
                 { "Без перезагрузки", "/norestart" },
                 { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
-            },
-            ShortcutName = "Cryptomator"
+            }
         },
         new InstallableApp()
         {
@@ -423,7 +403,6 @@ namespace WindSoftInstaller
                 { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
                 { "Язык", "/LANG=English" } // Временно английский, русский установим позже
             },
-            ShortcutName = "KeePass",
             AdditionalFiles = ["Russian.lngx", "KeePass.config.xml"],
             AdditionalFilesDestinations =
             {
@@ -486,10 +465,7 @@ namespace WindSoftInstaller
             CustomParameters =
             {
                 { "Тихая установка", "/S" }
-            },
-            // Ярлык создадим вручную после установки
-            ShortcutName = "UltraDefrag",
-            ShortcutRelativePath = "ufd.gui.exe"
+            }
         },
         new InstallableApp()
         {
@@ -549,8 +525,8 @@ namespace WindSoftInstaller
             SizeMB               = Math.Round(fileSizes["MSIAfterburnerPortable.zip"]/(1024.0*1024.0), 2),
             LicenseUrl           = "https://www.msi.com/page/eula",
             IsPortable           = true,
-            ShortcutRelativePath = "MSIAfterburner.exe",
-            ShortcutName         = "MSI Afterburner"
+            ShortcutName         = "MSI Afterburner",
+            ShortcutRelativePath = "MSIAfterburner.exe"
         },
         new InstallableApp()
         {
@@ -564,9 +540,7 @@ namespace WindSoftInstaller
           {
                 { "Тихая установка", "/S" },
                 //{ "Language", "/LANG=1049" }// Похоже не работает. Исправлено заменой конф-файла
-          },
-          ShortcutName = "RTSS",
-          ShortcutRelativePath = "RTSS.exe"
+          }
         },
         new InstallableApp()
         {
@@ -592,7 +566,7 @@ namespace WindSoftInstaller
             LicenseUrl            = "https://github.com/kiwix/kiwix-desktop/blob/master/LICENSE",
             IsPortable            = true,
             ShortcutName          = "Kiwix Desktop",
-            ShortcutRelativePath  = "kiwix.exe"
+            ShortcutRelativePath  = "kiwix-desktop.exe"
         },
         new InstallableApp()
         {
@@ -706,7 +680,7 @@ namespace WindSoftInstaller
             SizeMB           = Math.Round(fileSizes["vcredist_x86.exe"]/(1024.0*1024.0),2),
             LicenseUrl       = "https://support.microsoft.com/kb/40784",
             PathParameterKey = "/install /quiet /norestart",  // у этого пакета именно такая комбинация
-            CustomParameters = new Dictionary<string,string>{},
+            CustomParameters = [],
             ShortcutName     = null
         },
         new InstallableApp()
@@ -717,7 +691,7 @@ namespace WindSoftInstaller
             SizeMB           = Math.Round(fileSizes["vcredist_x64.exe"]/(1024.0*1024.0),2),
             LicenseUrl       = "https://support.microsoft.com/kb/40784",
             PathParameterKey = "/install /quiet /norestart",
-            CustomParameters = new Dictionary<string,string>(),
+            CustomParameters = [],
             ShortcutName     = null
         },
         new InstallableApp()
@@ -769,7 +743,7 @@ namespace WindSoftInstaller
                 { "Language", "/LANG=Russian" }
             },
             ShortcutName        = "Geany",
-            ShortcutRelativePath = "bin\\geany.exe"
+            //ShortcutRelativePath = "bin\\geany.exe"
         },
         new InstallableApp()
         {
@@ -800,34 +774,32 @@ namespace WindSoftInstaller
         },
         new InstallableApp()
         {
-            Name = "Apache OpenOffice",
-            Description = "Бесплатный офисный пакет с открытым исходным кодом",
-            ExecutablePath = "Apache_OpenOffice_4.1.15_Win_x86_install_ru.exe",
-            SizeMB = Math.Round(fileSizes["Apache_OpenOffice_4.1.15_Win_x86_install_ru.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.openoffice.org/license.html",
-            PathParameterKey = "/D=",
-            CustomParameters = new Dictionary<string, string>
+            Name = "LibreOffice",
+            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
+            ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
+            SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
+            // PathParameterKey не нужен для MSI‑разветвления ???
+            PathParameterKey = "", // MSI не использует /D=
+                    CustomParameters =
             {
-                { "Тихая установка", "/S" },
-                { "Язык", "/L=ru" }
-            },
-            ShortcutName = "Apache OpenOffice"
+                { "Quiet",      "/qn" },
+                { "Components", "ADDLOCAL=ALL" },
+                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
+            }
         },
         new InstallableApp()
         {
-            Name = "FreeOffice",
-            Description = "Бесплатный офисный пакет с полной совместимостью MS Office",
-            ExecutablePath = "freeoffice2024.msi", // Или актуальная версия
-            SizeMB = Math.Round(fileSizes["freeoffice2024.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.freeoffice.com/ru/eula",
-            CustomParameters = new Dictionary<string, string>
-            {
-                { "Тихая установка", "/qn" },
-                { "Путь установки", "TARGETDIR=\"{InstallDir}\"" },
-                { "Язык", "LANGUAGE=\"Russian\"" }
-            },
-            ShortcutName = "FreeOffice"
-        },
+            Name                  = "Apache OpenOffice Portable",
+            Description           = "Офисный пакет с открытым кодом, включающий текстовый редактор, таблицы, презентации и СУБД. Совместим с форматами Microsoft Office, но использует стандарт ODF. Особенность — работа без подписки и поддержка макросов, хотя интерфейс выглядит устаревшим. Подходит для базовых задач.",
+            ExecutablePath        = "ApacheOpenOfficePortable.zip",
+            SizeMB                = Math.Round(fileSizes["ApacheOpenOfficePortable.zip"] / (1024.0 * 1024.0), 2),
+            LicenseUrl            = "https://portableapps.com/about/legal",
+            IsPortable            = true,
+            ShortcutName          = "OpenOffice",
+            ShortcutRelativePath  = "OpenOfficeBasePortable.exe"
+
+        }
     ];
         }
 

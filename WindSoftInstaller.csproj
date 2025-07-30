@@ -12,10 +12,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
 	<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	<ApplicationIcon>Resources\logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Installers.7z" />
+    <None Remove="Resources\logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,6 +34,9 @@
 
   <ItemGroup>
     <Content Include="Installers.7z">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\logo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
 	<!-- Этот блок говорит: “все файлы icons\*.ico копировать в выходную папку рядом с exe” -->
@@ -61,13 +66,13 @@
     </Compile>
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<!-- Основные ресурсы (ResX) -->
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
 
   <ItemGroup>
     <None Update="Properties\Settings.settings">
