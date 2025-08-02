@@ -66,6 +66,12 @@ namespace WindSoftInstaller
                 Size = new Size(400, 60)
             };
             Controls.Add(txtDescription);
+            txtDescription.TabStop = false;
+            // Сбрасываем возможное выделение
+            txtDescription.SelectionStart = 0;
+            txtDescription.SelectionLength = 0;
+            // Скрываем выделение, когда текстбокс теряет фокус (но нам фокуса он и не получит)
+            txtDescription.HideSelection = true;
 
             // 5) Поддержать проект
             var linkSupport = new LinkLabel

@@ -13,6 +13,13 @@
 	<ApplicationManifest>app.manifest</ApplicationManifest>
 	<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	<ApplicationIcon>Resources\logo.ico</ApplicationIcon>
+
+    <!-- Публикация под конкретную платформу -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <!-- Включаем в сборку .NET Runtime -->
+    <SelfContained>true</SelfContained>
+
   </PropertyGroup>
 
   <ItemGroup>
