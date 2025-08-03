@@ -34,7 +34,6 @@ namespace WindSoftInstaller
             this.lblTotalSize = new Label();
             this.lblTotalSize.AutoSize = true;
             this.lblTotalSize.Name = "lblTotalSize";
-            this.lblTotalSize.Text = "Общий размер выбранных программ: 0.00 МБ";
             // Пока просто добавим — позиционировать будем ниже
             this.lblTotalSize.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             this.Controls.Add(this.lblTotalSize);
@@ -43,22 +42,57 @@ namespace WindSoftInstaller
             // ─── Блок: MenuStrip + позиционирование ─────────────────────
             // Создаем и докируем MenuStrip
             _logger.LogInformation("InitializeComponent: начало создания UI-элементов");
-            var menuStrip = new MenuStrip();
+            this.menuStrip = new MenuStrip();
             menuStrip.Dock = DockStyle.Top;
             this.MainMenuStrip = menuStrip;
             this.Controls.Add(menuStrip);
             // Логируем создание и добавление MenuStrip
             _logger.LogDebug("MenuStrip создан и добавлен на форму");
             // Настраиваем пункты меню
-            var fileMenu = new ToolStripMenuItem("Файл");
-            var helpMenu = new ToolStripMenuItem("Справка");
+            var fileMenu = new ToolStripMenuItem { Name = "menu.File", Text = "Файл" };
+            var helpMenu = new ToolStripMenuItem { Name = "menu.Help", Text = "Справка" };
             menuStrip.Items.AddRange(new[] { fileMenu, helpMenu });
             // Логируем, что пункты «Файл» и «Справка» добавлены
             _logger.LogDebug("MenuStrip Items: добавлены пункты 'Файл' и 'Справка'");
-            fileMenu.DropDownItems.Add(new ToolStripMenuItem("Выход", null, (s, e) => this.Close()));
+            // 1) Создаем сам элемент Выход
+            var exitItem = new ToolStripMenuItem
+            {
+                Name = "menu.File.Exit",
+                Text = "Выход"
+            };
+            // 2) Подписываемся на событие
+            exitItem.Click += (s, e) => this.Close();
+            // 3) Добавляем в меню
+            fileMenu.DropDownItems.Add(exitItem);
             _logger.LogDebug("MenuStrip: добавлен пункт 'Выход' в 'Файл'");
-            helpMenu.DropDownItems.Add(new ToolStripMenuItem("О программе", null, OnAboutClick));
+
+            // 1) Создаем сам элемент О программе
+            var aboutItem = new ToolStripMenuItem
+            {
+                Name = "menu.Help.About",
+                Text = "О программе"
+            };
+            // 2) Подписываемся на событие
+            aboutItem.Click += OnAboutClick;
+            // 3) Добавляем в меню
+            helpMenu.DropDownItems.Add(aboutItem);
+
             _logger.LogDebug("MenuStrip: добавлен пункт 'О программе' в 'Справка'");
+            // ─── Блок: меню "Язык" ────────────────────────────────────────
+            // 1) создаём пункт "Язык" и два подпункта
+            var langMenu = new ToolStripMenuItem("Язык") { Name = "menu.Language" };
+            var langRu = new ToolStripMenuItem("Русский") { Name = "menu.Language.Ru" };
+            var langEn = new ToolStripMenuItem("English") { Name = "menu.Language.En" };
+
+            // 2) подписываем обработчики
+            langRu.Click += (s, e) => SwitchLanguage("ru");
+            langEn.Click += (s, e) => SwitchLanguage("en");
+
+            // 3) собираем и вешаем на menuStrip
+            langMenu.DropDownItems.AddRange(new[] { langRu, langEn });
+            menuStrip.Items.Add(langMenu);
+            _logger.LogDebug("MenuStrip: добавлен пункт Язык");
+            // ───────────────────────────────────────────────────────────────
             // Позиционируем текстовое поле и кнопку ниже меню
             int offsetY = menuStrip.Bottom + 5;            // 5px от меню
             txtInstallPath.Location = new Point(1, offsetY + 3);
@@ -121,6 +155,7 @@ namespace WindSoftInstaller
             this.colParams.Name = "colParams";
             this.colParams.HeaderText = "Ключи";
             this.colParams.DataPropertyName = "ParametersDisplay";
+            this.colParams.DefaultCellStyle.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.colParams.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             // Логируем создание колонки colParams
             _logger.LogDebug("Колонка colParams (DataGridViewTextBoxColumn) создана");
@@ -218,7 +253,6 @@ namespace WindSoftInstaller
             btnBrowse.Name = "btnBrowse";
             btnBrowse.Size = new Size(88, 27);
             btnBrowse.TabIndex = 3;
-            btnBrowse.Text = "Выбрать папку";
             btnBrowse.UseVisualStyleBackColor = true;
             btnBrowse.Click += BtnBrowse_Click;
             // txtInstallPath
@@ -230,7 +264,6 @@ namespace WindSoftInstaller
             lblStatus.AutoSize = true;
             lblStatus.Name = "lblStatus";
             lblStatus.TabIndex = 5;
-            lblStatus.Text = "Выберите программы в таблице выше и нажмите кнопку Установить";
             // Логируем создание и добавление Label lblStatus
             _logger.LogDebug("Label lblStatus создан, Text=\"{Text}\"", lblStatus.Text);
             // statusTimer
@@ -245,7 +278,6 @@ namespace WindSoftInstaller
             this.lblDonate.AutoSize = true;
             this.lblDonate.Name = "lblDonate";
             this.lblDonate.TabIndex = 6;
-            this.lblDonate.Text = "Поддержать проект (BTC и ETH (ERC20) адреса):";
             this.Controls.Add(this.lblDonate);
             // Логируем создание и добавление Label lblDonate
             _logger.LogDebug("Label lblDonate создан, Text=\"{Text}\"", lblDonate.Text);

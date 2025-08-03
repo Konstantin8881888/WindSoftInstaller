@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
+﻿using Microsoft.Extensions.Logging;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Versioning;
-using Microsoft.Extensions.Logging;
+using System.Windows.Forms;
 using WindSoftInstaller.Services;
 using WindSoftInstaller.Utilities;
 using File = System.IO.File;
@@ -25,7 +26,7 @@ namespace WindSoftInstaller
         private readonly ShortcutService shortcutService;
         private readonly KeePassConfigurator kpConfigurator;
         private readonly InstallationManager installationManager;
-
+        private MenuStrip menuStrip;
         public Form1(ILogger<Form1> logger)
         {
             // Сначала инициализируем логгер
@@ -42,6 +43,14 @@ namespace WindSoftInstaller
             InitializeComponent();
             // Проверка на null
             _logger.LogInformation("Form1 constructor: объект формы создаётся");
+
+            Localization.LanguageChanged += OnLanguageChanged;
+
+            // 1) Спрашиваем язык сразу при старте
+            AskInitialLanguage();
+
+            // 2) Применяем переводы ко всем контролам
+            ApplyLocalization();
 
             // Очищаем старые временные папки, если они остались от предыдущих неудачных запусков
             TempCleaner.Cleanup(Properties.Settings.Default.LastInstallPath, _logger);
@@ -94,6 +103,111 @@ namespace WindSoftInstaller
             // Задаём фон формы и единый шрифт
             this.BackColor = Color.LightSteelBlue;
             this.Font = new Font("Segoe UI", 9F);
+        }
+
+        private void OnLanguageChanged()
+        {
+            // Обновляем статичные элементы (меню, кнопки)
+            ApplyLocalization();
+
+            // Обновляем DataGridView
+            RefreshDataGrid();
+        }
+
+        private void RefreshDataGrid()
+        {
+            // 1. Сохраняем позицию прокрутки
+            var scrollPosition = dataGridViewPrograms.FirstDisplayedScrollingRowIndex;
+
+            // 2. Обновляем заголовки колонок
+            colName.HeaderText = Localization.T("colName");
+            colDescription.HeaderText = Localization.T("colDescription");
+            colSize.HeaderText = Localization.T("colSize");
+            colLicense.HeaderText = Localization.T("colLicense");
+
+            // 3. Принудительно обновляем данные
+            dataGridViewPrograms.Refresh();
+
+            // 4. Восстанавливаем позицию прокрутки
+            if (scrollPosition >= 0 && scrollPosition < dataGridViewPrograms.RowCount)
+            {
+                dataGridViewPrograms.FirstDisplayedScrollingRowIndex = scrollPosition;
+            }
+
+            // Принудительно обновляем описания
+            if (dataGridViewPrograms.DataSource is BindingList<InstallableApp> bindingList)
+            {
+                // Это заставит грид перечитать все свойства
+                var apps = bindingList.ToList();
+                dataGridViewPrograms.DataSource = null;
+                dataGridViewPrograms.DataSource = new BindingList<InstallableApp>(apps);
+            }
+
+            // 5. Обновляем кнопку выбора
+            btnToggleSelection.Text = allSelected ?
+                Localization.T("btnDeselectAll") :
+                Localization.T("btnSelectAll");
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            Localization.LanguageChanged -= OnLanguageChanged; // Отписываемся
+        }
+
+        private void AskInitialLanguage()
+        {
+            // Текст на “нейтральном” (по умолчанию русском) или сразу на английском — 
+            // решайте сами. Я покажу на английском, потому что спрашиваем “Use English?”
+            var result = MessageBox.Show(
+                "Would you like to use English language?\n\nYes — English\nНет — Русский",
+                "Select language / Выберите язык",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button1);
+
+            // Yes → English, No → Russian
+            if (result == DialogResult.Yes)
+                Localization.Change("en");
+            else
+                Localization.Change("ru");
+        }
+        private void ApplyLocalization()
+        {
+            // Существующий код
+            this.Text = Localization.T("Form1.Title");
+
+            foreach (ToolStripMenuItem top in menuStrip.Items.OfType<ToolStripMenuItem>())
+            {
+                top.Text = Localization.T(top.Name);
+                foreach (ToolStripMenuItem sub in top.DropDownItems.OfType<ToolStripMenuItem>())
+                    sub.Text = Localization.T(sub.Name);
+            }
+
+            btnInstall.Text = Localization.T("btnInstall");
+            btnToggleSelection.Text = allSelected ?
+                Localization.T("btnDeselectAll") :
+                Localization.T("btnSelectAll");
+            btnCancelInstall.Text = Localization.T("btnCancelInstall");
+
+            // Новые элементы
+            btnBrowse.Text = Localization.T("btnBrowse");
+            lblStatus.Text = Localization.T("lblStatus.Instruction");
+            lblDonate.Text = Localization.T("lblDonate");
+            CalculateAndShowTotalSize(); // Обновит размер с локализацией
+
+            // Заголовки колонок
+            colName.HeaderText = Localization.T("colName");
+            colDescription.HeaderText = Localization.T("colDescription");
+            colSize.HeaderText = Localization.T("colSize");
+            colLicense.HeaderText = Localization.T("colLicense");
+        }
+
+        private void SwitchLanguage(string lang)
+        {
+            Localization.Change(lang);
+            ApplyLocalization();
+
         }
 
         private static readonly string[] HiddenApps = new[]
@@ -165,6 +279,8 @@ namespace WindSoftInstaller
             dataGridViewPrograms.DataSource = bindingList;
 
             _logger.LogInformation("DataGridView инициализирована");
+
+            RefreshDataGrid(); // Инициализируем заголовки колонок
         }
 
         private void OnAboutClick(object sender, EventArgs e)
@@ -261,7 +377,7 @@ namespace WindSoftInstaller
 
             // 5) Меняем состояние кнопки и считаем общий размер
             allSelected = selectingAll;
-            btnToggleSelection.Text = allSelected ? "Снять выделение" : "Выбрать все";
+            btnToggleSelection.Text = allSelected ? Localization.T("btnDeselectAll") : Localization.T("btnSelectAll");
             CalculateAndShowTotalSize();
         }
 
@@ -272,7 +388,6 @@ namespace WindSoftInstaller
 
             foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
             {
-                // Проверяем, что строка не является новой (пустой) строкой
                 if (!row.IsNewRow &&
                     row.Cells["colSelect"].Value != null &&
                     Convert.ToBoolean(row.Cells["colSelect"].Value) &&
@@ -282,7 +397,11 @@ namespace WindSoftInstaller
                 }
             }
 
-            lblTotalSize.Text = $"Общий размер выбранных программ: {totalSize:N2} МБ";
+            // Локализованный формат
+            lblTotalSize.Text = string.Format(
+                Localization.T("lblTotalSize.Text"),
+                totalSize
+            );
         }
 
         private void DataGridViewPrograms_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -386,6 +505,7 @@ namespace WindSoftInstaller
 
             try
             {
+
                 string installPath = txtInstallPath.Text.Trim();
                 _logger.LogInformation("Путь установки: {Path}", installPath);
                 if (string.IsNullOrWhiteSpace(installPath))
@@ -444,20 +564,26 @@ namespace WindSoftInstaller
                     if (_cts.Token.IsCancellationRequested)
                     {
                         _logger.LogWarning("Прерывание после {Index}/{Total}", i, total);
-                        lblStatus.Text = "Отменено";
+                        lblStatus.Text = Localization.T("lblStatus.Cancelled"); // Используем локализованный статус
                         break;
                     }
 
                     var app = checkedApps[i];
-                    if (app is null) // Защита от null
+                    if (app is null)
                     {
                         _logger.LogError("Элемент {Index} в списке установки равен null", i);
                         continue;
                     }
 
                     _logger.LogInformation("Устанавливается {AppName} ({Index}/{Total})", app.Name, i + 1, total);
-                    Invoke(() => {
-                        lblStatus.Text = $"Устанавливается {app.Name} ({i + 1}/{total})";
+
+                    // Обновление статуса ПЕРЕД установкой
+                    Invoke(() =>
+                    {
+                        lblStatus.Text = string.Format(
+                            Localization.T("lblStatus.Installing"),
+                            app.Name, i + 1, total
+                        );
                         progressBar.Value = (int)(((i + 1f) / total) * 100);
                     });
 
@@ -468,7 +594,7 @@ namespace WindSoftInstaller
                     }
                     catch (OperationCanceledException)
                     {
-                        lblStatus.Text = "Отменено";
+                        Invoke(() => lblStatus.Text = Localization.T("lblStatus.Cancelled"));
                         _logger.LogWarning("Установка {AppName} отменена", app.Name);
                         break;
                     }
@@ -506,10 +632,11 @@ namespace WindSoftInstaller
                 btnToggleSelection.Enabled = true;
                 btnCancelInstall.Enabled = false;
                 statusTimer.Stop();
-                lblStatus.Text = "Готово";
+                lblStatus.Text = Localization.T("lblStatus.Ready"); // Используем локализованный статус
                 _cts?.Dispose();
                 _cts = null;
             }
+            lblStatus.Text = Localization.T("lblStatus.Ready");
         }
 
         private static readonly Dictionary<string, string[]> AppDependencies = new()
@@ -553,7 +680,7 @@ namespace WindSoftInstaller
             if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
                 return;
 
-            e.Value = "Просмотр";
+            e.Value = Localization.T("license.View"); // Локализованный текст
             e.FormattingApplied = true;
         }
 

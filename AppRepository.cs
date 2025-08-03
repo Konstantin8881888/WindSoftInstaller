@@ -1,5 +1,6 @@
 ﻿using System.Runtime.Versioning;
 using SharpCompress.Archives;
+using static Localization;
 
 namespace WindSoftInstaller
 {
@@ -31,269 +32,291 @@ namespace WindSoftInstaller
 
             return
             [
+        // VLC
         new InstallableApp()
         {
             Name = "vlc-3.0.21",
-            Description = "Мощный видеопроигрыватель с поддержкой большинства кодеков",
-            ExecutablePath = "vlc-3.0.21.exe",
-            SizeMB = Math.Round(fileSizes["vlc-3.0.21.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.videolan.org/legal.html",
+            DescriptionKey      = "app.vlc.Description",
+            ExecutablePath   = "vlc-3.0.21.exe",
+            SizeMB           = Math.Round(fileSizes["vlc-3.0.21.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://www.videolan.org/legal.html",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Режим установки", "/S" },
-                { "Язык", "/L=ru" }
+                { "param.InstallMode", "/S" },
+                { "param.Language",
+                  "/L=" + (Current == "ru" ? "ru" : "en") }
             }
         },
+
+        // MPC-HC
         new InstallableApp()
         {
             Name = "MPC-HC",
-            Description = "Media Player Classic Home Cinema — лёгкий медиа-плеер",
-            // Укажите точное имя оффлайн-инсталлятора из вашего архива Installers.7z
-            ExecutablePath = "MPC-HC.1.7.13.x64.exe",
-            SizeMB = Math.Round(fileSizes["MPC-HC.1.7.13.x64.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://github.com/mpc-hc/mpc-hc/blob/develop/COPYING.txt",
+            DescriptionKey      = "app.mpc.Description",
+            ExecutablePath   = "MPC-HC.1.7.13.x64.exe",
+            SizeMB           = Math.Round(fileSizes["MPC-HC.1.7.13.x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://github.com/mpc-hc/mpc-hc/blob/develop/COPYING.txt",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/VERYSILENT" },
-                { "Не перезагружать", "/NORESTART" },
-                { "Язык", "/LANG=Russian" }
+                { "param.SilentInstall", "/VERYSILENT" },
+                { "param.NoRestart"   , "/NORESTART"   },
+                { "param.Language",
+                  Current == "ru"
+                    ? "/LANG=Russian"
+                    : "/LANG=English" }
             }
         },
+
+        // SMPlayer
         new InstallableApp()
         {
             Name = "SMPlayer",
-            Description = "SMPlayer — кроссплатформенный медиаплеер. Программа представляет собой графическую оболочку для MPlayer.",
-            ExecutablePath = "smplayer-24.5.0-x64-unsigned.exe",
-            SizeMB = Math.Round(fileSizes["smplayer-24.5.0-x64-unsigned.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://github.com/smplayer-dev/smplayer?tab=GPL-2.0-1-ov-file#readme",
+            DescriptionKey      = "app.smplayer.Description",
+            ExecutablePath   = "smplayer-24.5.0-x64-unsigned.exe",
+            SizeMB           = Math.Round(fileSizes["smplayer-24.5.0-x64-unsigned.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://github.com/smplayer-dev/smplayer?tab=GPL-2.0-1-ov-file#readme",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Тихая установка", "/S" }
+                { "param.SilentInstall", "/S" }
             }
         },
+
+        // GIMP
         new InstallableApp()
         {
             Name = "GIMP",
-            Description = "GIMP — растровый графический редактор. Аналог Adobe Photoshop для обработки фото, создания цифрового искусства и дизайна.",
-            ExecutablePath = "gimp-3.0.4-setup.exe",
-            SizeMB = Math.Round(fileSizes["gimp-3.0.4-setup.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.gimp.org/about/COPYING",
+            DescriptionKey      = "app.gimp.Description",
+            ExecutablePath   = "gimp-3.0.4-setup.exe",
+            SizeMB           = Math.Round(fileSizes["gimp-3.0.4-setup.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://www.gimp.org/about/COPYING",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Режим установки", "/VERYSILENT" },
-                { "Без окон", "/SUPPRESSMSGBOXES" },
-                { "Без перезагрузки", "/NORESTART" },
-                { "Откл SmartScreen", "/SP-" },
-                { "Язык", "/LANG=russian" }
+                { "param.InstallMode"   , "/VERYSILENT"       },
+                { "param.SuppressMsg"   , "/SUPPRESSMSGBOXES" },
+                { "param.NoRestart"     , "/NORESTART"        },
+                { "param.DisableSmartScreen", "/SP-"           },
+                { "param.Language",
+                  Current == "ru"
+                    ? "/LANG=russian"
+                    : "/LANG=english" }
             }
         },
+
+        // Paint.NET
         new InstallableApp()
         {
             Name = "Paint.NET",
-            Description = "Мощный редактор изображений с поддержкой слоёв и плагинов",
-            ExecutablePath = "paint.net.5.1.8.install.x64.exe",
-            SizeMB = Math.Round(fileSizes["paint.net.5.1.8.install.x64.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.getpaint.net/license.html",
+            DescriptionKey      = "app.paintnet.Description",
+            ExecutablePath   = "paint.net.5.1.8.install.x64.exe",
+            SizeMB           = Math.Round(fileSizes["paint.net.5.1.8.install.x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://www.getpaint.net/license.html",
             PathParameterKey = "TARGETDIR=",
             CustomParameters =
             {
-                { "Режим установки: тихий", "/auto" },
-                { "Пропустить конфигурации", "/skipConfig" },
-                { "Язык", "/language=ru" }
+                { "param.AutoInstall"   , "/auto"       },
+                { "param.SkipConfig"    , "/skipConfig" },
+                { "param.Language",
+                  Current == "ru"
+                    ? "/language=ru"
+                    : "/language=en" }
             }
         },
+
+        // Shotcut
         new InstallableApp()
         {
             Name = "Shotcut",
-            Description = "Мощный видеоредактор с открытым исходным кодом и поддержкой всех форматов",
-            ExecutablePath = "shotcut-win64-250511.exe",
-            SizeMB = Math.Round(fileSizes["shotcut-win64-250511.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://github.com/mltframework/shotcut/blob/master/COPYING",
+            DescriptionKey      = "app.shotcut.Description",
+            ExecutablePath   = "shotcut-win64-250511.exe",
+            SizeMB           = Math.Round(fileSizes["shotcut-win64-250511.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://github.com/mltframework/shotcut/blob/master/COPYING",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/VERYSILENT" },
-                { "Без перезагрузки", "/NORESTART" },
-                { "Для текущего пользователя", "/CURRENTUSER" },
-                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+                { "param.SilentInstall", "/VERYSILENT" },
+                { "param.NoRestart"   , "/NORESTART"   },
+                { "param.CurrentUser" , "/CURRENTUSER" },
+                { "param.DesktopShortcut", "/MERGETASKS=desktopicon" }
             }
         },
+
+        // VSDC
         new InstallableApp()
         {
             Name = "VSDC Free Video Editor",
-            Description = "Бесплатный нелинейный видеоредактор VSDC Free Video Editor",
-            ExecutablePath = "video_editor_x64.exe",
-            SizeMB = Math.Round(fileSizes["video_editor_x64.exe"] / (1024.0 * 1024.0), 2),
-            LicenseUrl = "https://www.videosoftdev.com/terms-and-conditions",
+            DescriptionKey      = "app.vsdc.Description",
+            ExecutablePath   = "video_editor_x64.exe",
+            SizeMB           = Math.Round(fileSizes["video_editor_x64.exe"] / (1024.0 * 1024.0), 2),
+            LicenseUrl       = "https://www.videosoftdev.com/terms-and-conditions",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/VERYSILENT" },
-                { "Без перезагрузки", "/NORESTART" },
+                { "param.SilentInstall", "/VERYSILENT" },
+                { "param.NoRestart", "/NORESTART"   }
             }
         },
         new InstallableApp()
         {
             Name = "Google Chrome",
-            Description = "Браузер Google Chrome",
+            DescriptionKey = "app.chrome.Description",
             ExecutablePath = "googlechromestandaloneenterprise64.msi",
             SizeMB = Math.Round(fileSizes["googlechromestandaloneenterprise64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.google.com/chrome/terms/",
             PathParameterKey = "INSTALLDIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/qn" }
+                { "param.SilentInstall", "/qn" }
             }
         },
         new InstallableApp()
         {
             Name = "Mozilla Firefox",
-            Description = "Браузер Mozilla Firefox",
+            DescriptionKey = "app.firefox.Description",
             ExecutablePath = "Firefox Setup 141.0.msi",
             SizeMB = Math.Round(fileSizes["Firefox Setup 141.0.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.mozilla.org/en-US/MPL/2.0/",
             CustomParameters = new Dictionary<string, string>
             {
-                { "Тихая установка", "/qn" },
-                { "Путь установки", "INSTALL_DIRECTORY_PATH=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/qn" },
+                { "param.InstallPath", "INSTALL_DIRECTORY_PATH=\"{InstallDir}\"" }
             }
         },
         new InstallableApp()
         {
             Name = "Opera",
-            Description = "Браузер Opera",
+            DescriptionKey = "app.opera.Description",
             ExecutablePath = "Opera_119.0.5497.70_Setup_x64.exe",
             SizeMB = Math.Round(fileSizes["Opera_119.0.5497.70_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.opera.com/legal",
             PathParameterKey = "--installfolder=",
             CustomParameters =
             {
-                { "Тихая установка", "--silent" },
+                { "param.SilentInstall", "--silent" },
                 // Установка только для текущего пользователя; если нужно для всех, поставить allusers=1
-                { "Только текущий пользователь", "--allusers=0" },
-                { "Язык установки", "--language=ru" },
+                { "param.CurrentUserOnly", "--allusers=0" },
+                { "param.InstallLanguage", "--language=ru" },
                 // Отключаем автозапуск после установки
-                { "Не запускать после установки", "--launchopera=0" },
+                { "param.DontLaunchAfter", "--launchopera=0" },
                 // Ярлык на рабочем столе (по умолчанию Opera его создаёт, но продублировать не вредно)
-                { "Создать ярлык", "--desktopshortcut=1" },
+                { "param.CreateDesktopShortcut", "--desktopshortcut=1" },
                 // Отключаем автообновления (если нужно)
-                //{ "Отключить автообновления", "--no-update" }
+                //{ "param.DisableAutoUpdate", "--no-update" }
             }
         },
         new InstallableApp()
         {
             Name = "Audacity",
-            Description = "Бесплатный аудиоредактор для записи и редактирования звука",
+            DescriptionKey = "app.audacity.Description",
             ExecutablePath = "audacity-win-3.7.3-64bit.exe",
             SizeMB = Math.Round(fileSizes["audacity-win-3.7.3-64bit.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.audacityteam.org/about/license/",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Скрытая установка", "/VERYSILENT" },
-                { "Не перезагружать", "/NORESTART" },
+                { "param.VerySilent", "/VERYSILENT" },
+                { "param.NoRestart", "/NORESTART" },
                 // Отключение ассоциации с файлами
-                { "Отключить ассоциацию", "/ASSOCIATE=0" }
+                { "param.DisableAssociations", "/ASSOCIATE=0" }
             }
         },
         new InstallableApp()
         {
             Name = "LMMS",
-            Description = "LMMS — цифровая аудио рабочая станция (NSIS-инсталлятор)",
+            DescriptionKey = "app.lmms.Description",
             ExecutablePath = "lmms-1.2.2-win64.exe",
             SizeMB = Math.Round(fileSizes["lmms-1.2.2-win64.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://github.com/LMMS/lmms/blob/master/LICENSE.txt",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Тихая установка", "/S" }
+                { "param.SilentInstall", "/S" }
             }
         },
         new InstallableApp()
         {
             Name = "HandBrake",
-            Description = "HandBrake — бесплатный видеотранскодер (GPL)",
+            DescriptionKey = "app.handbrake.Description",
             ExecutablePath = "HandBrake-1.9.2-x86_64-Win_GUI.exe",
             SizeMB = Math.Round(fileSizes["HandBrake-1.9.2-x86_64-Win_GUI.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://github.com/HandBrake/HandBrake/blob/master/COPYING",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Тихая установка", "/S" }
+                { "param.SilentInstall", "/S" }
             }
         },
         new InstallableApp()
         {
             Name = "XMedia Recode",
-            Description = "XMedia Recode — универсальный аудио/видео конвертер",
+            DescriptionKey = "app.xmedia.Description",
             ExecutablePath = "XMediaRecode3612_x64_setup.exe",
             SizeMB = Math.Round(fileSizes["XMediaRecode3612_x64_setup.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://www.xmedia-recode.de/en/",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/VERYSILENT" },
-                { "Не перезагружать", "/NORESTART" },
-                { "Язык", "/LANG=Russian" },
-                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+                { "param.SilentInstall", "/VERYSILENT" },
+                { "param.NoRestart", "/NORESTART" },
+                { "param.Language", "/LANG=Russian" },
+                { "param.CreateDesktopShortcut", "/MERGETASKS=desktopicon" }
             }
         },
         new InstallableApp()
         {
             Name = "OpenShot",
-            Description = "OpenShot Video Editor — бесплатный видеоредактор и конвертер",
+            DescriptionKey = "app.openshot.Description",
             ExecutablePath = "OpenShot-v3.3.0-x86_64.exe",
             SizeMB = Math.Round(fileSizes["OpenShot-v3.3.0-x86_64.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/VERYSILENT" },
-                { "Не перезагружать", "/NORESTART" },
-                { "Ярлык на столе", "/MERGETASKS=desktopicon" }
+                { "param.SilentInstall", "/VERYSILENT" },
+                { "param.NoRestart", "/NORESTART" },
+                { "param.CreateDesktopShortcut", "/MERGETASKS=desktopicon" }
             }
         },
         new InstallableApp()
         {
             Name = "AIMP",
-            Description = "AIMP — бесплатный аудиоплеер",
+            DescriptionKey = "app.aimp.Description",
             ExecutablePath = "aimp_5.40.2675_w64.exe",
             SizeMB = Math.Round(fileSizes["aimp_5.40.2675_w64.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://www.aimp.ru/?do=eula&os=windows",
             PathParameterKey = "/AUTO=",
             CustomParameters =
             {
-                { "Тихая установка", "/SILENT" },
+                { "param.SilentInstall", "/SILENT" },
             }
         },
         new InstallableApp()
         {
             Name = "Clementine",
-            Description = "Современный музыкальный проигрыватель и библиотека для организации коллекции",
+            DescriptionKey = "app.clementine.Description",
             ExecutablePath = "ClementineSetup-1.4.1-18-g4ab6f35ec.exe",
             SizeMB = Math.Round(fileSizes["ClementineSetup-1.4.1-18-g4ab6f35ec.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                 { "Режим установки", "/S" }
+                 { "param.InstallMode", "/S" }
             }
         },
         new InstallableApp()
         {
             Name = "7-Zip",
-            Description = "Мощный архиватор с высокой степенью сжатия и поддержкой множества форматов",
+            DescriptionKey = "app.7zip.Description",
             ExecutablePath = "7z2409-x64.exe",
             SizeMB = Math.Round(fileSizes["7z2409-x64.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.7-zip.org/license.txt",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Режим установки", "/S" }
+                { "param.InstallMode", "/S" }
             },
             ShortcutRelativePath = "7zFM.exe",
             ShortcutName         = "7-Zip"
@@ -301,16 +324,16 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "qBittorrent",
-            Description = "Мощный клиент для торрент-загрузок с открытым исходным кодом",
-            ExecutablePath = "qbittorrent_5.1.0_x64_setup.exe", // Уточните версию!
+            DescriptionKey = "app.qbittorrent.Description",
+            ExecutablePath = "qbittorrent_5.1.0_x64_setup.exe",
             SizeMB = Math.Round(fileSizes["qbittorrent_5.1.0_x64_setup.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.gnu.org/licenses/gpl-2.0.html",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Режим установки", "/S" },
-                { "Задачи", "/NOADDTOSTART" },
-                { "Ассоциации", "/ASSOCIATE" }
+                { "param.InstallMode", "/S" },
+                { "param.DisableStartMenu", "/NOADDTOSTART" },
+                { "param.EnableAssociations", "/ASSOCIATE" }
             },
             ShortcutName = "qBittorrent",
             ShortcutRelativePath = "qbittorrent.exe"
@@ -318,16 +341,16 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "HWMonitor",
-            Description = "Мониторинг температуры, напряжения и скорости вентиляторов компонентов ПК",
+            DescriptionKey = "app.hwmonitor.Description",
             ExecutablePath = "hwi64_826.exe",
             SizeMB = Math.Round(fileSizes["hwi64_826.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.cpuid.com/softwares/hwmonitor.html",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "VerySilent",    "/VERYSILENT" },
-                { "SuppressMsgs",  "/SUPPRESSMSGBOXES" },
-                { "NoRestart",     "/NORESTART" }
+                { "param.VerySilent",    "/VERYSILENT" },
+                { "param.SuppressMessages",  "/SUPPRESSMSGBOXES" },
+                { "param.NoRestart",     "/NORESTART" }
             },
             ShortcutRelativePath = "HWiNFO64.exe",
             ShortcutName         = "HWMonitor"
@@ -335,40 +358,40 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "PDF‑XChange Editor",
-            Description = "PDF‑редактор с аннотациями и редактированием текста",
+            DescriptionKey = "app.pdfxchange.Description",
             ExecutablePath = "PDF-XChangex64.msi",
             SizeMB = Math.Round(fileSizes["PDF-XChangex64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.tracker-software.com/PDFXLicense.pdf",
-            PathParameterKey = "", // для MSI путь будет добавлен в CustomParameters
+            PathParameterKey = "",
             CustomParameters =
             {
-                { "Тихая установка", "/quiet" },
-                { "Без перезагрузки", "/norestart" },
-                { "Язык", "EDITOR_LANGUAGE=ru-RU" },
-                { "Путь установки", "INSTALLLOCATION=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/quiet" },
+                { "param.NoRestart", "/norestart" },
+                { "param.Language", "EDITOR_LANGUAGE=ru-RU" },
+                { "param.InstallPath", "INSTALLLOCATION=\"{InstallDir}\"" }
             }
         },
         new InstallableApp()
         {
             Name = "ClamWin",
-            Description = "Антивирус с открытым исходным кодом.",
+            DescriptionKey = "app.clamwin.Description",
             ExecutablePath = "clamwin-0.103.2.1-setup.exe",
             SizeMB = Math.Round(fileSizes["clamwin-0.103.2.1-setup.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://github.com/clamwin/clamwin/blob/master/COPYING",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
-                { "Язык", "/LANG=Russian" },
-                { "Компоненты", "/COMPONENTS=\"main,context_menu,russian\"" },
-                { "Отключить SmartScreen", "/SP-" }
+                { "param.SilentInstall", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+                { "param.Language", "/LANG=Russian" },
+                { "param.Components", "/COMPONENTS=\"main,context_menu,russian\"" },
+                { "param.DisableSmartScreen", "/SP-" }
             }
         },
         new InstallableApp()
         {
             Name = "Emsisoft Emergency Kit",
-            Description = "Портативный антивирусный сканер для экстренной проверки системы",
-            ExecutablePath = "EmsisoftEmergencyKit.zip",  // теперь ZIP
+            DescriptionKey = "app.emsisoft.Description",
+            ExecutablePath = "EmsisoftEmergencyKit.zip",
             SizeMB = Math.Round(fileSizes["EmsisoftEmergencyKit.zip"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.emsisoft.com/en/eula/?utm_source=chatgpt.com",
             IsPortable = true,
@@ -378,43 +401,43 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "Cryptomator",
-            Description = "Клиентское шифрование папок и облаков (FUSE‑тома). Автоматически шифрует файлы перед загрузкой в Dropbox/Google Drive.",
+            DescriptionKey = "app.cryptomator.Description",
             ExecutablePath = "Cryptomator-1.16.0-x64.msi",
             SizeMB = Math.Round(fileSizes["Cryptomator-1.16.0-x64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://github.com/cryptomator/cryptomator/blob/master/LICENSE",
-            PathParameterKey = "",  // для MSI не используем отдельный ключ
+            PathParameterKey = "",
             CustomParameters =
             {
-                { "Тихая установка", "/quiet" },
-                { "Без перезагрузки", "/norestart" },
-                { "Путь установки", "INSTALLDIR=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/quiet" },
+                { "param.NoRestart", "/norestart" },
+                { "param.InstallPath", "INSTALLDIR=\"{InstallDir}\"" }
             }
         },
         new InstallableApp()
         {
             Name = "KeePass",
-            Description = "Бесплатный менеджер паролей с открытым исходным кодом для безопасного хранения учетных данных. Локальное шифрование (AES-256) и поддержка плагинов.",
+            DescriptionKey = "app.keepass.Description",
             ExecutablePath = "KeePass-2.58-Setup.exe",
             SizeMB = Math.Round(fileSizes["KeePass-2.58-Setup.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://keepass.info/help/v2/license.html",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Режим установки", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
-                { "Язык", "/LANG=English" } // Временно английский, русский установим позже
+                { "param.SilentInstall", "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" },
+                { "param.Language", "/LANG=English" }
             },
             AdditionalFiles = ["Russian.lngx", "KeePass.config.xml"],
             AdditionalFilesDestinations =
             {
                 {"Russian.lngx", "Languages\\Russian.lngx" },
-                { "KeePass.config.xml", "KeePass.config.xml" }  // Копируем в корень
+                { "KeePass.config.xml", "KeePass.config.xml" }
             },
-            LanguageConfig = "Russian" // Указываем язык для конфигурации
+            LanguageConfig = "Russian"
         },
         new InstallableApp()
         {
             Name = "Bitwarden",
-            Description = "Менеджер паролей с открытым кодом, шифрованием AES-256 и синхронизацией. Генерирует сложные пароли, поддерживает 2FA.",
+            DescriptionKey = "app.bitwarden.Description",
             ExecutablePath = "Bitwarden-Portable-2025.5.1.exe",
             SizeMB = Math.Round(fileSizes["Bitwarden-Portable-2025.5.1.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://github.com/bitwarden/clients/blob/main/LICENSE_BITWARDEN.txt",
@@ -422,55 +445,55 @@ namespace WindSoftInstaller
             ShortcutName = "Bitwarden",
             CustomParameters =
             {
-                { "Режим распаковки", "/VERYSILENT" }
+                { "param.ExtractSilent", "/VERYSILENT" }
             }
         },
         new InstallableApp()
         {
             Name = "Wise Disk Cleaner",
-            Description = "Программа для оптимизации дискового пространства с глубоким анализом мусорных файлов. Удаляет временные данные, кэш приложений и дубликаты, ускоряя работу системы.",
+            DescriptionKey = "app.wisedisk.Description",
             ExecutablePath = "WDCFree_11.2.3.843.exe",
             SizeMB = Math.Round(fileSizes["WDCFree_11.2.3.843.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://www.wisecleaner.com/eula.html",
             PathParameterKey = "/DIR=",
             CustomParameters =
             {
-                { "Тихая установка", "/VERYSILENT" }
+                { "param.SilentInstall", "/VERYSILENT" }
             },
             ShortcutName = "Wise Disk Cleaner"
         },
         new InstallableApp()
         {
             Name = "BleachBit",
-            Description = "Инструмент для удаления кэша, истории и временных файлов с перезаписью для защиты конфиденциальности.",
+            DescriptionKey = "app.bleachbit.Description",
             ExecutablePath = "BleachBit-5.0.0-setup.exe",
             SizeMB = Math.Round(fileSizes["BleachBit-5.0.0-setup.exe"] / (1024.0*1024.0), 2),
             LicenseUrl = "https://github.com/bleachbit/bleachbit/blob/master/COPYING",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Тихая установка", "/S" },
-                { "Для всех пользователей", "/allusers" }
+                { "param.SilentInstall", "/S" },
+                { "param.AllUsers", "/allusers" }
             },
             ShortcutName = "BleachBit"
         },
         new InstallableApp()
         {
             Name = "UltraDefrag",
-            Description = "Профессиональный дефрагментатор для Windows. Оптимизирует системные файлы, включая загрузочные области, и поддерживает работу из командной строки.",
+            DescriptionKey = "app.ultradefrag.Description",
             ExecutablePath = "ultradefrag-7.1.4.bin.amd64.exe",
             SizeMB = Math.Round(fileSizes["ultradefrag-7.1.4.bin.amd64.exe"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://ultradefrag.net/en/license",
             PathParameterKey = "/D=",
             CustomParameters =
             {
-                { "Тихая установка", "/S" }
+                { "param.SilentInstall", "/S" }
             }
         },
         new InstallableApp()
         {
             Name = "RetroArch",
-            Description = "Универсальная платформа для запуска эмуляторов, игр и мультимедиа с поддержкой ретро-консолей. Объединяет различные движки в единый интерфейс с расширенными настройками графики, шейдеров и управления. Подходит для создания унифицированной игровой среды с кросс-платформенной синхронизацией.",
+            DescriptionKey = "app.retroarch.Description",
             ExecutablePath = "RetroArchPortable.zip",
             SizeMB = Math.Round(fileSizes["RetroArchPortable.zip"]/(1024.0*1024.0), 2),
             LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
@@ -481,7 +504,7 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "PCSX2",
-            Description = "Эмулятор PlayStation 2 с поддержкой HD-разрешения, улучшенной графикой и сохранениями состояний. Позволяет запускать игры с физических дисков или образов, включает настройки для оптимизации производительности.",
+            DescriptionKey = "app.pcsx2.Description",
             ExecutablePath = "pcsx2-v2.2.0-windows-x64-Qt.7z",
             SizeMB = Math.Round(fileSizes["pcsx2-v2.2.0-windows-x64-Qt.7z"]/(1024.0*1024.0),2),
             LicenseUrl = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
@@ -492,279 +515,268 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "Microsoft VC++ 2015-2022 Redistributable (x64)",
-            Description = "Необходимые SxS-сборки для приложений на C++ (Afterburner, др.)",
+            DescriptionKey = "app.vcredist.x64.Description",
             SizeMB = Math.Round(fileSizes["vc_redist.x64.exe"]/(1024.0*1024.0),2),
             LicenseUrl = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
             ExecutablePath = "vc_redist.x64.exe",
             PathParameterKey = "",
             CustomParameters = new Dictionary<string,string>
             {
-                { "Тихая установка", "/install /quiet /norestart" }
+                { "param.SilentInstall", "/install /quiet /norestart" }
             },
             ShortcutName    = null
         },
         new InstallableApp()
         {
           Name = "Microsoft VC++ 2015-2022 Redistributable (x86)",
-          Description = "SxS-библиотеки x86 для приложений на C++",
+          DescriptionKey = "app.vcredist.x86.Description",
           ExecutablePath = "vc_redist.x86.exe",
           SizeMB = Math.Round(fileSizes["vc_redist.x86.exe"]/(1024.0*1024.0),2),
           LicenseUrl  = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
           PathParameterKey = "",
           CustomParameters = new Dictionary<string,string>
           {
-            { "Тихая установка", "/quiet /norestart" }
+            { "param.SilentInstall", "/quiet /norestart" }
           },
           ShortcutName    = null
         },
         new InstallableApp()
         {
-            Name                 = "MSI Afterburner",
-            Description          = "Портативный мониторинг и разгон видеокарт (без RTSS)",
-            ExecutablePath       = "MSIAfterburnerPortable.zip",
-            SizeMB               = Math.Round(fileSizes["MSIAfterburnerPortable.zip"]/(1024.0*1024.0), 2),
-            LicenseUrl           = "https://www.msi.com/page/eula",
-            IsPortable           = true,
-            ShortcutName         = "MSI Afterburner",
+            Name = "MSI Afterburner",
+            DescriptionKey = "app.afterburner.Description",
+            ExecutablePath = "MSIAfterburnerPortable.zip",
+            SizeMB = Math.Round(fileSizes["MSIAfterburnerPortable.zip"]/(1024.0*1024.0), 2),
+            LicenseUrl = "https://www.msi.com/page/eula",
+            IsPortable = true,
+            ShortcutName = "MSI Afterburner",
             ShortcutRelativePath = "MSIAfterburner.exe"
         },
         new InstallableApp()
         {
           Name = "RivaTuner Statistics Server",
-          Description = "Сервер статистики для MSI Afterburner (независимый)",
+          DescriptionKey = "app.rivatuner.Description",
           ExecutablePath = "RTSSSetup736.exe",
           SizeMB = Math.Round(fileSizes["RTSSSetup736.exe"]/(1024.0*1024.0),2),
           LicenseUrl = "https://www.msi.com/page/eula",
           PathParameterKey = "/D=",
           CustomParameters = new Dictionary<string,string>
           {
-                { "Тихая установка", "/S" },
-                //{ "Language", "/LANG=1049" }// Похоже не работает. Исправлено заменой конф-файла
+                { "param.SilentInstall", "/S" }
           }
         },
         new InstallableApp()
         {
-            Name            = "Anki",
-            Description     = "Обучение иностранным языкам. Система интервальных повторений для карточек (SRS)",
-            ExecutablePath  = "anki-25.02.7-windows-qt6.exe",            // адаптируйте под вашу версию
-            SizeMB          = Math.Round(fileSizes["anki-25.02.7-windows-qt6.exe"]/(1024.0*1024.0),2),
-            LicenseUrl      = "https://github.com/ankitects/anki/blob/main/LICENSE",
-            PathParameterKey= "/D=",
-            CustomParameters= new Dictionary<string,string>
-            {
-                { "Тихая установка", "/S" }
-            },
-            ShortcutName        = "Anki",
-            ShortcutRelativePath= "anki.exe"
-        },
-        new InstallableApp()
-        {
-            Name                  = "Kiwix Desktop",
-            Description           = "Офлайн-читалка для Wikipedia и Wikibooks через ZIM-архивы",
-            ExecutablePath        = "kiwix-desktop_windows_x64_2.4.1.zip",
-            SizeMB                = Math.Round(fileSizes["kiwix-desktop_windows_x64_2.4.1.zip"] / (1024.0*1024.0), 2),
-            LicenseUrl            = "https://github.com/kiwix/kiwix-desktop/blob/master/LICENSE",
-            IsPortable            = true,
-            ShortcutName          = "Kiwix Desktop",
-            ShortcutRelativePath  = "kiwix-desktop.exe"
-        },
-        new InstallableApp()
-        {
-            Name            = "Calibre",
-            Description     = "Менеджер электронных книг и конвертер форматов",
-            ExecutablePath  = "calibre-64bit-8.5.0.msi",
-            SizeMB          = Math.Round(fileSizes["calibre-64bit-8.5.0.msi"]/(1024.0*1024.0),2),
-            LicenseUrl      = "https://calibre-ebook.com/license",
-            PathParameterKey= "",
-            CustomParameters= new Dictionary<string,string>
-            {
-                { "Quiet",      "/quiet" },
-                { "NoRestart",  "/norestart" },
-                { "Папка установки", "TARGETDIR=\"{InstallDir}\"" }
-            },
-            ShortcutName        = "Calibre",
-            ShortcutRelativePath= "PFiles64\\Calibre2\\calibre.exe"
-        },
-        new InstallableApp()
-        {
-            Name            = "Zotero",
-            Description     = "Менеджер библиографии и PDF-анализатор для исследователей",
-            ExecutablePath  = "Zotero-7.0.16_x64_setup.exe",
-            SizeMB          = Math.Round(fileSizes["Zotero-7.0.16_x64_setup.exe"]/(1024.0*1024.0),2),
-            LicenseUrl      = "https://www.zotero.org/license/",
-            PathParameterKey= "/D=",
-            CustomParameters= new Dictionary<string,string>
-            {
-                { "Silent", "/S" }
-            },
-            ShortcutName        = null
-        },
-        new InstallableApp()
-        {
-            Name            = "PDFsam Basic",
-            Description     = "Open-source инструмент для разбивки, склейки и поворота PDF-файлов",
-            ExecutablePath  = "pdfsam-basic-5.3.1-windows-x64.msi",
-            SizeMB          = Math.Round(fileSizes["pdfsam-basic-5.3.1-windows-x64.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl      = "https://github.com/torakiki/pdfsam/blob/develop/LICENSE",
-            PathParameterKey= "",
-            CustomParameters =
-            {
-                // специфичные для PDFsam
-                { "Пропустить страницу благодарностей", "SKIPTHANKSPAGE=Yes" },
-                { "Отключить проверку обновлений",    "CHECK_FOR_UPDATES=false" },
-                // административная распаковка будет использовать TARGETDIR:
-                { "Папка установки", "TARGETDIR=\"{InstallDir}\"" }
-            },
-            ShortcutName         = "PDFsam Basic",
-            ShortcutRelativePath = "PFiles\\PDFsam Basic\\pdfsam.exe"
-        },
-
-        new InstallableApp()
-        {
-            Name            = "PDF24 Creator",
-            Description     = "Бесплатный PDF-редактор и виртуальный принтер (Freeware)",
-            ExecutablePath  = "pdf24-creator-11.27.0-x64.msi",   // ваш скачанный MSI
-            SizeMB          = Math.Round(
-                                 fileSizes["pdf24-creator-11.27.0-x64.msi"]
-                                 / (1024.0 * 1024.0), 2),
-            LicenseUrl      = "https://www.pdf24.org/en/terms-of-use",
-            PathParameterKey= "",    // для MSI мы используем только CustomParameters
+            Name = "Anki",
+            DescriptionKey = "app.anki.Description",
+            ExecutablePath = "anki-25.02.7-windows-qt6.exe",
+            SizeMB = Math.Round(fileSizes["anki-25.02.7-windows-qt6.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://github.com/ankitects/anki/blob/main/LICENSE",
+            PathParameterKey = "/D=",
             CustomParameters = new Dictionary<string,string>
             {
-                { "Тихая установка",  "/quiet"  },
-                { "Без перезапуска",   "/norestart" },
-                { "Папка установки",   "INSTALLDIR=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/S" }
             },
-            ShortcutName        = "PDF24 Creator",
-            ShortcutRelativePath= "pdf24-creator.exe"
+            ShortcutName = "Anki",
+            ShortcutRelativePath = "anki.exe"
         },
         new InstallableApp()
         {
-            Name             = "XnView MP",
-            Description      = "Универсальный просмотрщик и конвертер изображений с поддержкой RAW, гистограммой и базовыми инструментами редактирования. Позволяет сортировать коллекции, создавать PDF-презентации и применять пакетные преобразования (изменение размера, водяные знаки).",
-            ExecutablePath   = "XnViewMP-win-x64.exe",
-            SizeMB           = Math.Round(fileSizes["XnViewMP-win-x64.exe"]/(1024.0*1024.0),2),
-            LicenseUrl       = "https://www.xnview.com/en/license/",
+            Name = "Kiwix Desktop",
+            DescriptionKey = "app.kiwix.Description",
+            ExecutablePath = "kiwix-desktop_windows_x64_2.4.1.zip",
+            SizeMB = Math.Round(fileSizes["kiwix-desktop_windows_x64_2.4.1.zip"] / (1024.0*1024.0), 2),
+            LicenseUrl = "https://github.com/kiwix/kiwix-desktop/blob/master/LICENSE",
+            IsPortable = true,
+            ShortcutName = "Kiwix Desktop",
+            ShortcutRelativePath = "kiwix-desktop.exe"
+        },
+        new InstallableApp()
+        {
+            Name = "Calibre",
+            DescriptionKey = "app.calibre.Description",
+            ExecutablePath = "calibre-64bit-8.5.0.msi",
+            SizeMB = Math.Round(fileSizes["calibre-64bit-8.5.0.msi"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://calibre-ebook.com/license",
+            PathParameterKey = "",
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "param.SilentInstall", "/quiet" },
+                { "param.NoRestart", "/norestart" },
+                { "param.InstallPath", "TARGETDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName = "Calibre",
+            ShortcutRelativePath = "PFiles64\\Calibre2\\calibre.exe"
+        },
+        new InstallableApp()
+        {
+            Name = "Zotero",
+            DescriptionKey = "app.zotero.Description",
+            ExecutablePath = "Zotero-7.0.16_x64_setup.exe",
+            SizeMB = Math.Round(fileSizes["Zotero-7.0.16_x64_setup.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.zotero.org/license/",
+            PathParameterKey = "/D=",
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "param.SilentInstall", "/S" }
+            },
+            ShortcutName = null
+        },
+        new InstallableApp()
+        {
+            Name = "PDFsam Basic",
+            DescriptionKey = "app.pdfsam.Description",
+            ExecutablePath = "pdfsam-basic-5.3.1-windows-x64.msi",
+            SizeMB = Math.Round(fileSizes["pdfsam-basic-5.3.1-windows-x64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/torakiki/pdfsam/blob/develop/LICENSE",
+            PathParameterKey = "",
+            CustomParameters =
+            {
+                { "param.SkipThanksPage", "SKIPTHANKSPAGE=Yes" },
+                { "param.DisableUpdateCheck", "CHECK_FOR_UPDATES=false" },
+                { "param.InstallPath", "TARGETDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName = "PDFsam Basic",
+            ShortcutRelativePath = "PFiles\\PDFsam Basic\\pdfsam.exe"
+        },
+        new InstallableApp()
+        {
+            Name = "PDF24 Creator",
+            DescriptionKey = "app.pdf24.Description",
+            ExecutablePath = "pdf24-creator-11.27.0-x64.msi",
+            SizeMB = Math.Round(fileSizes["pdf24-creator-11.27.0-x64.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://www.pdf24.org/en/terms-of-use",
+            PathParameterKey = "",
+            CustomParameters = new Dictionary<string,string>
+            {
+                { "param.SilentInstall", "/quiet" },
+                { "param.NoRestart", "/norestart" },
+                { "param.InstallPath", "INSTALLDIR=\"{InstallDir}\"" }
+            },
+            ShortcutName = "PDF24 Creator",
+            ShortcutRelativePath = "pdf24-creator.exe"
+        },
+        new InstallableApp()
+        {
+            Name = "XnView MP",
+            DescriptionKey = "app.xnview.Description",
+            ExecutablePath = "XnViewMP-win-x64.exe",
+            SizeMB = Math.Round(fileSizes["XnViewMP-win-x64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://www.xnview.com/en/license/",
             PathParameterKey = "/dir=",
             CustomParameters = new Dictionary<string,string>
             {
-                { "Тихая установка",  "/verysilent" },
-                { "Без перезагрузки",  "/norestart"  },
-                { "Папка установки",   "/dir=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/verysilent" },
+                { "param.NoRestart", "/norestart" },
+                { "param.InstallPath", "/dir=\"{InstallDir}\"" }
             },
-            ShortcutName        = "XnView MP",
-            ShortcutRelativePath= "xnviewmp.exe"
+            ShortcutName = "XnView MP",
+            ShortcutRelativePath = "xnviewmp.exe"
         },
         new InstallableApp()
         {
-            Name             = "FastStone Image Viewer",
-            Description      = "Лёгкий, но мощный просмотрщик с функциями редактирования: кадрирование, коррекция цвета, ретушь и пакетная обработка. Поддерживает все популярные форматы, включая RAW, и создание PDF-галерей. Особенность — удобный режим полноэкранного просмотра.",
-            ExecutablePath   = "FSViewerSetup80.exe",
-            SizeMB           = Math.Round(fileSizes["FSViewerSetup80.exe"]/(1024.0*1024.0),2),
-            LicenseUrl       = "https://documentation.help/FastStone-Image-Viewer-ru/License.htm",
+            Name = "FastStone Image Viewer",
+            DescriptionKey = "app.faststone.Description",
+            ExecutablePath = "FSViewerSetup80.exe",
+            SizeMB = Math.Round(fileSizes["FSViewerSetup80.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://documentation.help/FastStone-Image-Viewer-ru/License.htm",
             CustomParameters = new Dictionary<string,string>
             {
-                { "Тихая установка",       "/S" },
-                { "Отключить SmartScreen", "/SP-" },
-                { "Подавить сообщения",     "/SUPPRESSMSGBOXES" },
-                //{ "Папка установки",        "/D={InstallDir}" }
+                { "param.SilentInstall", "/S" },
+                { "param.DisableSmartScreen", "/SP-" },
+                { "param.SuppressMessages", "/SUPPRESSMSGBOXES" }
             },
-            ShortcutName     = null
-            //ShortcutRelativePath= "FSViewer.exe"
+            ShortcutName = null
         },
         new InstallableApp()
         {
-            Name             = "VC++ 2013 Redistributable (x86)",
-            Description      = "Библиотеки CRT (VS2013)",
-            ExecutablePath   = "vcredist_x86.exe",
-            SizeMB           = Math.Round(fileSizes["vcredist_x86.exe"]/(1024.0*1024.0),2),
-            LicenseUrl       = "https://support.microsoft.com/kb/40784",
-            PathParameterKey = "/install /quiet /norestart",  // у этого пакета именно такая комбинация
-            CustomParameters = [],
-            ShortcutName     = null
-        },
-        new InstallableApp()
-        {
-            Name             = "VC++ 2013 Redistributable (x64)",
-            Description      = "Библиотеки CRT (VS2013)",
-            ExecutablePath   = "vcredist_x64.exe",
-            SizeMB           = Math.Round(fileSizes["vcredist_x64.exe"]/(1024.0*1024.0),2),
-            LicenseUrl       = "https://support.microsoft.com/kb/40784",
+            Name = "VC++ 2013 Redistributable (x86)",
+            DescriptionKey = "app.vcredist2013.x86.Description",
+            ExecutablePath = "vcredist_x86.exe",
+            SizeMB = Math.Round(fileSizes["vcredist_x86.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://support.microsoft.com/kb/40784",
             PathParameterKey = "/install /quiet /norestart",
             CustomParameters = [],
-            ShortcutName     = null
+            ShortcutName = null
         },
         new InstallableApp()
         {
-            Name               = "Marble",
-            Description        = "3D‑глобус и атлас на Qt аналог Google Earth, англоязычный",
-            ExecutablePath     = "Marble-setup_2.2.0-1_x64.exe",
-            SizeMB             = Math.Round(fileSizes["Marble-setup_2.2.0-1_x64.exe"]/(1024.0*1024.0), 2),
-            LicenseUrl         = "https://invent.kde.org/education/marble/-/blob/master/LICENSE.txt",
-            PathParameterKey   = "/DIR=",
-            CustomParameters   = new Dictionary<string,string>
+            Name = "VC++ 2013 Redistributable (x64)",
+            DescriptionKey = "app.vcredist2013.x64.Description",
+            ExecutablePath = "vcredist_x64.exe",
+            SizeMB = Math.Round(fileSizes["vcredist_x64.exe"]/(1024.0*1024.0),2),
+            LicenseUrl = "https://support.microsoft.com/kb/40784",
+            PathParameterKey = "/install /quiet /norestart",
+            CustomParameters = [],
+            ShortcutName = null
+        },
+        new InstallableApp()
+        {
+            Name = "Marble",
+            DescriptionKey = "app.marble.Description",
+            ExecutablePath = "Marble-setup_2.2.0-1_x64.exe",
+            SizeMB = Math.Round(fileSizes["Marble-setup_2.2.0-1_x64.exe"]/(1024.0*1024.0), 2),
+            LicenseUrl = "https://invent.kde.org/education/marble/-/blob/master/LICENSE.txt",
+            PathParameterKey = "/DIR=",
+            CustomParameters = new Dictionary<string,string>
             {
-                { "Тихая установка", "/VERYSILENT" },
-                { "Без перезагрузки", "/NORESTART" }
+                { "param.SilentInstall", "/VERYSILENT" },
+                { "param.NoRestart", "/NORESTART" }
             },
-            ShortcutName       = "Marble Globe",
+            ShortcutName = "Marble Globe",
             ShortcutRelativePath = "marble-qt.exe"
         },
         new InstallableApp()
         {
-            Name                = "Notepad++",
-            Description         = "Текстовый редактор с подсветкой синтаксиса для множества языков программирования и разметки. Отличается легкостью, поддержкой плагинов и удобными инструментами для работы с кодом — сравнением файлов, регулярными выражениями и макросами. Особенно полезен для быстрого редактирования и обработки текстовых данных.",
-            ExecutablePath      = "npp.8.8.Installer.x64.exe",
-            SizeMB              = Math.Round(fileSizes["npp.8.8.Installer.x64.exe"]/(1024.0*1024.0), 2),
-            LicenseUrl          = "https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE",
-            PathParameterKey    = "/D=",
-            CustomParameters    = new Dictionary<string,string>
+            Name = "Notepad++",
+            DescriptionKey = "app.notepadpp.Description",
+            ExecutablePath = "npp.8.8.Installer.x64.exe",
+            SizeMB = Math.Round(fileSizes["npp.8.8.Installer.x64.exe"]/(1024.0*1024.0), 2),
+            LicenseUrl = "https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE",
+            PathParameterKey = "/D=",
+            CustomParameters = new Dictionary<string,string>
             {
-                { "Silent install", "/S" },
-                // Отключить авто­обновление, чтобы не тянуло из интернета
-                { "NoUpdater", "/noUpdater" },
-                { "Language", "-Lru" }
+                { "param.SilentInstall", "/S" },
+                { "param.DisableAutoUpdate", "/noUpdater" },
+                { "param.Language", "-Lru" }
             },
-            ShortcutName        = "Notepad++",
+            ShortcutName = "Notepad++",
             ShortcutRelativePath = "notepad++.exe"
         },
-
         new InstallableApp()
         {
-            Name                = "Geany",
-            Description         = "Легковесный и быстрый текстовый редактор с базовыми функциями IDE, включая подсветку синтаксиса, автодополнение кода и простую навигацию по проекту. Поддерживает множество языков программирования, сохраняя при этом минималистичный интерфейс и низкое потребление ресурсов. Идеален для быстрого редактирования кода на разных платформах.",
-            ExecutablePath      = "geany-2.0_setup.exe",
-            SizeMB              = Math.Round(fileSizes["geany-2.0_setup.exe"]/(1024.0*1024.0), 2),
-            LicenseUrl          = "https://creativecommons.org/licenses/by-sa/4.0/",
-            PathParameterKey    = "/D=",
-            CustomParameters    = new Dictionary<string,string>
+            Name = "Geany",
+            DescriptionKey = "app.geany.Description",
+            ExecutablePath = "geany-2.0_setup.exe",
+            SizeMB = Math.Round(fileSizes["geany-2.0_setup.exe"]/(1024.0*1024.0), 2),
+            LicenseUrl = "https://creativecommons.org/licenses/by-sa/4.0/",
+            PathParameterKey = "/D=",
+            CustomParameters = new Dictionary<string,string>
             {
-                { "Silent install", "/S" },
-                { "Language", "/LANG=Russian" }
+                { "param.SilentInstall", "/S" },
+                { "param.Language", "/LANG=Russian" }
             },
-            ShortcutName        = "Geany",
-            //ShortcutRelativePath = "bin\\geany.exe"
+            ShortcutName = "Geany"
         },
         new InstallableApp()
         {
-            Name                 = "muCommander",
-            Description          = "Легкий кроссплатформенный файловый менеджер",
-            ExecutablePath       = "mucommander-1.5.2.msi",
-            SizeMB               = Math.Round(fileSizes["mucommander-1.5.2.msi"] / (1024.0 * 1024.0), 2),
-            LicenseUrl           = "https://github.com/mucommander/mucommander/blob/master/LICENSE",
-            PathParameterKey     = "",
-            CustomParameters     = new Dictionary<string,string>
+            Name = "muCommander",
+            DescriptionKey = "app.mucommander.Description",
+            ExecutablePath = "mucommander-1.5.2.msi",
+            SizeMB = Math.Round(fileSizes["mucommander-1.5.2.msi"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://github.com/mucommander/mucommander/blob/master/LICENSE",
+            PathParameterKey = "",
+            CustomParameters = new Dictionary<string,string>
             {
-                { "Тихая установка",       "/quiet" },
-                { "Без перезапуска",        "/norestart" },
-                { "Папка установки",        "INSTALLDIR=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/quiet" },
+                { "param.NoRestart", "/norestart" },
+                { "param.InstallPath", "INSTALLDIR=\"{InstallDir}\"" }
             },
-            ShortcutName         = null
+            ShortcutName = null
         },
         new InstallableApp()
         {
             Name = "Double Commander",
-            Description = "Мощный двухпанельный файловый менеджер",
+            DescriptionKey = "app.doublecmd.Description",
             ExecutablePath = "doublecmd.zip",
             SizeMB = Math.Round(fileSizes["doublecmd.zip"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://doublecmd.sourceforge.io/license.html",
@@ -775,30 +787,28 @@ namespace WindSoftInstaller
         new InstallableApp()
         {
             Name = "LibreOffice",
-            Description = "LibreOffice — офисный пакет с поддержкой PDF‑редактора (Draw)",
+            DescriptionKey = "app.libreoffice.Description",
             ExecutablePath = "LibreOffice_25.2.4_Win_x86-64.msi",
             SizeMB = Math.Round(fileSizes["LibreOffice_25.2.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
             LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
-            // PathParameterKey не нужен для MSI‑разветвления ???
-            PathParameterKey = "", // MSI не использует /D=
-                    CustomParameters =
+            PathParameterKey = "",
+            CustomParameters = new Dictionary<string,string>
             {
-                { "Quiet",      "/qn" },
-                { "Components", "ADDLOCAL=ALL" },
-                { "InstallDir", "INSTALLLOCATION=\"{InstallDir}\"" }
+                { "param.SilentInstall", "/qn" },
+                { "param.Components", "ADDLOCAL=ALL" },
+                { "param.InstallPath", "INSTALLLOCATION=\"{InstallDir}\"" }
             }
         },
         new InstallableApp()
         {
-            Name                  = "Apache OpenOffice Portable",
-            Description           = "Офисный пакет с открытым кодом, включающий текстовый редактор, таблицы, презентации и СУБД. Совместим с форматами Microsoft Office, но использует стандарт ODF. Особенность — работа без подписки и поддержка макросов, хотя интерфейс выглядит устаревшим. Подходит для базовых задач.",
-            ExecutablePath        = "ApacheOpenOfficePortable.zip",
-            SizeMB                = Math.Round(fileSizes["ApacheOpenOfficePortable.zip"] / (1024.0 * 1024.0), 2),
-            LicenseUrl            = "https://portableapps.com/about/legal",
-            IsPortable            = true,
-            ShortcutName          = "OpenOffice",
-            ShortcutRelativePath  = "OpenOfficeBasePortable.exe"
-
+            Name = "Apache OpenOffice Portable",
+            DescriptionKey = "app.openoffice.Description",
+            ExecutablePath = "ApacheOpenOfficePortable.zip",
+            SizeMB = Math.Round(fileSizes["ApacheOpenOfficePortable.zip"] / (1024.0 * 1024.0), 2),
+            LicenseUrl = "https://portableapps.com/about/legal",
+            IsPortable = true,
+            ShortcutName = "OpenOffice",
+            ShortcutRelativePath = "OpenOfficeBasePortable.exe"
         }
     ];
         }
