@@ -46,9 +46,6 @@ namespace WindSoftInstaller
 
             Localization.LanguageChanged += OnLanguageChanged;
 
-            // 1) Спрашиваем язык сразу при старте
-            AskInitialLanguage();
-
             // 2) Применяем переводы ко всем контролам
             ApplyLocalization();
 
@@ -105,11 +102,59 @@ namespace WindSoftInstaller
             this.Font = new Font("Segoe UI", 9F);
         }
 
+        private void PopulateAppsGrid()
+        {
+            var allApps = AppRepository.LoadApps();
+
+            // Загружаем иконки для вновь созданных объектов
+            LoadIcons(allApps);
+
+            // Фильтруем скрытые
+            var visibleApps = allApps
+                .Where(a => !HiddenApps.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            // Привязываем к DataGridView
+            dataGridViewPrograms.DataSource = new BindingList<InstallableApp>(visibleApps);
+        }
+
+        // Загружаем иконки из папки Icons для каждого InstallableApp.
+        private void LoadIcons(IEnumerable<InstallableApp> apps)
+        {
+            string iconsFolder = Path.Combine(Application.StartupPath, "Icons");
+            foreach (var app in apps)
+            {
+                try
+                {
+                    string icoName = Path.ChangeExtension(app.ExecutablePath, ".ico");
+                    string icoPath = Path.Combine(iconsFolder, icoName);
+
+                    if (File.Exists(icoPath))
+                    {
+                        using var ico = new Icon(icoPath);
+                        var bmp = ico.ToBitmap();
+                        app.Icon?.Dispose();
+                        app.Icon = bmp;
+                    }
+                    else
+                    {
+                        app.Icon = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось загрузить иконку для {App}", app.Name);
+                    app.Icon = null;
+                }
+            }
+        }
+
         private void OnLanguageChanged()
         {
             // Обновляем статичные элементы (меню, кнопки)
             ApplyLocalization();
-
+            // Перерисовка для вариаций выбора русского/английского языка.
+            PopulateAppsGrid();
             // Обновляем DataGridView
             RefreshDataGrid();
         }
@@ -122,6 +167,7 @@ namespace WindSoftInstaller
             // 2. Обновляем заголовки колонок
             colName.HeaderText = Localization.T("colName");
             colDescription.HeaderText = Localization.T("colDescription");
+            colParams.HeaderText = Localization.T("colParams");
             colSize.HeaderText = Localization.T("colSize");
             colLicense.HeaderText = Localization.T("colLicense");
 
@@ -235,40 +281,9 @@ namespace WindSoftInstaller
             string iconsFolder = Path.Combine(Application.StartupPath, "Icons");
             _logger.LogDebug("Иконки будут искаться в папке: {IconsFolder}", iconsFolder);
 
-            foreach (var app in apps)
-            {
-                try
-                {
-                    // Формируем имя .ico по тому же имени EXE
-                    // Например, "vlc-3.0.21.exe" → "vlc-3.0.21.ico"
-                    string icoName = Path.ChangeExtension(app.ExecutablePath, ".ico");
-                    string icoPath = Path.Combine(iconsFolder, icoName);
+            LoadIcons(apps);
+            _logger.LogInformation("Иконки загружены методом LoadIcons");
 
-                    if (File.Exists(icoPath))
-                    {
-                        // Если нашли файл, загружаем его
-                        // Загружаем иконку и сохраняем в app.Icon
-                        //и гарантированно освобождаем старые Bitmap
-                        using var ico = new Icon(icoPath);
-                        var bmp = ico.ToBitmap();
-                        app.Icon?.Dispose();
-                        app.Icon = bmp;
-                        _logger.LogDebug("Иконка для {App} загружена из {Path}", app.Name, icoPath);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Не найден .ico для {App} по пути {Path}", app.Name, icoPath);
-                        app.Icon = null; // если иконки нет, просто оставляем пустой
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Не удалось загрузить иконку для {App}", app.Name);
-                    app.Icon = null;
-                }
-            }
-
-            _logger.LogInformation("Иконки загружены, инициализируем DataGridView");
 
             dataGridViewPrograms.AutoGenerateColumns = false;
             var visibleApps = apps

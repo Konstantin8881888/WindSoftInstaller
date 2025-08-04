@@ -17,6 +17,14 @@ namespace WindSoftInstaller.Services
             {
                 _logger.LogInformation("Применение конфигурации KeePass");
 
+                if (Localization.Current != "ru")
+                {
+                    _logger.LogInformation(
+                        "KeePassConfigurator: пропускаем копирование русского конфига, т.к. Current = {Lang}",
+                        Localization.Current);
+                    return;
+                }
+
                 string sourceConfig = Path.Combine(installPath, "KeePass.config.xml");
                 if (!File.Exists(sourceConfig))
                 {
