@@ -279,7 +279,7 @@ namespace WindSoftInstaller
             {
                 MessageBox.Show(
                     $"{Localization.T("AboutForm.CopyError")}: {ex.Message}",
-                    Localization.T("AboutForm.ErrorTitle"),
+                    Localization.T("errorTitle"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );

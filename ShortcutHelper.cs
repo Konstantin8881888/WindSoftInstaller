@@ -63,8 +63,8 @@ namespace WindSoftInstaller
             {
                 logger.LogError(ex, "Ошибка при создании ярлыка {Shortcut}", shortcutName);
                 MessageBox.Show(
-                    $"Ошибка при создании ярлыка \"{shortcutName}\":\n{ex.Message}",
-                    "Ошибка",
+                    $"{Localization.T("shortcutError")} \"{shortcutName}\":\n{ex.Message}",
+                    Localization.T("errorTitle"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );

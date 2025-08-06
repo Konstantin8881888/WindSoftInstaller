@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Versioning;
-using System.Windows.Forms;
 using WindSoftInstaller.Services;
 using WindSoftInstaller.Utilities;
 using File = System.IO.File;
@@ -45,6 +44,7 @@ namespace WindSoftInstaller
             _logger.LogInformation("Form1 constructor: объект формы создаётся");
 
             Localization.LanguageChanged += OnLanguageChanged;
+            Localization.LanguageChanged += UpdateBanner;
 
             // 2) Применяем переводы ко всем контролам
             ApplyLocalization();
@@ -100,6 +100,14 @@ namespace WindSoftInstaller
             // Задаём фон формы и единый шрифт
             this.BackColor = Color.LightSteelBlue;
             this.Font = new Font("Segoe UI", 9F);
+        }
+
+        private void UpdateBanner()
+        {
+            // Выбираем нужный ресурс в зависимости от текущей локали
+            bannerPictureBox.Image = Localization.Current == "ru"
+                ? Properties.Resources.banner
+                : Properties.Resources.banneren;
         }
 
         private void PopulateAppsGrid()
@@ -240,6 +248,7 @@ namespace WindSoftInstaller
             btnBrowse.Text = Localization.T("btnBrowse");
             lblStatus.Text = Localization.T("lblStatus.Instruction");
             lblDonate.Text = Localization.T("lblDonate");
+            lblTelegram.Text = Localization.T("lblTelegram");
             CalculateAndShowTotalSize(); // Обновит размер с локализацией
 
             // Заголовки колонок
@@ -352,9 +361,13 @@ namespace WindSoftInstaller
                     && AppDependencies.TryGetValue(app.Name, out var deps))
                 {
                     string depList = string.Join(Environment.NewLine, deps);
-                    var dr = MessageBox.Show(
-                        $"При установке «{app.Name}» будут установлены зависимости:{Environment.NewLine}{depList}{Environment.NewLine}{Environment.NewLine}Продолжить?",
-                        "Установка зависимостей",
+                    var dr = MessageBox.Show( // новый вариант объединения строк
+                        string.Format(
+                            Localization.T("dependencyInstallationText"),
+                            app.Name,
+                            depList
+                        ),
+                        Localization.T("dependencyInstallation"),
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Question
                     );
@@ -374,8 +387,8 @@ namespace WindSoftInstaller
             if (selectingAll && chromeRequested)
             {
                 chromeDialogResult = MessageBox.Show(
-                    "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
-                    "Ограничение установки Chrome",
+                    Localization.T("chromeRestrictionText"),
+                    Localization.T("chromeRestriction"),
                     MessageBoxButtons.OKCancel,
                     MessageBoxIcon.Warning
                 );
@@ -438,9 +451,13 @@ namespace WindSoftInstaller
                     && AppDependencies.TryGetValue(app.Name, out var deps))
                 {
                     string depList = string.Join(Environment.NewLine, deps);
-                    var dr = MessageBox.Show(
-                        $"При установке «{app.Name}» будут установлены зависимости:{Environment.NewLine}{depList}{Environment.NewLine}{Environment.NewLine}Продолжить?",
-                        "Установка зависимостей",
+                    var dr = MessageBox.Show( // новый вариант объединения строк
+                        string.Format(
+                            Localization.T("dependencyInstallationText"),
+                            app.Name,
+                            depList
+                        ),
+                        Localization.T("dependencyInstallation"),
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Question
                     );
@@ -458,8 +475,8 @@ namespace WindSoftInstaller
                 if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase) && !currentValue)
                 {
                     var result = MessageBox.Show(
-                        "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
-                        "Ограничение установки Chrome",
+                        Localization.T("chromeRestrictionText"),
+                        Localization.T("chromeRestriction"),
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Warning
                     );
@@ -496,8 +513,8 @@ namespace WindSoftInstaller
                 {
                     _logger.LogError(ex, "Ошибка открытия ссылки на лицензию");
                     MessageBox.Show(
-                        $"Ошибка: {ex.Message}\nURL: {app.LicenseUrl}",
-                        "Ошибка",
+                        $"{Localization.T("errorTitle")}: {ex.Message}\n URL: {app.LicenseUrl}",
+                        Localization.T("errorTitle"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error
                     );
@@ -525,7 +542,7 @@ namespace WindSoftInstaller
                 _logger.LogInformation("Путь установки: {Path}", installPath);
                 if (string.IsNullOrWhiteSpace(installPath))
                 {
-                    MessageBox.Show("Пожалуйста, выберите путь установки.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Localization.T("directInstallError"), Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -567,7 +584,7 @@ namespace WindSoftInstaller
 
                 if (checkedApps.Count == 0)
                 {
-                    MessageBox.Show("Не выбрана ни одна программа для установки.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Localization.T("selectedError"), Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -616,7 +633,7 @@ namespace WindSoftInstaller
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Ошибка при установке {AppName}", app.Name);
-                        MessageBox.Show($"Ошибка при установке {app.Name}:\n{ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"{Localization.T("installError")} {app.Name}:\n{ex.Message}", Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                         break;
                     }
                 }
@@ -626,8 +643,8 @@ namespace WindSoftInstaller
                 {
                     string failedList = string.Join(", ", _registryFailedApps);
                     MessageBox.Show(
-                        $"Нет доступа к реестру для установки следующих программ:\n{failedList}",
-                        "Внимание",
+                        $"{Localization.T("registErrorText")}:\n{failedList}",
+                        Localization.T("registError"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
                 }
@@ -636,7 +653,7 @@ namespace WindSoftInstaller
                 if (!_cts.Token.IsCancellationRequested)
                 {
                     _logger.LogInformation("Все приложения установлены успешно");
-                    MessageBox.Show("Установка завершена!", "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(Localization.T("installAppCompetedText"), Localization.T("installAppCompeted"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             finally

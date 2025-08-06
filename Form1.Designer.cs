@@ -303,10 +303,31 @@ namespace WindSoftInstaller
             this.Controls.Add(this.txtETH);
             // Логируем создание TextBox txtETH
             _logger.LogDebug("TextBox txtETH создан, Text=\"{Text}\"", txtETH.Text);
+            // Label для Telegram-канала
+            this.lblTelegram = new Label();
+            this.lblTelegram.AutoSize = true;
+            this.lblTelegram.Name = "lblTelegram";
+            this.lblTelegram.Text = Localization.T("lblTelegram"); // ключ в словаре
+            this.Controls.Add(this.lblTelegram);
+            _logger.LogDebug("Label lblTelegram создан");
+
+            // TextBox для ссылки на Telegram
+            this.txtTelegram = new TextBox();
+            this.txtTelegram.Name = "txtTelegram";
+            this.txtTelegram.ReadOnly = true;
+            this.txtTelegram.BorderStyle = BorderStyle.FixedSingle;
+            this.txtTelegram.Text = Localization.T("txtTelegram.Url"); // ключ в словаре
+            this.txtTelegram.AutoSize = false; // чтобы можно было задать ширину
+            this.txtTelegram.Height = txtETH.Height;
+            this.Controls.Add(this.txtTelegram);
+            _logger.LogDebug("TextBox txtTelegram создан");
             // bannerPictureBox Рекламный блок (изображение)
             this.bannerPictureBox = new PictureBox();
             this.bannerPictureBox.SizeMode = PictureBoxSizeMode.Zoom; // Растягиваем изображение
-            this.bannerPictureBox.Image = Properties.Resources.banner; // Путь к изображению
+            // Выбираем баннер по текущему языку
+            this.bannerPictureBox.Image = Localization.Current == "ru"
+                ? Properties.Resources.banner
+                : Properties.Resources.banneren;
             this.bannerPictureBox.WaitOnLoad = false;
             if (this.bannerPictureBox.Image == null)
                 _logger.LogError("Banner image is null! Проверьте, что ресурс banner добавлен в Resources.resx");
@@ -357,23 +378,28 @@ namespace WindSoftInstaller
                 float aspect = 45f / 728f;
                 int bannerHeight = (int)(bannerWidth * aspect);            // высота = % от ширины
 
-                // 3) Вычисляем высоту «футера» (включая отступ до баннера и сам баннер)
+                // 3) Вычисляем высоту «футера» без баннера
                 int footerHeight =
                       btnToggleSelection.Height + 5   // кнопки
-                    + lblStatus.Height + 5   // статус
-                    + progressBar.Height + 5   // прогресс‑бар
-                    + lblTotalSize.Height + 5   // метка «Общий размер»
-                    + lblDonate.Height + 5   // надпись «Поддержать…»
-                    + txtBTC.Height + 5   // поле BTC
-                    + txtETH.Height + bannerMarginTop
-                    + bannerHeight + bannerMarginBottom;
+                    + lblStatus.Height + 5           // статус
+                    + progressBar.Height + 5         // прогресс-бар
+                    + lblTotalSize.Height + 5        // метка «Общий размер»
+                    + lblDonate.Height + 5           // надпись «Поддержать…»
+                    + txtBTC.Height + 5               // поле BTC
+                    + txtETH.Height + 5               // поле ETH
+                    + lblTelegram.Height + 5          // надпись Telegram
+                    + txtTelegram.Height + bannerMarginTop; // поле Telegram + отступ сверху
 
-                // 4) Считаем размер и позицию DataGridView
-                int gridHeight = this.ClientSize.Height - footerHeight - top;
+                // 4) Считаем размер и позицию DataGridView так, чтобы под ним осталось место под footer + баннер
+                int gridHeight = this.ClientSize.Height
+                               - footerHeight      // место под все footer-элементы
+                               - bannerHeight      // место под баннер
+                               - bannerMarginBottom // отступ под баннером
+                               - top;               // пространство сверху
                 dataGridViewPrograms.Location = new Point(left, top);
                 dataGridViewPrograms.Size = new Size(width, gridHeight);
 
-                // 5) Позиционируем нижние контролы без баннера
+                // 5) Позиционируем footer-элементы (кнопки, статусы, BTC/ETH, Telegram) прямо под DataGridView
                 int y = dataGridViewPrograms.Bottom + 5;
                 btnToggleSelection.Location = new Point(left, y);
                 btnInstall.Location = new Point(left + commonW + 5, y);
@@ -395,15 +421,23 @@ namespace WindSoftInstaller
                 y = lblDonate.Bottom + 5;
                 txtBTC.Location = new Point(left, y);
                 txtBTC.Size = new Size(width, txtBTC.Height);
+
                 y = txtBTC.Bottom + 5;
                 txtETH.Location = new Point(left, y);
                 txtETH.Size = new Size(width, txtETH.Height);
 
-                // 6) Позиционируем и выводим баннер
-                int yBanner = txtETH.Bottom + bannerMarginTop;
-                this.bannerPictureBox.Size = new Size(bannerWidth, bannerHeight);
-                this.bannerPictureBox.Location = new Point(20, yBanner);
-                this.bannerPictureBox.BringToFront();
+                // Telegram-блок
+                y = txtETH.Bottom + 5;
+                lblTelegram.Location = new Point(left, y);
+                y = lblTelegram.Bottom + 5;
+                txtTelegram.Location = new Point(left, y);
+                txtTelegram.Width = width;
+
+                // 6) Позиционируем баннер в самом низу окна
+                int yBanner = this.ClientSize.Height - bannerHeight - bannerMarginBottom;
+                bannerPictureBox.Size = new Size(bannerWidth, bannerHeight);
+                bannerPictureBox.Location = new Point(20, yBanner);
+                bannerPictureBox.BringToFront();
             };
 
             Controls.Add(lblStatus);
@@ -428,8 +462,7 @@ namespace WindSoftInstaller
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Не удалось открыть URL {Url}", url);
-                MessageBox.Show($"Не удалось открыть ссылку: {ex.Message}",
-                                "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"{Localization.T("failedOpenLink")}: {ex.Message}", Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -456,5 +489,7 @@ namespace WindSoftInstaller
         private DataGridViewLinkColumn colLicense;
         private Label lblTotalSize;
         private PictureBox bannerPictureBox;
+        private Label lblTelegram;
+        private TextBox txtTelegram;
     }
 }

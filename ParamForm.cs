@@ -64,7 +64,7 @@ namespace WindSoftInstaller
                 // Требовать непустой ключ
                 if (string.IsNullOrEmpty(key))
                 {
-                    MessageBox.Show("У каждой строки должен быть непустой ключ.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Localization.T("emptyKey"), Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 

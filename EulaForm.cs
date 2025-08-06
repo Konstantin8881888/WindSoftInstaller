@@ -56,7 +56,7 @@ namespace WindSoftInstaller
             // --- Кнопка "Принять" ---
             btnAccept = new Button
             {
-                Text = "Я принимаю",
+                Text = Localization.T("EulaForm.agree"),
                 Size = new Size(100, 30),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 Location = new Point(
@@ -71,7 +71,7 @@ namespace WindSoftInstaller
             // --- Кнопка "Отказаться" ---
             btnDecline = new Button
             {
-                Text = "Отказаться",
+                Text = Localization.T("EulaForm.decline"),
                 Size = new Size(100, 30),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 Location = new Point(
