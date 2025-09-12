@@ -94,8 +94,43 @@ namespace WindSoftInstaller.Services
             }
 
             // KeePass: копируем конфиг
+            using (var archive = ArchiveFactory.Open(archive7z))
+            {
+                var entry = archive.Entries
+                                   .FirstOrDefault(e => e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                               ?? throw new FileNotFoundException($"В архиве нет {app.ExecutablePath}");
+                sourcePath = Path.Combine(extractDir, app.ExecutablePath);
+                entry.WriteToFile(sourcePath);
+                _logger.LogInformation("Извлечён {File} → {Dest}", app.ExecutablePath, sourcePath);
+
+                // ДОБАВЛЯЕМ: Извлечение дополнительных файлов для KeePass
+                if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Извлекаем KeePass.config.xml
+                    var configEntry = archive.Entries
+                                             .FirstOrDefault(e => e.Key.Equals("KeePass.config.xml", StringComparison.OrdinalIgnoreCase));
+                    if (configEntry != null)
+                    {
+                        string configPath = Path.Combine(extractDir, "KeePass.config.xml");
+                        configEntry.WriteToFile(configPath);
+                        _logger.LogInformation("Извлечён конфиг KeePass → {Dest}", configPath);
+                    }
+
+                    // Извлекаем Russian.lngx
+                    var lngxEntry = archive.Entries
+                                           .FirstOrDefault(e => e.Key.Equals("Russian.lngx", StringComparison.OrdinalIgnoreCase));
+                    if (lngxEntry != null)
+                    {
+                        string lngxPath = Path.Combine(extractDir, "Russian.lngx");
+                        lngxEntry.WriteToFile(lngxPath);
+                        _logger.LogInformation("Извлечён файл русского языка → {Dest}", lngxPath);
+                    }
+                }
+            }
+
+            // KeePass: копируем конфиг
             if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase))
-                ApplyKeePassConfiguration(appDir);
+                ApplyKeePassConfiguration(appDir, extractDir);
 
             CleanupTemp(tempDir);
         }
@@ -222,56 +257,64 @@ namespace WindSoftInstaller.Services
             ShortcutHelper.CreateShortcut(_logger, exePath, name);
         }
 
-        private void ApplyKeePassConfiguration(string installPath)
+        private void ApplyKeePassConfiguration(string installPath, string extractDir)
         {
             try
             {
                 _logger.LogInformation("Применение конфигурации KeePass");
 
-                // Путь к скопированному конфигу в папке установки
-                string sourceConfig = Path.Combine(installPath, "KeePass.config.xml");
-
-                // Проверяем существование файла
-                if (!File.Exists(sourceConfig))
+                if (Localization.Current != "ru")
                 {
-                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ НЕ НАЙДЕН В ПАПКЕ УСТАНОВКИ: {Path}", sourceConfig);
-
-                    // Попробуем найти файл вручную
-                    var allFiles = Directory.GetFiles(installPath, "*.config.xml", SearchOption.AllDirectories);
-                    _logger.LogWarning("Найденные файлы конфигурации: {Files}", string.Join(", ", allFiles));
-
+                    _logger.LogInformation(
+                        "KeePassConfigurator: пропускаем копирование русского конфига, т.к. Current = {Lang}",
+                        Localization.Current);
                     return;
                 }
 
-                // Путь к целевому конфигу в AppData
-                string targetConfig = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "KeePass", "KeePass.config.xml"
-                );
+                // Пути к файлам во временной директории (extractDir)
+                string sourceConfig = Path.Combine(extractDir, "KeePass.config.xml");
+                string sourceLngx = Path.Combine(extractDir, "Russian.lngx");
 
-                // Проверяем содержимое конфига (опционально)
-                string configContent = File.ReadAllText(sourceConfig);
-                if (!configContent.Contains("Russian.lngx"))
+                // Проверяем наличие файлов во временной директории
+                if (!File.Exists(sourceConfig))
                 {
-                    _logger.LogWarning("Конфиг не содержит русский язык! Файл: {Path}", sourceConfig);
+                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ НЕ НАЙДЕН: {Path}", sourceConfig);
+                    return;
                 }
 
-                // Создаем целевую директорию
-                Directory.CreateDirectory(Path.GetDirectoryName(targetConfig)!);
+                // Целевая директория — куда установлен KeePass
+                string targetConfig = Path.Combine(installPath, "KeePass.config.xml");
 
-                // Копируем с заменой
+                // Создаем папку Languages, если её нет
+                string languagesDir = Path.Combine(installPath, "Languages");
+                Directory.CreateDirectory(languagesDir);
+
+                // Копируем файл языка в папку Languages
+                string targetLngx = Path.Combine(languagesDir, "Russian.lngx");
+
+                // 1. Копируем файл русского языка, если он есть
+                if (File.Exists(sourceLngx))
+                {
+                    File.Copy(sourceLngx, targetLngx, overwrite: true);
+                    _logger.LogInformation("Файл русского языка скопирован в \"{Path}\"", targetLngx);
+                }
+                else
+                {
+                    _logger.LogWarning("Файл русского языка не найден: {Path}", sourceLngx);
+                }
+
+                // 2. Копируем конфигурационный файл
                 File.Copy(sourceConfig, targetConfig, overwrite: true);
-                _logger.LogInformation("Конфиг KeePass успешно скопирован в AppData");
+                _logger.LogInformation("Конфиг KeePass скопирован в \"{Path}\"", targetConfig);
 
-                // Удаляем временную копию из папки установки
-                try
+                // 3. Проверяем конфиг на наличие ссылки на русский язык
+                string content = File.ReadAllText(targetConfig);
+                if (!content.Contains("Russian.lngx"))
                 {
-                    File.Delete(sourceConfig);
-                    _logger.LogDebug("Временный конфиг удалён из папки установки");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Не удалось удалить временный конфиг");
+                    _logger.LogWarning("Конфиг не содержит ссылку на русский язык! {Path}", targetConfig);
+
+                    // Если нужно, можно автоматически обновить конфиг
+                    // Но это уже дополнительная функциональность
                 }
             }
             catch (Exception ex)
