@@ -10,6 +10,9 @@ namespace WindSoftInstaller
         [STAThread]
         static void Main()
         {
+            // 0) Сначала спрашиваем язык
+            AskInitialLanguage();
+
             // Настройка Serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -48,6 +51,18 @@ namespace WindSoftInstaller
             {
                 Log.CloseAndFlush();
             }
+        }
+
+        private static void AskInitialLanguage()
+        {
+            var result = MessageBox.Show(
+                "Would you like to use English language?\n\nYes/Да — English\nNo/Нет — Русский",
+                "Select language / Выберите язык",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button1);
+
+            Localization.Change(result == DialogResult.Yes ? "en" : "ru");
         }
     }
 }

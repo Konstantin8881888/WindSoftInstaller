@@ -1,8 +1,8 @@
-﻿using System.ComponentModel;
+﻿using Microsoft.Extensions.Logging;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Versioning;
-using Microsoft.Extensions.Logging;
 using WindSoftInstaller.Services;
 using WindSoftInstaller.Utilities;
 using File = System.IO.File;
@@ -23,15 +23,13 @@ namespace WindSoftInstaller
         private readonly List<string> _registryFailedApps = [];
         int exitCode = -1; // Инициализируем код выхода значением по умолчанию
         private readonly ShortcutService shortcutService;
-        private readonly KeePassConfigurator kpConfigurator;
         private readonly InstallationManager installationManager;
-
+        private MenuStrip menuStrip;
         public Form1(ILogger<Form1> logger)
         {
             // Сначала инициализируем логгер
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             shortcutService = new ShortcutService(_logger);
-            kpConfigurator = new KeePassConfigurator(_logger);
             installationManager = new InstallationManager(_logger);
             // Строим словарь для быстрого поиска по имени
             appLookup = apps
@@ -42,6 +40,12 @@ namespace WindSoftInstaller
             InitializeComponent();
             // Проверка на null
             _logger.LogInformation("Form1 constructor: объект формы создаётся");
+
+            Localization.LanguageChanged += OnLanguageChanged;
+            Localization.LanguageChanged += UpdateBanner;
+
+            // 2) Применяем переводы ко всем контролам
+            ApplyLocalization();
 
             // Очищаем старые временные папки, если они остались от предыдущих неудачных запусков
             TempCleaner.Cleanup(Properties.Settings.Default.LastInstallPath, _logger);
@@ -96,6 +100,169 @@ namespace WindSoftInstaller
             this.Font = new Font("Segoe UI", 9F);
         }
 
+        private void UpdateBanner()
+        {
+            // Выбираем нужный ресурс в зависимости от текущей локали
+            bannerPictureBox.Image = Localization.Current == "ru"
+                ? Properties.Resources.banner
+                : Properties.Resources.banneren;
+        }
+
+        private void PopulateAppsGrid()
+        {
+            var allApps = AppRepository.LoadApps();
+
+            // Загружаем иконки для вновь созданных объектов
+            LoadIcons(allApps);
+
+            // Фильтруем скрытые
+            var visibleApps = allApps
+                .Where(a => !HiddenApps.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            // Привязываем к DataGridView
+            dataGridViewPrograms.DataSource = new BindingList<InstallableApp>(visibleApps);
+        }
+
+        // Загружаем иконки из папки Icons для каждого InstallableApp.
+        private void LoadIcons(IEnumerable<InstallableApp> apps)
+        {
+            string iconsFolder = Path.Combine(Application.StartupPath, "Icons");
+            foreach (var app in apps)
+            {
+                try
+                {
+                    string icoName = Path.ChangeExtension(app.ExecutablePath, ".ico");
+                    string icoPath = Path.Combine(iconsFolder, icoName);
+
+                    if (File.Exists(icoPath))
+                    {
+                        using var ico = new Icon(icoPath);
+                        var bmp = ico.ToBitmap();
+                        app.Icon?.Dispose();
+                        app.Icon = bmp;
+                    }
+                    else
+                    {
+                        app.Icon = null;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось загрузить иконку для {App}", app.Name);
+                    app.Icon = null;
+                }
+            }
+        }
+
+        private void OnLanguageChanged()
+        {
+            // Обновляем статичные элементы (меню, кнопки)
+            ApplyLocalization();
+            // Перерисовка для вариаций выбора русского/английского языка.
+            PopulateAppsGrid();
+            // Обновляем DataGridView
+            RefreshDataGrid();
+        }
+
+        private void RefreshDataGrid()
+        {
+            // 1. Сохраняем позицию прокрутки
+            var scrollPosition = dataGridViewPrograms.FirstDisplayedScrollingRowIndex;
+
+            // 2. Обновляем заголовки колонок
+            colName.HeaderText = Localization.T("colName");
+            colDescription.HeaderText = Localization.T("colDescription");
+            colParams.HeaderText = Localization.T("colParams");
+            colSize.HeaderText = Localization.T("colSize");
+            colLicense.HeaderText = Localization.T("colLicense");
+
+            // 3. Принудительно обновляем данные
+            dataGridViewPrograms.Refresh();
+
+            // 4. Восстанавливаем позицию прокрутки
+            if (scrollPosition >= 0 && scrollPosition < dataGridViewPrograms.RowCount)
+            {
+                dataGridViewPrograms.FirstDisplayedScrollingRowIndex = scrollPosition;
+            }
+
+            // Принудительно обновляем описания
+            if (dataGridViewPrograms.DataSource is BindingList<InstallableApp> bindingList)
+            {
+                // Это заставит грид перечитать все свойства
+                var apps = bindingList.ToList();
+                dataGridViewPrograms.DataSource = null;
+                dataGridViewPrograms.DataSource = new BindingList<InstallableApp>(apps);
+            }
+
+            // 5. Обновляем кнопку выбора
+            btnToggleSelection.Text = allSelected ?
+                Localization.T("btnDeselectAll") :
+                Localization.T("btnSelectAll");
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            Localization.LanguageChanged -= OnLanguageChanged; // Отписываемся
+        }
+
+        private void AskInitialLanguage()
+        {
+            // Текст на “нейтральном” (по умолчанию русском) или сразу на английском — 
+            // решайте сами. Я покажу на английском, потому что спрашиваем “Use English?”
+            var result = MessageBox.Show(
+                "Would you like to use English language?\n\nYes — English\nНет — Русский",
+                "Select language / Выберите язык",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button1);
+
+            // Yes → English, No → Russian
+            if (result == DialogResult.Yes)
+                Localization.Change("en");
+            else
+                Localization.Change("ru");
+        }
+        private void ApplyLocalization()
+        {
+            // Существующий код
+            this.Text = Localization.T("Form1.Title");
+
+            foreach (ToolStripMenuItem top in menuStrip.Items.OfType<ToolStripMenuItem>())
+            {
+                top.Text = Localization.T(top.Name);
+                foreach (ToolStripMenuItem sub in top.DropDownItems.OfType<ToolStripMenuItem>())
+                    sub.Text = Localization.T(sub.Name);
+            }
+
+            btnInstall.Text = Localization.T("btnInstall");
+            btnToggleSelection.Text = allSelected ?
+                Localization.T("btnDeselectAll") :
+                Localization.T("btnSelectAll");
+            btnCancelInstall.Text = Localization.T("btnCancelInstall");
+
+            // Новые элементы
+            btnBrowse.Text = Localization.T("btnBrowse");
+            lblStatus.Text = Localization.T("lblStatus.Instruction");
+            lblDonate.Text = Localization.T("lblDonate");
+            lblTelegram.Text = Localization.T("lblTelegram");
+            CalculateAndShowTotalSize(); // Обновит размер с локализацией
+
+            // Заголовки колонок
+            colName.HeaderText = Localization.T("colName");
+            colDescription.HeaderText = Localization.T("colDescription");
+            colSize.HeaderText = Localization.T("colSize");
+            colLicense.HeaderText = Localization.T("colLicense");
+        }
+
+        private void SwitchLanguage(string lang)
+        {
+            Localization.Change(lang);
+            ApplyLocalization();
+
+        }
+
         private static readonly string[] HiddenApps = new[]
         {
             "Microsoft VC++ 2015-2022 Redistributable (x64)",
@@ -121,40 +288,9 @@ namespace WindSoftInstaller
             string iconsFolder = Path.Combine(Application.StartupPath, "Icons");
             _logger.LogDebug("Иконки будут искаться в папке: {IconsFolder}", iconsFolder);
 
-            foreach (var app in apps)
-            {
-                try
-                {
-                    // Формируем имя .ico по тому же имени EXE
-                    // Например, "vlc-3.0.21.exe" → "vlc-3.0.21.ico"
-                    string icoName = Path.ChangeExtension(app.ExecutablePath, ".ico");
-                    string icoPath = Path.Combine(iconsFolder, icoName);
+            LoadIcons(apps);
+            _logger.LogInformation("Иконки загружены методом LoadIcons");
 
-                    if (File.Exists(icoPath))
-                    {
-                        // Если нашли файл, загружаем его
-                        // Загружаем иконку и сохраняем в app.Icon
-                        //и гарантированно освобождаем старые Bitmap
-                        using var ico = new Icon(icoPath);
-                        var bmp = ico.ToBitmap();
-                        app.Icon?.Dispose();
-                        app.Icon = bmp;
-                        _logger.LogDebug("Иконка для {App} загружена из {Path}", app.Name, icoPath);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Не найден .ico для {App} по пути {Path}", app.Name, icoPath);
-                        app.Icon = null; // если иконки нет, просто оставляем пустой
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Не удалось загрузить иконку для {App}", app.Name);
-                    app.Icon = null;
-                }
-            }
-
-            _logger.LogInformation("Иконки загружены, инициализируем DataGridView");
 
             dataGridViewPrograms.AutoGenerateColumns = false;
             var visibleApps = apps
@@ -165,6 +301,8 @@ namespace WindSoftInstaller
             dataGridViewPrograms.DataSource = bindingList;
 
             _logger.LogInformation("DataGridView инициализирована");
+
+            RefreshDataGrid(); // Инициализируем заголовки колонок
         }
 
         private void OnAboutClick(object sender, EventArgs e)
@@ -221,9 +359,13 @@ namespace WindSoftInstaller
                     && AppDependencies.TryGetValue(app.Name, out var deps))
                 {
                     string depList = string.Join(Environment.NewLine, deps);
-                    var dr = MessageBox.Show(
-                        $"При установке «{app.Name}» будут установлены зависимости:{Environment.NewLine}{depList}{Environment.NewLine}{Environment.NewLine}Продолжить?",
-                        "Установка зависимостей",
+                    var dr = MessageBox.Show( // новый вариант объединения строк
+                        string.Format(
+                            Localization.T("dependencyInstallationText"),
+                            app.Name,
+                            depList
+                        ),
+                        Localization.T("dependencyInstallation"),
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Question
                     );
@@ -243,8 +385,8 @@ namespace WindSoftInstaller
             if (selectingAll && chromeRequested)
             {
                 chromeDialogResult = MessageBox.Show(
-                    "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
-                    "Ограничение установки Chrome",
+                    Localization.T("chromeRestrictionText"),
+                    Localization.T("chromeRestriction"),
                     MessageBoxButtons.OKCancel,
                     MessageBoxIcon.Warning
                 );
@@ -261,7 +403,7 @@ namespace WindSoftInstaller
 
             // 5) Меняем состояние кнопки и считаем общий размер
             allSelected = selectingAll;
-            btnToggleSelection.Text = allSelected ? "Снять выделение" : "Выбрать все";
+            btnToggleSelection.Text = allSelected ? Localization.T("btnDeselectAll") : Localization.T("btnSelectAll");
             CalculateAndShowTotalSize();
         }
 
@@ -272,7 +414,6 @@ namespace WindSoftInstaller
 
             foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
             {
-                // Проверяем, что строка не является новой (пустой) строкой
                 if (!row.IsNewRow &&
                     row.Cells["colSelect"].Value != null &&
                     Convert.ToBoolean(row.Cells["colSelect"].Value) &&
@@ -282,7 +423,11 @@ namespace WindSoftInstaller
                 }
             }
 
-            lblTotalSize.Text = $"Общий размер выбранных программ: {totalSize:N2} МБ";
+            // Локализованный формат
+            lblTotalSize.Text = string.Format(
+                Localization.T("lblTotalSize.Text"),
+                totalSize
+            );
         }
 
         private void DataGridViewPrograms_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -304,9 +449,13 @@ namespace WindSoftInstaller
                     && AppDependencies.TryGetValue(app.Name, out var deps))
                 {
                     string depList = string.Join(Environment.NewLine, deps);
-                    var dr = MessageBox.Show(
-                        $"При установке «{app.Name}» будут установлены зависимости:{Environment.NewLine}{depList}{Environment.NewLine}{Environment.NewLine}Продолжить?",
-                        "Установка зависимостей",
+                    var dr = MessageBox.Show( // новый вариант объединения строк
+                        string.Format(
+                            Localization.T("dependencyInstallationText"),
+                            app.Name,
+                            depList
+                        ),
+                        Localization.T("dependencyInstallation"),
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Question
                     );
@@ -324,8 +473,8 @@ namespace WindSoftInstaller
                 if (app.Name.Equals("Google Chrome", StringComparison.OrdinalIgnoreCase) && !currentValue)
                 {
                     var result = MessageBox.Show(
-                        "Установка Google Chrome возможна только в папку по умолчанию (обычно на диск C:). Продолжить?",
-                        "Ограничение установки Chrome",
+                        Localization.T("chromeRestrictionText"),
+                        Localization.T("chromeRestriction"),
                         MessageBoxButtons.OKCancel,
                         MessageBoxIcon.Warning
                     );
@@ -362,8 +511,8 @@ namespace WindSoftInstaller
                 {
                     _logger.LogError(ex, "Ошибка открытия ссылки на лицензию");
                     MessageBox.Show(
-                        $"Ошибка: {ex.Message}\nURL: {app.LicenseUrl}",
-                        "Ошибка",
+                        $"{Localization.T("errorTitle")}: {ex.Message}\n URL: {app.LicenseUrl}",
+                        Localization.T("errorTitle"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error
                     );
@@ -386,11 +535,12 @@ namespace WindSoftInstaller
 
             try
             {
+
                 string installPath = txtInstallPath.Text.Trim();
                 _logger.LogInformation("Путь установки: {Path}", installPath);
                 if (string.IsNullOrWhiteSpace(installPath))
                 {
-                    MessageBox.Show("Пожалуйста, выберите путь установки.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Localization.T("directInstallError"), Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -432,7 +582,7 @@ namespace WindSoftInstaller
 
                 if (checkedApps.Count == 0)
                 {
-                    MessageBox.Show("Не выбрана ни одна программа для установки.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(Localization.T("selectedError"), Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
@@ -444,20 +594,26 @@ namespace WindSoftInstaller
                     if (_cts.Token.IsCancellationRequested)
                     {
                         _logger.LogWarning("Прерывание после {Index}/{Total}", i, total);
-                        lblStatus.Text = "Отменено";
+                        lblStatus.Text = Localization.T("lblStatus.Cancelled"); // Используем локализованный статус
                         break;
                     }
 
                     var app = checkedApps[i];
-                    if (app is null) // Защита от null
+                    if (app is null)
                     {
                         _logger.LogError("Элемент {Index} в списке установки равен null", i);
                         continue;
                     }
 
                     _logger.LogInformation("Устанавливается {AppName} ({Index}/{Total})", app.Name, i + 1, total);
-                    Invoke(() => {
-                        lblStatus.Text = $"Устанавливается {app.Name} ({i + 1}/{total})";
+
+                    // Обновление статуса ПЕРЕД установкой
+                    Invoke(() =>
+                    {
+                        lblStatus.Text = string.Format(
+                            Localization.T("lblStatus.Installing"),
+                            app.Name, i + 1, total
+                        );
                         progressBar.Value = (int)(((i + 1f) / total) * 100);
                     });
 
@@ -468,14 +624,14 @@ namespace WindSoftInstaller
                     }
                     catch (OperationCanceledException)
                     {
-                        lblStatus.Text = "Отменено";
+                        Invoke(() => lblStatus.Text = Localization.T("lblStatus.Cancelled"));
                         _logger.LogWarning("Установка {AppName} отменена", app.Name);
                         break;
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Ошибка при установке {AppName}", app.Name);
-                        MessageBox.Show($"Ошибка при установке {app.Name}:\n{ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"{Localization.T("installError")} {app.Name}:\n{ex.Message}", Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
                         break;
                     }
                 }
@@ -485,8 +641,8 @@ namespace WindSoftInstaller
                 {
                     string failedList = string.Join(", ", _registryFailedApps);
                     MessageBox.Show(
-                        $"Нет доступа к реестру для установки следующих программ:\n{failedList}",
-                        "Внимание",
+                        $"{Localization.T("registErrorText")}:\n{failedList}",
+                        Localization.T("registError"),
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
                 }
@@ -495,7 +651,7 @@ namespace WindSoftInstaller
                 if (!_cts.Token.IsCancellationRequested)
                 {
                     _logger.LogInformation("Все приложения установлены успешно");
-                    MessageBox.Show("Установка завершена!", "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(Localization.T("installAppCompetedText"), Localization.T("installAppCompeted"), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             finally
@@ -506,10 +662,11 @@ namespace WindSoftInstaller
                 btnToggleSelection.Enabled = true;
                 btnCancelInstall.Enabled = false;
                 statusTimer.Stop();
-                lblStatus.Text = "Готово";
+                lblStatus.Text = Localization.T("lblStatus.Ready"); // Используем локализованный статус
                 _cts?.Dispose();
                 _cts = null;
             }
+            lblStatus.Text = Localization.T("lblStatus.Ready");
         }
 
         private static readonly Dictionary<string, string[]> AppDependencies = new()
@@ -553,7 +710,7 @@ namespace WindSoftInstaller
             if (e.RowIndex < 0 || e.ColumnIndex != colLicense.Index)
                 return;
 
-            e.Value = "Просмотр";
+            e.Value = Localization.T("license.View"); // Локализованный текст
             e.FormattingApplied = true;
         }
 

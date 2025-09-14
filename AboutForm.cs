@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -11,179 +10,240 @@ namespace WindSoftInstaller
         public AboutForm()
         {
             // Общие настройки
-            Text = "О программе";
-            Size = new Size(450, 400);
+            Text = Localization.T("AboutForm.Title");
+            Size = new Size(500, 650);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
             Font = new Font("Segoe UI", 9F);
+            Padding = new Padding(20);
+            BackColor = SystemColors.Window;
 
-            const int left = 20;
-            const int vGap = 10;
-
-            //1) Логотип
-            using var stream = Assembly.GetExecutingAssembly()
-                           .GetManifestResourceStream("WindSoftInstaller.Resources.04e64.ico"); // <- ваше точное имя
-            if (stream != null)
+            // Основной контейнер с вертикальным расположением
+            var mainPanel = new Panel
             {
-                this.Icon?.Dispose();
-                using var ico = new Icon(stream);
-                this.Icon = (Icon)ico.Clone();
-                this.ShowIcon = true;
-            }
+                Dock = DockStyle.Fill,
+                AutoScroll = true
+            };
+            Controls.Add(mainPanel);
 
-            // 2) Заголовок
+            // Вертикальный контейнер для элементов
+            var contentPanel = new Panel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Dock = DockStyle.Top
+            };
+            mainPanel.Controls.Add(contentPanel);
+
+            // Текущая позиция Y для элементов
+            int currentY = 0;
+
+            // 1. Заголовок
             var lblTitle = new Label
             {
-                Text = "WindSoft Installer",
-                Font = new Font(Font.FontFamily, 14, FontStyle.Bold),
-                AutoSize = true
+                Text = Localization.T("AboutForm.lblTitle"),
+                Font = new Font(Font.FontFamily, 16, FontStyle.Bold),
+                AutoSize = true,
+                Location = new Point(0, currentY),
+                Width = contentPanel.Width - 40,
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            int titleY = 20 + (64 - lblTitle.PreferredHeight) / 2;
-            lblTitle.Location = new Point(100, titleY);
-            Controls.Add(lblTitle);
+            contentPanel.Controls.Add(lblTitle);
+            currentY += lblTitle.Height + 10;
 
-            // 3) Версия
+            // 2. Версия
+            const string HARDCODED_VERSION = "1.1.0";
+
             var lblVersion = new Label
             {
-                Text = $"Версия: {Application.ProductVersion}",
+                Text = string.Format(Localization.T("AboutForm.lblVersion"), HARDCODED_VERSION),
                 AutoSize = true,
-                Location = new Point(100, titleY + lblTitle.PreferredHeight + vGap)
+                Location = new Point(0, currentY),
+                Width = contentPanel.Width - 40,
+                TextAlign = ContentAlignment.MiddleCenter
             };
-            Controls.Add(lblVersion);
+            contentPanel.Controls.Add(lblVersion);
+            currentY += lblVersion.Height + 20;
 
-            // 4) Описание
+            // 3. Описание
             var txtDescription = new TextBox
             {
+                Text = Localization.T("AboutForm.txtDescription"),
                 Multiline = true,
                 ReadOnly = true,
                 BorderStyle = BorderStyle.None,
                 BackColor = this.BackColor,
-                Text = "Установщик WindSoft — лёгкий и удобный способ массово инсталлировать ваши любимые программы в пару кликов.",
-                Location = new Point(left,
-                    Math.Max(20 + 64, lblVersion.Location.Y + lblVersion.PreferredHeight) + vGap),
-                Size = new Size(400, 60)
+                ScrollBars = ScrollBars.Vertical,
+                Location = new Point(0, currentY),
+                Width = contentPanel.Width - 40,
+                Height = 80
             };
-            Controls.Add(txtDescription);
-            txtDescription.TabStop = false;
-            // Сбрасываем возможное выделение
+
+            // Сбрасываем выделение текста
             txtDescription.SelectionStart = 0;
             txtDescription.SelectionLength = 0;
-            // Скрываем выделение, когда текстбокс теряет фокус (но нам фокуса он и не получит)
-            txtDescription.HideSelection = true;
+            txtDescription.SelectionStart = txtDescription.Text.Length;
 
-            // 5) Поддержать проект
+            // Предотвращаем выделение при фокусе
+            txtDescription.Enter += (s, e) => {
+                txtDescription.SelectionStart = txtDescription.Text.Length;
+                txtDescription.SelectionLength = 0;
+            };
+
+            // Отключаем получение фокуса через Tab
+            txtDescription.TabStop = false;
+
+            contentPanel.Controls.Add(txtDescription);
+            currentY += txtDescription.Height + 20;
+
+            // 4. Ссылки
             var linkSupport = new LinkLabel
             {
-                Text = "Поддержать проект",
+                Text = Localization.T("AboutForm.linkSupport"),
                 AutoSize = true,
-                Location = new Point(left, txtDescription.Location.Y + txtDescription.Height + vGap)
+                Location = new Point(0, currentY)
             };
             linkSupport.LinkClicked += (_, __) =>
                 Process.Start(new ProcessStartInfo("https://yourprojectsite.example.com/donate")
                 { UseShellExecute = true });
-            Controls.Add(linkSupport);
+            contentPanel.Controls.Add(linkSupport);
+            currentY += linkSupport.Height + 5;
 
-            // 6) Авторские права
             var linkCopyright = new LinkLabel
             {
-                Text = "© 2025 WindSoft. Все права защищены.",
+                Text = Localization.T("AboutForm.linkCopyright"),
                 AutoSize = true,
-                Location = new Point(left,
-                    linkSupport.Location.Y + linkSupport.PreferredHeight + vGap)
+                Location = new Point(0, currentY)
             };
             linkCopyright.LinkClicked += (_, __) =>
                 Process.Start(new ProcessStartInfo("https://andreytsvla.pythonanywhere.com/")
                 { UseShellExecute = true });
-            Controls.Add(linkCopyright);
+            contentPanel.Controls.Add(linkCopyright);
+            currentY += linkCopyright.Height + 5;
 
-            // 7) E-mail поддержки
             var linkEmail = new LinkLabel
             {
-                Text = "Связаться: kamagoroff@gmail.com",
+                Text = Localization.T("AboutForm.linkEmail"),
                 AutoSize = true,
-                Location = new Point(left,
-                    linkCopyright.Location.Y + linkCopyright.PreferredHeight + vGap)
+                Location = new Point(0, currentY)
             };
             linkEmail.LinkClicked += (_, __) =>
                 Process.Start(new ProcessStartInfo("mailto:kamagoroff@gmail.com")
                 { UseShellExecute = true });
-            Controls.Add(linkEmail);
+            contentPanel.Controls.Add(linkEmail);
+            currentY += linkEmail.Height + 30;
 
-            // 8) Системный отчет
-            var btnSysReport = new Button
-            {
-                Text = "Системный отчет",
-                Size = new Size(130, 30),
-                Location = new Point(left,
-            linkEmail.Location.Y + linkEmail.PreferredHeight + 2 * vGap)
-            };
-            btnSysReport.Click += BtnSysReport_Click;
-            Controls.Add(btnSysReport);
-
-            // 9) Закрыть
-            var btnClose = new Button
-            {
-                Text = "Закрыть",
-                DialogResult = DialogResult.OK,
-                Size = new Size(80, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Right
-            };
-            btnClose.Location = new Point(
-                ClientSize.Width - btnClose.Width - left,
-                ClientSize.Height - btnClose.Height - vGap
-            );
-            Controls.Add(btnClose);
-
-            // Перемещаем блок с кошельками ниже кнопки "Системный отчет"
-            int supportTop = btnSysReport.Bottom + vGap;
-
-            // 10) Блок с кошельками
+            // 5. Поддержка - заголовок
             var lblSupport = new Label
             {
-                Text = "Поддержать проект (адреса кошельков):",
+                Text = Localization.T("AboutForm.lblSupport"),
                 AutoSize = true,
                 Font = new Font(Font.FontFamily, 9F, FontStyle.Bold),
-                Location = new Point(left, supportTop)
+                Location = new Point(0, currentY)
             };
-            Controls.Add(lblSupport);
+            contentPanel.Controls.Add(lblSupport);
+            currentY += lblSupport.Height + 10;
 
-            // Bitcoin
+            // 6. Адреса кошельков с кнопками копирования
+
+            // BTC
+            var lblBtc = new Label
+            {
+                Text = "BTC:",
+                AutoSize = true,
+                Location = new Point(0, currentY)
+            };
+            contentPanel.Controls.Add(lblBtc);
+            currentY += lblBtc.Height + 5;
+
             var txtBtc = new TextBox
             {
+                Text = "bc1qfamn5mcee7egfl8pu7w85ax7yvj5n9hxz8vxh4",
                 ReadOnly = true,
-                BorderStyle = BorderStyle.None,
-                BackColor = this.BackColor,
-                Text = "BTC: bc1qfamn5mcee7egfl8pu7w85ax7yvj5n9hxz8vxh4",
-                Location = new Point(left, lblSupport.Bottom + vGap),
-                Width = 400
+                BorderStyle = BorderStyle.FixedSingle,
+                Location = new Point(0, currentY),
+                Width = contentPanel.Width - 40
             };
-            Controls.Add(txtBtc);
+            // Сбрасываем выделение при фокусе
+            txtBtc.Enter += (s, e) => txtBtc.SelectionLength = 0;
+            contentPanel.Controls.Add(txtBtc);
 
-            // Ethereum
+            var btnCopyBtc = new Button
+            {
+                Text = Localization.T("AboutForm.CopyButton"),
+                FlatStyle = FlatStyle.System,
+                Location = new Point(10, currentY + txtBtc.Height + 5),
+                Size = new Size(120, 30)
+            };
+            btnCopyBtc.Click += (s, e) => CopyToClipboard(txtBtc.Text);
+            contentPanel.Controls.Add(btnCopyBtc);
+            currentY += txtBtc.Height + 40;
+
+            // ETH
+            var lblEth = new Label
+            {
+                Text = "ETH (ERC20):",
+                AutoSize = true,
+                Location = new Point(0, currentY)
+            };
+            contentPanel.Controls.Add(lblEth);
+            currentY += lblEth.Height + 5;
+
             var txtEth = new TextBox
             {
+                Text = "0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
                 ReadOnly = true,
-                BorderStyle = BorderStyle.None,
-                BackColor = this.BackColor,
-                Text = "ETH (ERC20): 0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
-                Location = new Point(left, txtBtc.Bottom + vGap),
-                Width = 400
+                BorderStyle = BorderStyle.FixedSingle,
+                Location = new Point(0, currentY),
+                Width = contentPanel.Width - 40
             };
-            Controls.Add(txtEth);
+            // Сбрасываем выделение при фокусе
+            txtEth.Enter += (s, e) => txtEth.SelectionLength = 0;
+            contentPanel.Controls.Add(txtEth);
 
-            // Увеличиваем высоту формы, если нужно
-            int requiredHeight = txtEth.Bottom + btnClose.Height + 3 * vGap;
-            if (requiredHeight > 400)
+            var btnCopyEth = new Button
             {
-                Size = new Size(450, requiredHeight);
-            }
+                Text = Localization.T("AboutForm.CopyButton"),
+                FlatStyle = FlatStyle.System,
+                Location = new Point(10, currentY + txtEth.Height + 5),
+                Size = new Size(120, 30)
+            };
+            btnCopyEth.Click += (s, e) => CopyToClipboard(txtEth.Text);
+            contentPanel.Controls.Add(btnCopyEth);
+            currentY += txtEth.Height + 50;
+
+            // 7. Кнопка системного отчета
+            var btnSysReport = new Button
+            {
+                Text = Localization.T("AboutForm.btnSysReport"),
+                Size = new Size(180, 35),
+                Location = new Point((contentPanel.Width - 180) / 2, currentY)
+            };
+            btnSysReport.Click += BtnSysReport_Click;
+            contentPanel.Controls.Add(btnSysReport);
+            currentY += btnSysReport.Height + 20;
+
+            // 8. Кнопка закрытия
+            var btnClose = new Button
+            {
+                Text = Localization.T("AboutForm.btnClose"),
+                DialogResult = DialogResult.OK,
+                Size = new Size(100, 35),
+                Location = new Point((contentPanel.Width - 100) / 2, currentY)
+            };
+            contentPanel.Controls.Add(btnClose);
+            currentY += btnClose.Height + 20;
+
+            // Устанавливаем высоту контента
+            contentPanel.Height = currentY;
 
             AcceptButton = btnClose;
         }
 
-        private void BtnSysReport_Click(object? sender, EventArgs e)
+        // Обработчик для кнопки системного отчета
+        private void BtnSysReport_Click(object sender, EventArgs e)
         {
             // Собираем информацию об ОС и .NET
             string os = RuntimeInformation.OSDescription;
@@ -194,11 +254,34 @@ namespace WindSoftInstaller
             Clipboard.SetText(report);
 
             MessageBox.Show(
-                "Системный отчет скопирован в буфер обмена.",
-                "Системный отчет",
+                Localization.T("AboutForm.SystemReportCopied"),
+                Localization.T("AboutForm.SystemReport"),
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
             );
+        }
+
+        private void CopyToClipboard(string text)
+        {
+            try
+            {
+                Clipboard.SetText(text);
+                MessageBox.Show(
+                    $"{text}\n\n{Localization.T("AboutForm.CopiedMessage")}",
+                    Localization.T("AboutForm.CopiedTitle"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"{Localization.T("AboutForm.CopyError")}: {ex.Message}",
+                    Localization.T("errorTitle"),
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
     }
 }

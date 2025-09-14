@@ -1,8 +1,10 @@
-﻿using System.Diagnostics;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using SharpCompress.Archives;
 using SharpCompress.Common;
-using Microsoft.Win32;
+using System.Diagnostics;
+using System.Net;
+using System.Text;
 
 namespace WindSoftInstaller.Services
 {
@@ -45,12 +47,44 @@ namespace WindSoftInstaller.Services
                 _logger.LogInformation("Извлечён {File} → {Dest}", app.ExecutablePath, sourcePath);
             }
 
+            // 1.2) Извлекаем дополнительные файлы, если они есть
+            if (app.AdditionalFiles != null && app.AdditionalFiles.Any())
+            {
+                using (var archive = ArchiveFactory.Open(archive7z))
+                {
+                    foreach (var additionalFile in app.AdditionalFiles)
+                    {
+                        var entry = archive.Entries.FirstOrDefault(e =>
+                            e.Key.Equals(additionalFile, StringComparison.OrdinalIgnoreCase));
+
+                        if (entry != null)
+                        {
+                            string destPath = Path.Combine(extractDir, additionalFile);
+                            entry.WriteToFile(destPath);
+                            _logger.LogInformation("Извлечён дополнительный файл {File} → {Dest}", additionalFile, destPath);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Дополнительный файл {File} не найден в архиве", additionalFile);
+                        }
+                    }
+                }
+            }
+
             token.ThrowIfCancellationRequested();
 
             // 2) Если портативная ветка
             if (app.IsPortable)
             {
                 await HandlePortableAsync(app, installRoot, sourcePath, tempDir, token);
+
+                // MSI Afterburner: применяем конфигурацию с русским языком только если язык русский
+                if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase) && Localization.Current == "ru")
+                {
+                    string targetDir = Path.Combine(installRoot, app.Name);
+                    ApplyMSIAfterburnerConfiguration(targetDir, extractDir);
+                }
+
                 CleanupTemp(tempDir);
                 return;
             }
@@ -63,6 +97,17 @@ namespace WindSoftInstaller.Services
             bool isVlc = app.Name.StartsWith("vlc", StringComparison.OrdinalIgnoreCase);
             if (isVlc)
                 WriteVlcRegistry(appDir);
+
+            // Для Opera, VC++ 2013 и LMMS: копируем установщик в папку установки
+            if (app.Name.Equals("Opera", StringComparison.OrdinalIgnoreCase) ||
+                app.Name.Contains("VC++ 2013", StringComparison.OrdinalIgnoreCase) ||
+                app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase))
+            {
+                string newSourcePath = Path.Combine(appDir, Path.GetFileName(sourcePath));
+                File.Copy(sourcePath, newSourcePath, overwrite: true);
+                sourcePath = newSourcePath;
+                _logger.LogInformation("Установщик {App} скопирован в {Dest}", app.Name, newSourcePath);
+            }
 
             var builder = new InstallerArgumentsBuilder(app, sourcePath, appDir);
             var psi = builder.BuildStartInfo();
@@ -93,13 +138,223 @@ namespace WindSoftInstaller.Services
                     CreateDesktopShortcutIfExists(rel, app.ShortcutName ?? app.Name, appDir);
             }
 
+
+
+            //копируем конфиг
+            using (var archive = ArchiveFactory.Open(archive7z))
+            {
+                var entry = archive.Entries
+                                   .FirstOrDefault(e => e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                               ?? throw new FileNotFoundException($"В архиве нет {app.ExecutablePath}");
+                sourcePath = Path.Combine(extractDir, app.ExecutablePath);
+                entry.WriteToFile(sourcePath);
+                _logger.LogInformation("Извлечён {File} → {Dest}", app.ExecutablePath, sourcePath);
+
+                // ДОБАВЛЯЕМ: Извлечение дополнительных файлов для KeePass
+                if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Извлекаем KeePass.config.xml
+                    var configEntry = archive.Entries
+                                             .FirstOrDefault(e => e.Key.Equals("KeePass.config.xml", StringComparison.OrdinalIgnoreCase));
+                    if (configEntry != null)
+                    {
+                        string configPath = Path.Combine(extractDir, "KeePass.config.xml");
+                        configEntry.WriteToFile(configPath);
+                        _logger.LogInformation("Извлечён конфиг KeePass → {Dest}", configPath);
+                    }
+
+                    // Извлекаем Russian.lngx
+                    var lngxEntry = archive.Entries
+                                           .FirstOrDefault(e => e.Key.Equals("Russian.lngx", StringComparison.OrdinalIgnoreCase));
+                    if (lngxEntry != null)
+                    {
+                        string lngxPath = Path.Combine(extractDir, "Russian.lngx");
+                        lngxEntry.WriteToFile(lngxPath);
+                        _logger.LogInformation("Извлечён файл русского языка → {Dest}", lngxPath);
+                    }
+                }
+            }
+
             // KeePass: копируем конфиг
             if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase))
-                ApplyKeePassConfiguration(appDir);
+                ApplyKeePassConfiguration(appDir, extractDir);
+
+            // XMedia Recode: создаем структуру папок и копируем конфиги (только для русского языка)
+            if (app.Name.Equals("XMedia Recode", StringComparison.OrdinalIgnoreCase))
+                ApplyXMediaRecodeConfiguration(extractDir);
+
+            // После завершения установки проблемных приложений
+            if (app.Name.Equals("Opera", StringComparison.OrdinalIgnoreCase) ||
+                app.Name.Contains("VC++ 2013", StringComparison.OrdinalIgnoreCase) ||
+                app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    // Пытаемся удалить установщик из папки назначения
+                    if (File.Exists(sourcePath))
+                    {
+                        File.Delete(sourcePath);
+                        _logger.LogInformation("Установщик {App} удалён: {Path}", app.Name, sourcePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Не удалось удалить установщик {App}, будет выполнена отложенная очистка", app.Name);
+                    // Запланируем удаление при следующем запуске
+                    ScheduleDeferredCleanup(sourcePath);
+                }
+            }
 
             CleanupTemp(tempDir);
         }
 
+        private void ScheduleDeferredCleanup(string filePath)
+        {
+            try
+            {
+                string cleanupBat = Path.Combine(Path.GetTempPath(), $"cleanup_{Guid.NewGuid()}.bat");
+                string batchContent = $@"
+@echo off
+chcp 65001 >nul
+echo Запланированная очистка заблокированных файлов...
+timeout /t 10 /nobreak >nul
+
+:: Попытка удалить файл
+if exist ""{filePath}"" (
+    echo Удаляем файл: {filePath}
+    del /f /q ""{filePath}""
+)
+
+:: Попытка удалить папку, если это временная директория
+for /d %%i in (""{Path.GetDirectoryName(filePath)}"") do (
+    if ""%%~ni"" geq ""WSI_"" (
+        echo Удаляем временную директорию: %%~fi
+        rmdir /s /q ""%%~fi"" 2>nul
+    )
+)
+
+:: Удаляем сам bat-файл
+del /f /q ""%~f0""
+
+echo Очистка завершена.
+";
+
+                File.WriteAllText(cleanupBat, batchContent, Encoding.UTF8);
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c start /min \"\" \"{cleanupBat}\"",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+
+                _logger.LogInformation("Запланирована отложенная очистка для {Path}", filePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось запланировать отложенную очистку");
+            }
+        }
+
+        private void ApplyMSIAfterburnerConfiguration(string installPath, string extractDir)
+        {
+            try
+            {
+                // Проверяем язык - применяем конфигурацию только для русского
+                if (Localization.Current != "ru")
+                {
+                    _logger.LogInformation("Пропускаем применение конфигурации для MSI Afterburner, т.к. текущий язык: {Lang}", Localization.Current);
+                    return;
+                }
+
+                _logger.LogInformation("Применение конфигурации MSI Afterburner");
+
+                string sourceConfig = Path.Combine(extractDir, "MSIAfterburner.cfg");
+                if (!File.Exists(sourceConfig))
+                {
+                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ MSI AFTERBURNER НЕ НАЙДЕН: {Path}", sourceConfig);
+                    return;
+                }
+
+                // Формируем целевой путь в папке установленного приложения
+                string targetConfigDir = Path.Combine(installPath, "Profiles");
+                string targetConfigPath = Path.Combine(targetConfigDir, "MSIAfterburner.cfg");
+
+                // Создаем целевую директорию, если её нет
+                Directory.CreateDirectory(targetConfigDir);
+                _logger.LogInformation("Создана директория: {Dir}", targetConfigDir);
+
+                // Копируем файл конфигурации
+                File.Copy(sourceConfig, targetConfigPath, overwrite: true);
+                _logger.LogInformation("Конфиг MSI Afterburner скопирован в \"{Path}\"", targetConfigPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка применения конфига MSI Afterburner");
+            }
+        }
+
+        private void ApplyXMediaRecodeConfiguration(string extractDir)
+        {
+            try
+            {
+                if (Localization.Current != "ru")
+                {
+                    _logger.LogInformation("Пропускаем применение русской конфигурации для XMedia Recode, т.к. текущий язык: {Lang}", Localization.Current);
+                    return;
+                }
+
+                _logger.LogInformation("Создание структуры папок и конфигурации XMedia Recode");
+
+                // Формируем целевой путь
+                string targetDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                    "XMedia Recode");
+
+                // Создаем основную директорию
+                Directory.CreateDirectory(targetDir);
+                _logger.LogInformation("Создана директория: {Dir}", targetDir);
+
+                // Создаем подпапку xmr.log
+                string logDir = Path.Combine(targetDir, "xmr.log");
+                Directory.CreateDirectory(logDir);
+                _logger.LogInformation("Создана поддиректория: {Dir}", logDir);
+
+                // Копируем файлы конфигурации
+                CopyConfigFile(extractDir, targetDir, "XMediaRecode.json");
+                CopyConfigFile(extractDir, targetDir, "Fav.ini");
+
+                _logger.LogInformation("Структура папок и файлов для XMedia Recode успешно создана");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка создания структуры папок для XMedia Recode");
+            }
+        }
+
+        private void CopyConfigFile(string extractDir, string targetDir, string fileName)
+        {
+            try
+            {
+                string sourceFile = Path.Combine(extractDir, fileName);
+                string targetFile = Path.Combine(targetDir, fileName);
+
+                if (!File.Exists(sourceFile))
+                {
+                    _logger.LogError("Файл {File} не найден в временной директории: {Path}", fileName, sourceFile);
+                    return;
+                }
+
+                File.Copy(sourceFile, targetFile, overwrite: true);
+                _logger.LogInformation("Файл {File} скопирован в \"{Path}\"", fileName, targetFile);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка копирования файла {File}", fileName);
+            }
+        }
 
         private async Task HandlePortableAsync(InstallableApp app, string installRoot, string sourcePath, string tempDir, CancellationToken token)
         {
@@ -222,56 +477,64 @@ namespace WindSoftInstaller.Services
             ShortcutHelper.CreateShortcut(_logger, exePath, name);
         }
 
-        private void ApplyKeePassConfiguration(string installPath)
+        private void ApplyKeePassConfiguration(string installPath, string extractDir)
         {
             try
             {
                 _logger.LogInformation("Применение конфигурации KeePass");
 
-                // Путь к скопированному конфигу в папке установки
-                string sourceConfig = Path.Combine(installPath, "KeePass.config.xml");
-
-                // Проверяем существование файла
-                if (!File.Exists(sourceConfig))
+                if (Localization.Current != "ru")
                 {
-                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ НЕ НАЙДЕН В ПАПКЕ УСТАНОВКИ: {Path}", sourceConfig);
-
-                    // Попробуем найти файл вручную
-                    var allFiles = Directory.GetFiles(installPath, "*.config.xml", SearchOption.AllDirectories);
-                    _logger.LogWarning("Найденные файлы конфигурации: {Files}", string.Join(", ", allFiles));
-
+                    _logger.LogInformation(
+                        "KeePassConfigurator: пропускаем копирование русского конфига, т.к. Current = {Lang}",
+                        Localization.Current);
                     return;
                 }
 
-                // Путь к целевому конфигу в AppData
-                string targetConfig = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "KeePass", "KeePass.config.xml"
-                );
+                // Пути к файлам во временной директории (extractDir)
+                string sourceConfig = Path.Combine(extractDir, "KeePass.config.xml");
+                string sourceLngx = Path.Combine(extractDir, "Russian.lngx");
 
-                // Проверяем содержимое конфига (опционально)
-                string configContent = File.ReadAllText(sourceConfig);
-                if (!configContent.Contains("Russian.lngx"))
+                // Проверяем наличие файлов во временной директории
+                if (!File.Exists(sourceConfig))
                 {
-                    _logger.LogWarning("Конфиг не содержит русский язык! Файл: {Path}", sourceConfig);
+                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ НЕ НАЙДЕН: {Path}", sourceConfig);
+                    return;
                 }
 
-                // Создаем целевую директорию
-                Directory.CreateDirectory(Path.GetDirectoryName(targetConfig)!);
+                // Целевая директория — куда установлен KeePass
+                string targetConfig = Path.Combine(installPath, "KeePass.config.xml");
 
-                // Копируем с заменой
+                // Создаем папку Languages, если её нет
+                string languagesDir = Path.Combine(installPath, "Languages");
+                Directory.CreateDirectory(languagesDir);
+
+                // Копируем файл языка в папку Languages
+                string targetLngx = Path.Combine(languagesDir, "Russian.lngx");
+
+                // 1. Копируем файл русского языка, если он есть
+                if (File.Exists(sourceLngx))
+                {
+                    File.Copy(sourceLngx, targetLngx, overwrite: true);
+                    _logger.LogInformation("Файл русского языка скопирован в \"{Path}\"", targetLngx);
+                }
+                else
+                {
+                    _logger.LogWarning("Файл русского языка не найден: {Path}", sourceLngx);
+                }
+
+                // 2. Копируем конфигурационный файл
                 File.Copy(sourceConfig, targetConfig, overwrite: true);
-                _logger.LogInformation("Конфиг KeePass успешно скопирован в AppData");
+                _logger.LogInformation("Конфиг KeePass скопирован в \"{Path}\"", targetConfig);
 
-                // Удаляем временную копию из папки установки
-                try
+                // 3. Проверяем конфиг на наличие ссылки на русский язык
+                string content = File.ReadAllText(targetConfig);
+                if (!content.Contains("Russian.lngx"))
                 {
-                    File.Delete(sourceConfig);
-                    _logger.LogDebug("Временный конфиг удалён из папки установки");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Не удалось удалить временный конфиг");
+                    _logger.LogWarning("Конфиг не содержит ссылку на русский язык! {Path}", targetConfig);
+
+                    // Если нужно, можно автоматически обновить конфиг
+                    // Но это уже дополнительная функциональность
                 }
             }
             catch (Exception ex)
