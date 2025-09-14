@@ -78,8 +78,8 @@ namespace WindSoftInstaller.Services
             {
                 await HandlePortableAsync(app, installRoot, sourcePath, tempDir, token);
 
-                // MSI Afterburner: применяем конфигурацию с русским языком
-                if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase))
+                // MSI Afterburner: применяем конфигурацию с русским языком только если язык русский
+                if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase) && Localization.Current == "ru")
                 {
                     string targetDir = Path.Combine(installRoot, app.Name);
                     ApplyMSIAfterburnerConfiguration(targetDir, extractDir);
@@ -262,6 +262,7 @@ echo Очистка завершена.
         {
             try
             {
+                // Проверяем язык - применяем конфигурацию только для русского
                 if (Localization.Current != "ru")
                 {
                     _logger.LogInformation("Пропускаем применение конфигурации для MSI Afterburner, т.к. текущий язык: {Lang}", Localization.Current);

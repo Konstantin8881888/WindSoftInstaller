@@ -23,7 +23,6 @@ namespace WindSoftInstaller
         private readonly List<string> _registryFailedApps = [];
         int exitCode = -1; // Инициализируем код выхода значением по умолчанию
         private readonly ShortcutService shortcutService;
-        private readonly KeePassConfigurator kpConfigurator;
         private readonly InstallationManager installationManager;
         private MenuStrip menuStrip;
         public Form1(ILogger<Form1> logger)
@@ -31,7 +30,6 @@ namespace WindSoftInstaller
             // Сначала инициализируем логгер
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             shortcutService = new ShortcutService(_logger);
-            kpConfigurator = new KeePassConfigurator(_logger);
             installationManager = new InstallationManager(_logger);
             // Строим словарь для быстрого поиска по имени
             appLookup = apps

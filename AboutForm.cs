@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Windows.Forms;
 
 namespace WindSoftInstaller
 {
@@ -56,7 +54,7 @@ namespace WindSoftInstaller
             currentY += lblTitle.Height + 10;
 
             // 2. Версия
-            const string HARDCODED_VERSION = "1.0.1";
+            const string HARDCODED_VERSION = "1.1.0";
 
             var lblVersion = new Label
             {
