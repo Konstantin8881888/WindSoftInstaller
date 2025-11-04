@@ -566,7 +566,7 @@ namespace WindSoftInstaller
                     }
                 }
 
-                if (checkedApps.Any(a => a.Name == "MSI Afterburner") || checkedApps.Any(a => a.Name == "RivaTuner Statistics Server"))
+                if (checkedApps.Any(a => a.Name == "MSI Afterburner") || checkedApps.Any(a => a.Name == "RivaTuner Statistics Server") || checkedApps.Any(a => a.Name == "XMedia Recode"))
                 {
                     if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x86)", out var vc2015x86)
                      && !checkedApps.Contains(vc2015x86))
@@ -677,8 +677,13 @@ namespace WindSoftInstaller
             "VC++ 2013 Redistributable (x86)",
             "VC++ 2013 Redistributable (x64)"
         },
-            // MSI Afterburner и RivaTuner требуют VC++ 2015–2022 x86 и x64
+            // MSI Afterburner XMedia Recode и RivaTuner требуют VC++ 2015–2022 x86 и x64
             ["MSI Afterburner"] = new[]
+        {
+            "Microsoft VC++ 2015-2022 Redistributable (x86)",
+            "Microsoft VC++ 2015-2022 Redistributable (x64)"
+        },
+            ["XMedia Recode"] = new[]
         {
             "Microsoft VC++ 2015-2022 Redistributable (x86)",
             "Microsoft VC++ 2015-2022 Redistributable (x64)"
