@@ -148,6 +148,14 @@
                 ["param.SuppressMessages"] = "Подавить сообщения",
                 ["param.DisableAutoUpdate"] = "Отключить автообновление",
                 ["param.Components"] = "Компоненты",
+
+                // Новые ключи для меню "Вид"
+                ["menu.View"] = "Вид",
+                ["menu.Language"] = "Язык",
+                ["menu.Theme"] = "Тема",
+                ["theme.default"] = "Стандартная",
+                ["theme.dark"] = "Тёмная",
+                ["theme.light"] = "Светлая",
             },
             ["en"] = new Dictionary<string, string>
             {
@@ -292,6 +300,14 @@
                 ["param.SuppressMessages"] = "Suppress messages",
                 ["param.DisableAutoUpdate"] = "Disable auto-update",
                 ["param.Components"] = "Components",
+
+                // keys for menu "view"
+                ["menu.Theme"] = "Theme",
+                ["menu.View"] = "View",
+                ["menu.Language"] = "Language",
+                ["theme.default"] = "Default",
+                ["theme.dark"] = "Dark",
+                ["theme.light"] = "Light",
             }
         };
 

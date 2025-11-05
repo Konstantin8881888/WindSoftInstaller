@@ -1,13 +1,104 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using WindSoftInstaller.Services;
 
 namespace WindSoftInstaller
 {
     [SupportedOSPlatform("windows")]
     public class AboutForm : Form
     {
+        private Panel mainPanel;
+        private Panel contentPanel;
+        private Label lblTitle;
+        private Label lblVersion;
+        private TextBox txtDescription;
+        private LinkLabel linkSupport;
+        private LinkLabel linkCopyright;
+        private LinkLabel linkEmail;
+        private Label lblSupport;
+        private Label lblBtc;
+        private TextBox txtBtc;
+        private Button btnCopyBtc;
+        private Label lblEth;
+        private TextBox txtEth;
+        private Button btnCopyEth;
+        private Button btnSysReport;
+        private Button btnClose;
+
         public AboutForm()
+        {
+            InitializeComponent();
+            ApplyTheme(ThemeManager.CurrentTheme);
+
+            // Подписываемся на событие смены темы
+            ThemeManager.ThemeChanged += OnThemeChanged;
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            // Отписываемся от события при закрытии формы
+            ThemeManager.ThemeChanged -= OnThemeChanged;
+        }
+
+        private void OnThemeChanged(Theme theme)
+        {
+            ApplyTheme(theme);
+        }
+
+        private void ApplyTheme(Theme theme)
+        {
+            this.BackColor = theme.FormBackColor;
+            this.ForeColor = theme.ControlForeColor;
+
+            // Применяем тему ко всем контролам
+            mainPanel.BackColor = theme.FormBackColor;
+            contentPanel.BackColor = theme.FormBackColor;
+
+            // Labels
+            lblTitle.BackColor = theme.FormBackColor;
+            lblTitle.ForeColor = theme.ControlForeColor;
+            lblVersion.BackColor = theme.FormBackColor;
+            lblVersion.ForeColor = theme.ControlForeColor;
+            lblSupport.BackColor = theme.FormBackColor;
+            lblSupport.ForeColor = theme.ControlForeColor;
+            lblBtc.BackColor = theme.FormBackColor;
+            lblBtc.ForeColor = theme.ControlForeColor;
+            lblEth.BackColor = theme.FormBackColor;
+            lblEth.ForeColor = theme.ControlForeColor;
+
+            // TextBoxes
+            txtDescription.BackColor = theme.ControlBackColor;
+            txtDescription.ForeColor = theme.ControlForeColor;
+            txtBtc.BackColor = theme.ControlBackColor;
+            txtBtc.ForeColor = theme.ControlForeColor;
+            txtEth.BackColor = theme.ControlBackColor;
+            txtEth.ForeColor = theme.ControlForeColor;
+
+            // LinkLabels
+            linkSupport.BackColor = theme.FormBackColor;
+            linkSupport.ForeColor = theme.ControlForeColor;
+            linkSupport.LinkColor = theme.ControlForeColor;
+            linkCopyright.BackColor = theme.FormBackColor;
+            linkCopyright.ForeColor = theme.ControlForeColor;
+            linkCopyright.LinkColor = theme.ControlForeColor;
+            linkEmail.BackColor = theme.FormBackColor;
+            linkEmail.ForeColor = theme.ControlForeColor;
+            linkEmail.LinkColor = theme.ControlForeColor;
+
+            // Buttons
+            btnCopyBtc.BackColor = theme.ButtonBackColor;
+            btnCopyBtc.ForeColor = theme.ButtonForeColor;
+            btnCopyEth.BackColor = theme.ButtonBackColor;
+            btnCopyEth.ForeColor = theme.ButtonForeColor;
+            btnSysReport.BackColor = theme.ButtonBackColor;
+            btnSysReport.ForeColor = theme.ButtonForeColor;
+            btnClose.BackColor = theme.ButtonBackColor;
+            btnClose.ForeColor = theme.ButtonForeColor;
+        }
+
+        private void InitializeComponent()
         {
             // Общие настройки
             Text = Localization.T("AboutForm.Title");
@@ -18,10 +109,9 @@ namespace WindSoftInstaller
             StartPosition = FormStartPosition.CenterParent;
             Font = new Font("Segoe UI", 9F);
             Padding = new Padding(20);
-            BackColor = SystemColors.Window;
 
             // Основной контейнер с вертикальным расположением
-            var mainPanel = new Panel
+            mainPanel = new Panel
             {
                 Dock = DockStyle.Fill,
                 AutoScroll = true
@@ -29,7 +119,7 @@ namespace WindSoftInstaller
             Controls.Add(mainPanel);
 
             // Вертикальный контейнер для элементов
-            var contentPanel = new Panel
+            contentPanel = new Panel
             {
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
@@ -41,7 +131,7 @@ namespace WindSoftInstaller
             int currentY = 0;
 
             // 1. Заголовок
-            var lblTitle = new Label
+            lblTitle = new Label
             {
                 Text = Localization.T("AboutForm.lblTitle"),
                 Font = new Font(Font.FontFamily, 16, FontStyle.Bold),
@@ -56,7 +146,7 @@ namespace WindSoftInstaller
             // 2. Версия
             const string HARDCODED_VERSION = "1.1.0";
 
-            var lblVersion = new Label
+            lblVersion = new Label
             {
                 Text = string.Format(Localization.T("AboutForm.lblVersion"), HARDCODED_VERSION),
                 AutoSize = true,
@@ -68,13 +158,12 @@ namespace WindSoftInstaller
             currentY += lblVersion.Height + 20;
 
             // 3. Описание
-            var txtDescription = new TextBox
+            txtDescription = new TextBox
             {
                 Text = Localization.T("AboutForm.txtDescription"),
                 Multiline = true,
                 ReadOnly = true,
-                BorderStyle = BorderStyle.None,
-                BackColor = this.BackColor,
+                BorderStyle = BorderStyle.FixedSingle,
                 ScrollBars = ScrollBars.Vertical,
                 Location = new Point(0, currentY),
                 Width = contentPanel.Width - 40,
@@ -99,31 +188,31 @@ namespace WindSoftInstaller
             currentY += txtDescription.Height + 20;
 
             // 4. Ссылки
-            var linkSupport = new LinkLabel
+            linkSupport = new LinkLabel
             {
                 Text = Localization.T("AboutForm.linkSupport"),
                 AutoSize = true,
                 Location = new Point(0, currentY)
             };
             linkSupport.LinkClicked += (_, __) =>
-                Process.Start(new ProcessStartInfo("https://yourprojectsite.example.com/donate")
+                Process.Start(new ProcessStartInfo("https://windsoftinstaller.site/donat/")
                 { UseShellExecute = true });
             contentPanel.Controls.Add(linkSupport);
             currentY += linkSupport.Height + 5;
 
-            var linkCopyright = new LinkLabel
+            linkCopyright = new LinkLabel
             {
                 Text = Localization.T("AboutForm.linkCopyright"),
                 AutoSize = true,
                 Location = new Point(0, currentY)
             };
             linkCopyright.LinkClicked += (_, __) =>
-                Process.Start(new ProcessStartInfo("https://andreytsvla.pythonanywhere.com/")
+                Process.Start(new ProcessStartInfo("https://windsoftinstaller.site/")
                 { UseShellExecute = true });
             contentPanel.Controls.Add(linkCopyright);
             currentY += linkCopyright.Height + 5;
 
-            var linkEmail = new LinkLabel
+            linkEmail = new LinkLabel
             {
                 Text = Localization.T("AboutForm.linkEmail"),
                 AutoSize = true,
@@ -136,7 +225,7 @@ namespace WindSoftInstaller
             currentY += linkEmail.Height + 30;
 
             // 5. Поддержка - заголовок
-            var lblSupport = new Label
+            lblSupport = new Label
             {
                 Text = Localization.T("AboutForm.lblSupport"),
                 AutoSize = true,
@@ -149,7 +238,7 @@ namespace WindSoftInstaller
             // 6. Адреса кошельков с кнопками копирования
 
             // BTC
-            var lblBtc = new Label
+            lblBtc = new Label
             {
                 Text = "BTC:",
                 AutoSize = true,
@@ -158,7 +247,7 @@ namespace WindSoftInstaller
             contentPanel.Controls.Add(lblBtc);
             currentY += lblBtc.Height + 5;
 
-            var txtBtc = new TextBox
+            txtBtc = new TextBox
             {
                 Text = "bc1qfamn5mcee7egfl8pu7w85ax7yvj5n9hxz8vxh4",
                 ReadOnly = true,
@@ -170,10 +259,9 @@ namespace WindSoftInstaller
             txtBtc.Enter += (s, e) => txtBtc.SelectionLength = 0;
             contentPanel.Controls.Add(txtBtc);
 
-            var btnCopyBtc = new Button
+            btnCopyBtc = new Button
             {
                 Text = Localization.T("AboutForm.CopyButton"),
-                FlatStyle = FlatStyle.System,
                 Location = new Point(10, currentY + txtBtc.Height + 5),
                 Size = new Size(120, 30)
             };
@@ -182,7 +270,7 @@ namespace WindSoftInstaller
             currentY += txtBtc.Height + 40;
 
             // ETH
-            var lblEth = new Label
+            lblEth = new Label
             {
                 Text = "ETH (ERC20):",
                 AutoSize = true,
@@ -191,7 +279,7 @@ namespace WindSoftInstaller
             contentPanel.Controls.Add(lblEth);
             currentY += lblEth.Height + 5;
 
-            var txtEth = new TextBox
+            txtEth = new TextBox
             {
                 Text = "0xbC7fE973BFA32Ca0D4d4900ee94214E61F23271E",
                 ReadOnly = true,
@@ -203,10 +291,9 @@ namespace WindSoftInstaller
             txtEth.Enter += (s, e) => txtEth.SelectionLength = 0;
             contentPanel.Controls.Add(txtEth);
 
-            var btnCopyEth = new Button
+            btnCopyEth = new Button
             {
                 Text = Localization.T("AboutForm.CopyButton"),
-                FlatStyle = FlatStyle.System,
                 Location = new Point(10, currentY + txtEth.Height + 5),
                 Size = new Size(120, 30)
             };
@@ -215,7 +302,7 @@ namespace WindSoftInstaller
             currentY += txtEth.Height + 50;
 
             // 7. Кнопка системного отчета
-            var btnSysReport = new Button
+            btnSysReport = new Button
             {
                 Text = Localization.T("AboutForm.btnSysReport"),
                 Size = new Size(180, 35),
@@ -226,7 +313,7 @@ namespace WindSoftInstaller
             currentY += btnSysReport.Height + 20;
 
             // 8. Кнопка закрытия
-            var btnClose = new Button
+            btnClose = new Button
             {
                 Text = Localization.T("AboutForm.btnClose"),
                 DialogResult = DialogResult.OK,
