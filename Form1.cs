@@ -25,6 +25,7 @@ namespace WindSoftInstaller
         private readonly ShortcutService shortcutService;
         private readonly InstallationManager installationManager;
         private MenuStrip menuStrip;
+
         public Form1(ILogger<Form1> logger)
         {
             // Сначала инициализируем логгер
@@ -37,7 +38,11 @@ namespace WindSoftInstaller
                 .ToDictionary(a => a.Name, StringComparer.OrdinalIgnoreCase);
 
             _logger.LogInformation("Form1 constructor: старт");
+
             InitializeComponent();
+
+            // Сразу применяем рендерер к меню
+            menuStrip.Renderer = new MenuRenderer(ThemeManager.CurrentTheme);
             // Проверка на null
             _logger.LogInformation("Form1 constructor: объект формы создаётся");
 
@@ -95,9 +100,152 @@ namespace WindSoftInstaller
                 txtInstallPath.Text = saved;
                 _logger.LogDebug("Восстановлен последний путь установки: {Path}", saved);
             }
+
+            // Восстанавливаем последнюю выбранную тему
+            var savedThemeKey = Properties.Settings.Default.LastTheme;
+            if (!string.IsNullOrEmpty(savedThemeKey))
+            {
+                var theme = ThemeManager.GetAvailableThemes().FirstOrDefault(t => t.Key == savedThemeKey);
+                if (theme != null)
+                {
+                    ThemeManager.ChangeTheme(theme);
+                }
+            }
+
+            // Подписываемся на событие смены темы
+            ThemeManager.ThemeChanged += (theme) => ApplyTheme();
+
             // Задаём фон формы и единый шрифт
             this.BackColor = Color.LightSteelBlue;
             this.Font = new Font("Segoe UI", 9F);
+        }
+
+        private void SwitchTheme(Theme theme)
+        {
+            ThemeManager.ChangeTheme(theme);
+            ApplyTheme();
+        }
+
+        private void ApplyTheme()
+        {
+            var theme = ThemeManager.CurrentTheme;
+
+            // Применяем тему ко всей форме и контролам
+            this.BackColor = theme.FormBackColor;
+            this.ForeColor = theme.ControlForeColor;
+
+            // Меню - устанавливаем кастомный рендерер
+            menuStrip.Renderer = new MenuRenderer(theme);
+            menuStrip.BackColor = theme.MenuBackColor;
+            menuStrip.ForeColor = theme.MenuForeColor;
+
+            // Настраиваем выпадающие меню
+            foreach (ToolStripMenuItem item in menuStrip.Items)
+            {
+                item.BackColor = theme.MenuBackColor;
+                item.ForeColor = theme.MenuForeColor;
+
+                // Настраиваем выпадающие подменю
+                foreach (ToolStripMenuItem subItem in item.DropDownItems.OfType<ToolStripMenuItem>())
+                {
+                    subItem.BackColor = theme.MenuDropDownBackColor;
+                    subItem.ForeColor = theme.MenuDropDownForeColor;
+
+                    // Рекурсивно настраиваем вложенные меню
+                    foreach (ToolStripMenuItem nestedItem in subItem.DropDownItems.OfType<ToolStripMenuItem>())
+                    {
+                        nestedItem.BackColor = theme.MenuDropDownBackColor;
+                        nestedItem.ForeColor = theme.MenuDropDownForeColor;
+                    }
+                }
+            }
+
+            // Текстовые поля
+            txtInstallPath.BackColor = theme.ControlBackColor;
+            txtInstallPath.ForeColor = theme.ControlForeColor;
+            txtBTC.BackColor = theme.ControlBackColor;
+            txtBTC.ForeColor = theme.ControlForeColor;
+            txtETH.BackColor = theme.ControlBackColor;
+            txtETH.ForeColor = theme.ControlForeColor;
+            txtTelegram.BackColor = theme.ControlBackColor;
+            txtTelegram.ForeColor = theme.ControlForeColor;
+
+            // Кнопки
+            btnInstall.BackColor = theme.ButtonBackColor;
+            btnInstall.ForeColor = theme.ButtonForeColor;
+            btnBrowse.BackColor = theme.ButtonBackColor;
+            btnBrowse.ForeColor = theme.ButtonForeColor;
+            btnToggleSelection.BackColor = theme.ButtonBackColor;
+            btnToggleSelection.ForeColor = theme.ButtonForeColor;
+            btnCancelInstall.BackColor = theme.ButtonBackColor;
+            btnCancelInstall.ForeColor = theme.ButtonForeColor;
+
+            // DataGridView - полная настройка для темной темы
+            dataGridViewPrograms.BackgroundColor = theme.GridBackColor;
+            dataGridViewPrograms.DefaultCellStyle.BackColor = theme.GridBackColor;
+            dataGridViewPrograms.DefaultCellStyle.ForeColor = theme.GridForeColor;
+            dataGridViewPrograms.DefaultCellStyle.SelectionBackColor = theme.GridSelectionBackColor;
+            dataGridViewPrograms.DefaultCellStyle.SelectionForeColor = theme.GridForeColor;
+            dataGridViewPrograms.AlternatingRowsDefaultCellStyle.BackColor = theme.GridAlternatingBackColor;
+            dataGridViewPrograms.AlternatingRowsDefaultCellStyle.ForeColor = theme.GridForeColor;
+
+            // Отключаем визуальные стили для полного контроля над внешним видом
+            dataGridViewPrograms.EnableHeadersVisualStyles = false;
+
+            // Настройка заголовков столбцов
+            dataGridViewPrograms.ColumnHeadersDefaultCellStyle.BackColor = theme.GridHeaderBackColor;
+            dataGridViewPrograms.ColumnHeadersDefaultCellStyle.ForeColor = theme.GridHeaderForeColor;
+            dataGridViewPrograms.ColumnHeadersDefaultCellStyle.SelectionBackColor = theme.GridSelectionBackColor;
+            dataGridViewPrograms.ColumnHeadersDefaultCellStyle.SelectionForeColor = theme.GridForeColor;
+            dataGridViewPrograms.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewPrograms.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+
+            // Настройка заголовков строк
+            dataGridViewPrograms.RowHeadersDefaultCellStyle.BackColor = theme.GridHeaderBackColor;
+            dataGridViewPrograms.RowHeadersDefaultCellStyle.ForeColor = theme.GridHeaderForeColor;
+            dataGridViewPrograms.RowHeadersDefaultCellStyle.SelectionBackColor = theme.GridSelectionBackColor;
+
+            // Линии сетки
+            dataGridViewPrograms.GridColor = theme.GridLineColor;
+
+            // Принудительно обновляем каждую колонку
+            foreach (DataGridViewColumn column in dataGridViewPrograms.Columns)
+            {
+                column.HeaderCell.Style.BackColor = theme.GridHeaderBackColor;
+                column.HeaderCell.Style.ForeColor = theme.GridHeaderForeColor;
+                column.HeaderCell.Style.SelectionBackColor = theme.GridSelectionBackColor;
+                column.HeaderCell.Style.SelectionForeColor = theme.GridForeColor;
+            }
+
+            // Перерисовываем грид
+            dataGridViewPrograms.Invalidate();
+
+            // Labels
+            lblStatus.BackColor = theme.FormBackColor;
+            lblStatus.ForeColor = theme.ControlForeColor;
+            lblTotalSize.BackColor = theme.FormBackColor;
+            lblTotalSize.ForeColor = theme.ControlForeColor;
+            lblDonate.BackColor = theme.FormBackColor;
+            lblDonate.ForeColor = theme.ControlForeColor;
+            lblTelegram.BackColor = theme.FormBackColor;
+            lblTelegram.ForeColor = theme.ControlForeColor;
+
+            // ProgressBar - улучшенная настройка
+            progressBar.BackColor = theme.ControlBackColor;
+            progressBar.ForeColor = theme.ProgressBarColor;
+
+            // Для ProgressBar в тёмной теме может потребоваться дополнительная настройка
+            if (theme == ThemeManager.DarkTheme)
+            {
+                // Устанавливаем стиль для лучшего отображения в тёмной теме
+                SetupProgressBarForDarkTheme();
+            }
+
+            // Сохраняем выбор темы в настройках
+            Properties.Settings.Default.LastTheme = theme.Key;
+            Properties.Settings.Default.Save();
+
+            _logger.LogInformation("Применена тема: {ThemeName}", theme.Name);
         }
 
         private void UpdateBanner()
@@ -207,33 +355,35 @@ namespace WindSoftInstaller
             Localization.LanguageChanged -= OnLanguageChanged; // Отписываемся
         }
 
-        private void AskInitialLanguage()
-        {
-            // Текст на “нейтральном” (по умолчанию русском) или сразу на английском — 
-            // решайте сами. Я покажу на английском, потому что спрашиваем “Use English?”
-            var result = MessageBox.Show(
-                "Would you like to use English language?\n\nYes — English\nНет — Русский",
-                "Select language / Выберите язык",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question,
-                MessageBoxDefaultButton.Button1);
-
-            // Yes → English, No → Russian
-            if (result == DialogResult.Yes)
-                Localization.Change("en");
-            else
-                Localization.Change("ru");
-        }
         private void ApplyLocalization()
         {
-            // Существующий код
             this.Text = Localization.T("Form1.Title");
 
             foreach (ToolStripMenuItem top in menuStrip.Items.OfType<ToolStripMenuItem>())
             {
                 top.Text = Localization.T(top.Name);
+
+                // Обновляем подпункты
                 foreach (ToolStripMenuItem sub in top.DropDownItems.OfType<ToolStripMenuItem>())
+                {
                     sub.Text = Localization.T(sub.Name);
+
+                    // Для подпунктов тем обновляем текст из самой темы
+                    foreach (ToolStripMenuItem themeSub in sub.DropDownItems.OfType<ToolStripMenuItem>())
+                    {
+                        if (themeSub.Name.StartsWith("menu.Theme."))
+                        {
+                            string themeKey = themeSub.Name.Replace("menu.Theme.", "");
+                            var theme = ThemeManager.GetAvailableThemes().FirstOrDefault(t => t.Key == themeKey);
+                            if (theme != null)
+                                themeSub.Text = theme.Name;
+                        }
+                        else
+                        {
+                            themeSub.Text = Localization.T(themeSub.Name);
+                        }
+                    }
+                }
             }
 
             btnInstall.Text = Localization.T("btnInstall");
@@ -273,6 +423,8 @@ namespace WindSoftInstaller
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Применяем тему сразу после загрузки
+            ApplyTheme();
             // Подписываемся на форматирование ячеек
             dataGridViewPrograms.CellFormatting += DataGridViewPrograms_CellFormatting;
             // Добавляем обработчик изменения значений
@@ -303,6 +455,31 @@ namespace WindSoftInstaller
             _logger.LogInformation("DataGridView инициализирована");
 
             RefreshDataGrid(); // Инициализируем заголовки колонок
+            ApplyTheme(); // Применяем тему после загрузки данных
+        }
+
+        private void SetupProgressBarForDarkTheme()
+        {
+            if (ThemeManager.CurrentTheme == ThemeManager.DarkTheme)
+            {
+                // Создаем кастомный рендерер для ProgressBar в темной теме
+                progressBar.SetState(1); // Normal state
+
+                // Альтернативный подход - используем P/Invoke для настройки цвета
+                try
+                {
+                    // Пытаемся установить цвет через отражение (менее надежно, но работает в большинстве случаев)
+                    var fi = typeof(ProgressBar).GetField("visualStyle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (fi != null)
+                    {
+                        fi.SetValue(progressBar, false);
+                    }
+                }
+                catch
+                {
+                    // Игнорируем ошибки - это не критично
+                }
+            }
         }
 
         private void OnAboutClick(object sender, EventArgs e)
@@ -744,6 +921,25 @@ namespace WindSoftInstaller
                 app.CustomParameters = dlg.Parameters;
                 // Обновляем грид, чтобы отобразить новые ParametersDisplay
                 dataGridViewPrograms.Refresh();
+            }
+        }
+    }
+    public class ThemedProgressBar : ProgressBar
+    {
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var theme = ThemeManager.CurrentTheme;
+
+            Rectangle rec = new Rectangle(0, 0, this.Width, this.Height);
+            if (ProgressBarRenderer.IsSupported)
+                ProgressBarRenderer.DrawHorizontalBar(e.Graphics, rec);
+
+            rec.Width = (int)(rec.Width * ((double)Value / Maximum)) - 4;
+            rec.Height = rec.Height - 4;
+
+            using (SolidBrush brush = new SolidBrush(theme.ProgressBarColor))
+            {
+                e.Graphics.FillRectangle(brush, 2, 2, rec.Width, rec.Height);
             }
         }
     }

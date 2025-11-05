@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using WindSoftInstaller.Services;
 using Timer = System.Windows.Forms.Timer;
 
 namespace WindSoftInstaller
@@ -25,7 +26,7 @@ namespace WindSoftInstaller
         {
             this.dataGridViewPrograms = new System.Windows.Forms.DataGridView();
             btnInstall = new Button();
-            progressBar = new ProgressBar();
+            progressBar = new ThemedProgressBar();
             folderBrowserDialog = new FolderBrowserDialog();
             btnBrowse = new Button();
             txtInstallPath = new TextBox();
@@ -50,8 +51,9 @@ namespace WindSoftInstaller
             _logger.LogDebug("MenuStrip создан и добавлен на форму");
             // Настраиваем пункты меню
             var fileMenu = new ToolStripMenuItem { Name = "menu.File", Text = "Файл" };
+            var viewMenu = new ToolStripMenuItem { Name = "menu.View", Text = "Вид" };
             var helpMenu = new ToolStripMenuItem { Name = "menu.Help", Text = "Справка" };
-            menuStrip.Items.AddRange(new[] { fileMenu, helpMenu });
+            menuStrip.Items.AddRange(new[] { fileMenu, viewMenu, helpMenu });
             // Логируем, что пункты «Файл» и «Справка» добавлены
             _logger.LogDebug("MenuStrip Items: добавлены пункты 'Файл' и 'Справка'");
             // 1) Создаем сам элемент Выход
@@ -78,20 +80,36 @@ namespace WindSoftInstaller
             helpMenu.DropDownItems.Add(aboutItem);
 
             _logger.LogDebug("MenuStrip: добавлен пункт 'О программе' в 'Справка'");
-            // ─── Блок: меню "Язык" ────────────────────────────────────────
-            // 1) создаём пункт "Язык" и два подпункта
-            var langMenu = new ToolStripMenuItem("Язык") { Name = "menu.Language" };
+
+            // ─── Блок: меню "Язык" как подпункт "Вид" ──────────────────
+            var langMenu = new ToolStripMenuItem { Name = "menu.Language" };
             var langRu = new ToolStripMenuItem("Русский") { Name = "menu.Language.Ru" };
             var langEn = new ToolStripMenuItem("English") { Name = "menu.Language.En" };
 
-            // 2) подписываем обработчики
             langRu.Click += (s, e) => SwitchLanguage("ru");
             langEn.Click += (s, e) => SwitchLanguage("en");
 
-            // 3) собираем и вешаем на menuStrip
             langMenu.DropDownItems.AddRange(new[] { langRu, langEn });
-            menuStrip.Items.Add(langMenu);
-            _logger.LogDebug("MenuStrip: добавлен пункт Язык");
+            viewMenu.DropDownItems.Add(langMenu);
+            _logger.LogDebug("MenuStrip: добавлен пункт Язык в меню Вид");
+
+            // ─── Блок: меню "Тема" как подпункт "Вид" ──────────────────
+            var themeMenu = new ToolStripMenuItem { Name = "menu.Theme" };
+
+            foreach (var theme in ThemeManager.GetAvailableThemes())
+            {
+                var themeItem = new ToolStripMenuItem
+                {
+                    Name = $"menu.Theme.{theme.Key}",
+                    Text = theme.Name
+                };
+                themeItem.Click += (s, e) => SwitchTheme(theme);
+                themeMenu.DropDownItems.Add(themeItem);
+            }
+
+            viewMenu.DropDownItems.Add(themeMenu);
+            _logger.LogDebug("MenuStrip: добавлен пункт Тема в меню Вид");
+
             // ───────────────────────────────────────────────────────────────
             // Позиционируем текстовое поле и кнопку ниже меню
             int offsetY = menuStrip.Bottom + 5;            // 5px от меню
