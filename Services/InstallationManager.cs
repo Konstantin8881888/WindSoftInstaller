@@ -19,7 +19,7 @@ namespace WindSoftInstaller.Services
 
         /// <summary>
         /// Устанавливает одно приложение.
-        /// Все «особые» ветки (VLC, HWMonitor, RivaTuner, KeePass, OpenOffice Portable, Bitwarden) включены.
+        /// Все «особые» ветки (VLC, HWiNFO64, RivaTuner, KeePass, OpenOffice Portable, Bitwarden) включены.
         /// </summary>
         public async Task InstallAppAsync(InstallableApp app, string installRoot, CancellationToken token)
         {
@@ -31,7 +31,7 @@ namespace WindSoftInstaller.Services
                 throw new FileNotFoundException($"Не найден {archive7z}");
 
             string tempDir = Path.Combine(installRoot, "Temp", $"WSI_{Guid.NewGuid()}");
-            string extractDir = Path.Combine(tempDir, "exe");    // ← изолируем здесь всё, что распакует инсталлятор
+            string extractDir = Path.Combine(tempDir, "exe");
             Directory.CreateDirectory(extractDir);
             _logger.LogDebug("TempDir = {Dir}", tempDir);
             _logger.LogDebug("ExtractDir = {Dir}", extractDir);
@@ -39,12 +39,16 @@ namespace WindSoftInstaller.Services
             string sourcePath;
             using (var archive = ArchiveFactory.Open(archive7z))
             {
+                // Используем локализованный путь к архиву для портативных приложений
+                string fileToExtract = app.IsPortable ? app.GetLocalizedArchivePath() : app.ExecutablePath;
+
                 var entry = archive.Entries
-                                   .FirstOrDefault(e => e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase))
-                           ?? throw new FileNotFoundException($"В архиве нет {app.ExecutablePath}");
-                sourcePath = Path.Combine(extractDir, app.ExecutablePath);
+                                   .FirstOrDefault(e => e.Key.Equals(fileToExtract, StringComparison.OrdinalIgnoreCase))
+                           ?? throw new FileNotFoundException($"В архиве нет {fileToExtract}");
+
+                sourcePath = Path.Combine(extractDir, fileToExtract);
                 entry.WriteToFile(sourcePath);
-                _logger.LogInformation("Извлечён {File} → {Dest}", app.ExecutablePath, sourcePath);
+                _logger.LogInformation("Извлечён {File} → {Dest}", fileToExtract, sourcePath);
             }
 
             // 1.2) Извлекаем дополнительные файлы, если они есть
@@ -77,14 +81,6 @@ namespace WindSoftInstaller.Services
             if (app.IsPortable)
             {
                 await HandlePortableAsync(app, installRoot, sourcePath, tempDir, token);
-
-                // MSI Afterburner: применяем конфигурацию с русским языком только если язык русский
-                if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase) && Localization.Current == "ru")
-                {
-                    string targetDir = Path.Combine(installRoot, app.Name);
-                    ApplyMSIAfterburnerConfiguration(targetDir, extractDir);
-                }
-
                 CleanupTemp(tempDir);
                 return;
             }
@@ -98,13 +94,27 @@ namespace WindSoftInstaller.Services
             if (isVlc)
                 WriteVlcRegistry(appDir);
 
-            // Для Opera, VC++ 2013 и LMMS: копируем установщик в папку установки
-            if (app.Name.Equals("Opera", StringComparison.OrdinalIgnoreCase) ||
+            // Для VC++ 2015-2022 и других проблемных установщиков: копируем установщик в папку установки
+            bool shouldCopyInstaller =
+                app.Name.Equals("Opera", StringComparison.OrdinalIgnoreCase) ||
                 app.Name.Contains("VC++ 2013", StringComparison.OrdinalIgnoreCase) ||
-                app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase))
+                app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase) ||
+                app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase);
+
+            if (shouldCopyInstaller)
             {
                 string newSourcePath = Path.Combine(appDir, Path.GetFileName(sourcePath));
-                File.Copy(sourcePath, newSourcePath, overwrite: true);
+
+                // Добавляем задержку и повторные попытки для VC++ 2015-2022
+                if (app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase))
+                {
+                    await CopyFileWithRetryAsync(sourcePath, newSourcePath, app.Name);
+                }
+                else
+                {
+                    File.Copy(sourcePath, newSourcePath, overwrite: true);
+                }
+
                 sourcePath = newSourcePath;
                 _logger.LogInformation("Установщик {App} скопирован в {Dest}", app.Name, newSourcePath);
             }
@@ -113,67 +123,37 @@ namespace WindSoftInstaller.Services
             var psi = builder.BuildStartInfo();
             _logger.LogDebug("Запуск: {File} {Args}", psi.FileName, psi.Arguments);
 
-            using (var proc = Process.Start(psi) ?? throw new InvalidOperationException("Process.Start() вернул null"))
+            // Для VC++ 2015-2022 добавляем дополнительную обработку
+            if (app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase))
             {
-                await proc.WaitForExitAsync(token);
-                _logger.LogDebug("{App} ExitCode={Code}", app.Name, proc.ExitCode);
-
-                // HWMonitor: после окончания установки глушим его авто‑запуск
-                if (app.Name.Equals("HWMonitor", StringComparison.OrdinalIgnoreCase))
-                    KillProcesses("HWiNFO64");
-
-                // RivaTuner: копируем шаблон
-                if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase)
-                    && proc.ExitCode == 0)
-                    CopyRivaTunerConfig(appDir, tempDir);
-
-                // удаляем MSI, если там остался
-                DeleteInstallerIfLeft(sourcePath, appDir);
-
-                // ярлыки
-                CreateDesktopShortcutIfExists(app.ShortcutRelativePath, app.ShortcutName ?? app.Name, appDir);
-
-                // общие словарные ярлыки
-                if (ShortcutHelper.TryGetExeRelativePath(app.Name, out var rel))
-                    CreateDesktopShortcutIfExists(rel, app.ShortcutName ?? app.Name, appDir);
+                await InstallVcRedistWithRetryAsync(psi, app.Name, token);
             }
-
-
-
-            //копируем конфиг
-            using (var archive = ArchiveFactory.Open(archive7z))
+            else
             {
-                var entry = archive.Entries
-                                   .FirstOrDefault(e => e.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase))
-                               ?? throw new FileNotFoundException($"В архиве нет {app.ExecutablePath}");
-                sourcePath = Path.Combine(extractDir, app.ExecutablePath);
-                entry.WriteToFile(sourcePath);
-                _logger.LogInformation("Извлечён {File} → {Dest}", app.ExecutablePath, sourcePath);
-
-                // ДОБАВЛЯЕМ: Извлечение дополнительных файлов для KeePass
-                if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase))
+                using (var proc = Process.Start(psi) ?? throw new InvalidOperationException("Process.Start() вернул null"))
                 {
-                    // Извлекаем KeePass.config.xml
-                    var configEntry = archive.Entries
-                                             .FirstOrDefault(e => e.Key.Equals("KeePass.config.xml", StringComparison.OrdinalIgnoreCase));
-                    if (configEntry != null)
-                    {
-                        string configPath = Path.Combine(extractDir, "KeePass.config.xml");
-                        configEntry.WriteToFile(configPath);
-                        _logger.LogInformation("Извлечён конфиг KeePass → {Dest}", configPath);
-                    }
-
-                    // Извлекаем Russian.lngx
-                    var lngxEntry = archive.Entries
-                                           .FirstOrDefault(e => e.Key.Equals("Russian.lngx", StringComparison.OrdinalIgnoreCase));
-                    if (lngxEntry != null)
-                    {
-                        string lngxPath = Path.Combine(extractDir, "Russian.lngx");
-                        lngxEntry.WriteToFile(lngxPath);
-                        _logger.LogInformation("Извлечён файл русского языка → {Dest}", lngxPath);
-                    }
+                    await proc.WaitForExitAsync(token);
+                    _logger.LogDebug("{App} ExitCode={Code}", app.Name, proc.ExitCode);
                 }
             }
+
+            // HWiNFO64: после окончания установки глушим его авто‑запуск
+            if (app.Name.Equals("HWiNFO64", StringComparison.OrdinalIgnoreCase))
+                KillProcesses("HWiNFO64");
+
+            // RivaTuner: копируем шаблон
+            if (app.Name.Equals("RivaTuner Statistics Server", StringComparison.OrdinalIgnoreCase))
+                CopyRivaTunerConfig(appDir, tempDir);
+
+            // удаляем MSI, если там остался
+            DeleteInstallerIfLeft(sourcePath, appDir);
+
+            // ярлыки
+            CreateDesktopShortcutIfExists(app.ShortcutRelativePath, app.ShortcutName ?? app.Name, appDir);
+
+            // общие словарные ярлыки
+            if (ShortcutHelper.TryGetExeRelativePath(app.Name, out var rel))
+                CreateDesktopShortcutIfExists(rel, app.ShortcutName ?? app.Name, appDir);
 
             // KeePass: копируем конфиг
             if (app.Name.Equals("KeePass", StringComparison.OrdinalIgnoreCase))
@@ -184,12 +164,16 @@ namespace WindSoftInstaller.Services
                 ApplyXMediaRecodeConfiguration(extractDir);
 
             // После завершения установки проблемных приложений
-            if (app.Name.Equals("Opera", StringComparison.OrdinalIgnoreCase) ||
-                app.Name.Contains("VC++ 2013", StringComparison.OrdinalIgnoreCase) ||
-                app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase))
+            if (shouldCopyInstaller)
             {
                 try
                 {
+                    // Для VC++ 2015-2022 добавляем задержку перед удалением
+                    if (app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await Task.Delay(2000, token); // Задержка 2 секунды
+                    }
+
                     // Пытаемся удалить установщик из папки назначения
                     if (File.Exists(sourcePath))
                     {
@@ -208,6 +192,71 @@ namespace WindSoftInstaller.Services
             CleanupTemp(tempDir);
         }
 
+        private async Task CopyFileWithRetryAsync(string sourcePath, string destPath, string appName, int maxRetries = 3)
+        {
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    File.Copy(sourcePath, destPath, overwrite: true);
+                    _logger.LogInformation("Файл {App} успешно скопирован с попытки {Attempt}", appName, attempt);
+                    return;
+                }
+                catch (IOException ex) when (attempt < maxRetries)
+                {
+                    _logger.LogWarning("Попытка {Attempt} копирования {App} не удалась: {Error}", attempt, appName, ex.Message);
+                    await Task.Delay(1000 * attempt); // Увеличивающаяся задержка
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Критическая ошибка при копировании {App}", appName);
+                    throw;
+                }
+            }
+
+            throw new IOException($"Не удалось скопировать файл {appName} после {maxRetries} попыток");
+        }
+
+        private async Task InstallVcRedistWithRetryAsync(ProcessStartInfo psi, string appName, CancellationToken token, int maxRetries = 3)
+        {
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    using (var proc = Process.Start(psi) ?? throw new InvalidOperationException("Process.Start() вернул null"))
+                    {
+                        await proc.WaitForExitAsync(token);
+                        _logger.LogDebug("{App} ExitCode={Code} (попытка {Attempt})", appName, proc.ExitCode, attempt);
+
+                        if (proc.ExitCode == 0 || proc.ExitCode == 1638 || proc.ExitCode == 3010)
+                        {
+                            // 0 - успех, 1638 - уже установлена более новая версия, 3010 - требуется перезагрузка
+                            _logger.LogInformation("{App} установлен успешно (код: {Code})", appName, proc.ExitCode);
+                            return;
+                        }
+                        else if (attempt < maxRetries)
+                        {
+                            _logger.LogWarning("{App} завершился с кодом {Code}, повторная попытка {Attempt}",
+                                appName, proc.ExitCode, attempt + 1);
+                            await Task.Delay(2000 * attempt, token); // Увеличивающаяся задержка
+                        }
+                        else
+                        {
+                            _logger.LogError("{App} завершился с ошибкой (код: {Code}) после {Attempt} попыток",
+                                appName, proc.ExitCode, maxRetries);
+                            throw new Exception($"Установка {appName} завершилась с кодом ошибки: {proc.ExitCode}");
+                        }
+                    }
+                }
+                catch (IOException ex) when (attempt < maxRetries)
+                {
+                    _logger.LogWarning("Ошибка ввода-вывода при установке {App} (попытка {Attempt}): {Error}",
+                        appName, attempt, ex.Message);
+                    await Task.Delay(1000 * attempt, token);
+                }
+            }
+        }
+
         private void ScheduleDeferredCleanup(string filePath)
         {
             try
@@ -217,12 +266,19 @@ namespace WindSoftInstaller.Services
 @echo off
 chcp 65001 >nul
 echo Запланированная очистка заблокированных файлов...
-timeout /t 10 /nobreak >nul
+timeout /t 5 /nobreak >nul
 
-:: Попытка удалить файл
+:: Попытка удалить файл (несколько попыток с задержкой)
+:retry_delete
 if exist ""{filePath}"" (
-    echo Удаляем файл: {filePath}
-    del /f /q ""{filePath}""
+    echo Попытка удалить файл: {filePath}
+    del /f /q ""{filePath}"" 2>nul
+    if exist ""{filePath}"" (
+        echo Файл все еще заблокирован, повтор через 2 секунды...
+        timeout /t 2 /nobreak >nul
+        goto retry_delete
+    )
+    echo Файл успешно удален.
 )
 
 :: Попытка удалить папку, если это временная директория
@@ -255,44 +311,6 @@ echo Очистка завершена.
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Не удалось запланировать отложенную очистку");
-            }
-        }
-
-        private void ApplyMSIAfterburnerConfiguration(string installPath, string extractDir)
-        {
-            try
-            {
-                // Проверяем язык - применяем конфигурацию только для русского
-                if (Localization.Current != "ru")
-                {
-                    _logger.LogInformation("Пропускаем применение конфигурации для MSI Afterburner, т.к. текущий язык: {Lang}", Localization.Current);
-                    return;
-                }
-
-                _logger.LogInformation("Применение конфигурации MSI Afterburner");
-
-                string sourceConfig = Path.Combine(extractDir, "MSIAfterburner.cfg");
-                if (!File.Exists(sourceConfig))
-                {
-                    _logger.LogError("ФАЙЛ КОНФИГУРАЦИИ MSI AFTERBURNER НЕ НАЙДЕН: {Path}", sourceConfig);
-                    return;
-                }
-
-                // Формируем целевой путь в папке установленного приложения
-                string targetConfigDir = Path.Combine(installPath, "Profiles");
-                string targetConfigPath = Path.Combine(targetConfigDir, "MSIAfterburner.cfg");
-
-                // Создаем целевую директорию, если её нет
-                Directory.CreateDirectory(targetConfigDir);
-                _logger.LogInformation("Создана директория: {Dir}", targetConfigDir);
-
-                // Копируем файл конфигурации
-                File.Copy(sourceConfig, targetConfigPath, overwrite: true);
-                _logger.LogInformation("Конфиг MSI Afterburner скопирован в \"{Path}\"", targetConfigPath);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка применения конфига MSI Afterburner");
             }
         }
 
@@ -361,11 +379,40 @@ echo Очистка завершена.
             string targetDir = Path.Combine(installRoot, app.Name);
             Directory.CreateDirectory(targetDir);
 
-            string ext = Path.GetExtension(sourcePath).ToLowerInvariant();
+            // Для MSI Afterburner используем локализованный архив
+            string archiveToExtract = sourcePath;
+            if (app.Name.Equals("MSI Afterburner", StringComparison.OrdinalIgnoreCase))
+            {
+                string localizedArchivePath = app.GetLocalizedArchivePath();
+                if (!string.IsNullOrEmpty(localizedArchivePath))
+                {
+                    // Получаем путь к локализованному архиву
+                    string archivesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Installers.7z");
+                    using (var archive = ArchiveFactory.Open(archivesPath))
+                    {
+                        var localizedEntry = archive.Entries
+                            .FirstOrDefault(e => e.Key.Equals(localizedArchivePath, StringComparison.OrdinalIgnoreCase));
+                
+                        if (localizedEntry != null)
+                        {
+                            string localizedSourcePath = Path.Combine(tempDir, localizedArchivePath);
+                            localizedEntry.WriteToFile(localizedSourcePath);
+                            archiveToExtract = localizedSourcePath;
+                            _logger.LogInformation("Используется локализованный архив для MSI Afterburner: {Archive}", localizedArchivePath);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Локализованный архив {Archive} не найден, используется стандартный", localizedArchivePath);
+                        }
+                    }
+                }
+            }
+
+            string ext = Path.GetExtension(archiveToExtract).ToLowerInvariant();
             if (ext is ".zip" or ".7z")
             {
-                _logger.LogDebug("Распаковываем {Zip}", sourcePath);
-                using var arc = ArchiveFactory.Open(sourcePath);
+                _logger.LogDebug("Распаковываем {Zip}", archiveToExtract);
+                using var arc = ArchiveFactory.Open(archiveToExtract);
                 foreach (var entry in arc.Entries.Where(e => !e.IsDirectory))
                 {
                     string outPath = Path.Combine(targetDir, entry.Key);
@@ -377,7 +424,7 @@ echo Очистка завершена.
             else
             {
                 // простой exe‑portable
-                File.Copy(sourcePath, Path.Combine(targetDir, Path.GetFileName(sourcePath)), overwrite: true);
+                File.Copy(archiveToExtract, Path.Combine(targetDir, Path.GetFileName(archiveToExtract)), overwrite: true);
             }
 
             // OpenOffice Portable — создаём ярлыки всех модулей

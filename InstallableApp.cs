@@ -18,5 +18,16 @@
         public List<string> AdditionalFiles { get; set; } = []; // Свойство для дополнительных файлов, не включённых в основной инсталятор/архив
         public string? LanguageConfig { get; set; } // Свойство для дополнительных языковых файлов, не включённых в основной инсталятор/архив
         public Dictionary<string, string> AdditionalFilesDestinations { get; set; } = [];// Свойство для дополнительных языковых файлов, не включённых в основной инсталятор/архив
+        // Новые свойства для локализованных архивов
+        public string ArchivePathEn { get; set; }
+        public string ArchivePathRu { get; set; }
+        // Метод для получения правильного архива в зависимости от языка
+        public string GetLocalizedArchivePath()
+        {
+            if (Localization.Current == "ru" && !string.IsNullOrEmpty(ArchivePathRu))
+                return ArchivePathRu;
+            else
+                return ArchivePathEn;
+        }
     }
 }

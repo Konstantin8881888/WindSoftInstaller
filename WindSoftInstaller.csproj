@@ -20,10 +20,10 @@
     <!-- Включаем в сборку .NET Runtime -->
     <SelfContained>true</SelfContained>
 	  
-	<Version>1.1.0</Version>
-	<FileVersion>1.1.0</FileVersion>
-	<AssemblyVersion>1.1.0</AssemblyVersion>
-	<InformationalVersion>1.1.0</InformationalVersion>
+	<Version>1.2.5</Version>
+	<FileVersion>1.2.5</FileVersion>
+	<AssemblyVersion>1.2.5</AssemblyVersion>
+	<InformationalVersion>1.2.5</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -193,9 +193,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Opera",
                     DescriptionKey = "app.opera.Description",
-                    ExecutablePath = "Opera_123.0.5669.23_Setup_x64.exe",
+                    ExecutablePath = "Opera_123.0.5669.47_Setup_x64.exe",
                     SizeMB = 451,
-                    //SizeMB = Math.Round(fileSizes["Opera_123.0.5669.23_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["Opera_123.0.5669.47_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.opera.com/legal",
                     PathParameterKey = "--installfolder=",
                     CustomParameters =
@@ -361,11 +361,11 @@ namespace WindSoftInstaller
                 },
                 new InstallableApp()
                 {
-                    Name = "HWMonitor",
-                    DescriptionKey = "app.hwmonitor.Description",
-                    ExecutablePath = "hwi64_826.exe",
-                    SizeMB = Math.Round(fileSizes["hwi64_826.exe"] / (1024.0 * 1024.0), 2),
-                    LicenseUrl = "https://www.cpuid.com/softwares/hwmonitor.html",
+                    Name = "HWiNFO64",
+                    DescriptionKey = "app.hwinfo64.Description",
+                    ExecutablePath = "hwi64_832.exe",
+                    SizeMB = Math.Round(fileSizes["hwi64_832.exe"] / (1024.0 * 1024.0), 2),
+                    LicenseUrl = "https://www.hwinfo.com/licenses/",
                     PathParameterKey = "/DIR=",
                     CustomParameters =
                     {
@@ -374,7 +374,7 @@ namespace WindSoftInstaller
                         { "param.NoRestart", "/NORESTART" }
                     },
                     ShortcutRelativePath = "HWiNFO64.exe",
-                    ShortcutName = "HWMonitor"
+                    ShortcutName = "HWiNFO64"
                 },
                 new InstallableApp()
                 {
@@ -577,26 +577,22 @@ namespace WindSoftInstaller
                     Name = "MSI Afterburner",
                     DescriptionKey = "app.afterburner.Description",
                     ExecutablePath = "MSIAfterburnerPortable.zip",
+                    ArchivePathEn = "MSIAfterburnerPortable.zip", // Английская версия
+                    ArchivePathRu = "MSIAfterburnerPortableRu.zip", // Русская версия
                     SizeMB = 41,
                     //SizeMB = Math.Round(fileSizes["MSIAfterburnerPortable.zip"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.msi.com/page/eula",
                     IsPortable = true,
                     ShortcutName = "MSI Afterburner",
                     ShortcutRelativePath = "MSIAfterburner.exe",
-                    // Новые свойства для конфигурационного файла
-                    AdditionalFiles = new List<string> { "MSIAfterburner.cfg" },
-                    AdditionalFilesDestinations = new Dictionary<string, string>
-                    {
-                        { "MSIAfterburner.cfg", "Profiles\\MSIAfterburner.cfg" }
-                    }
                 },
                 new InstallableApp()
                 {
                     Name = "RivaTuner Statistics Server",
                     DescriptionKey = "app.rivatuner.Description",
-                    ExecutablePath = "RTSSSetup736.exe",
+                    ExecutablePath = "RTSSSetup737.exe",
                     SizeMB = 97,
-                    //SizeMB = Math.Round(fileSizes["RTSSSetup736.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["RTSSSetup737.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.msi.com/page/eula",
                     PathParameterKey = "/D=",
                     CustomParameters = new Dictionary<string, string>
@@ -636,9 +632,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Calibre",
                     DescriptionKey = "app.calibre.Description",
-                    ExecutablePath = "calibre-64bit-8.13.0.msi",
+                    ExecutablePath = "calibre-64bit-8.14.0.msi",
                     SizeMB = 561,
-                    //SizeMB = Math.Round(fileSizes["calibre-64bit-8.13.0.msi"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["calibre-64bit-8.14.0.msi"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://calibre-ebook.com/license",
                     PathParameterKey = "",
                     CustomParameters = new Dictionary<string, string>

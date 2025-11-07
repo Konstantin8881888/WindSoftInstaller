@@ -15,6 +15,7 @@ namespace WindSoftInstaller
             _installDir = installDir ?? throw new ArgumentNullException(nameof(installDir));
         }
 
+
         /// <summary>
         /// Формирует строку аргументов для запуска инсталлятора или распаковщика.
         /// </summary>
@@ -85,6 +86,7 @@ namespace WindSoftInstaller
 
             return startInfo;
         }
+
 
         private bool IsVlcInstaller => _app.Name.StartsWith("vlc", StringComparison.OrdinalIgnoreCase);
         private bool IsMsiPackage => Path.GetExtension(_sourcePath)
