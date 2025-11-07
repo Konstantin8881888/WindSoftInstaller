@@ -144,7 +144,7 @@ namespace WindSoftInstaller
             currentY += lblTitle.Height + 10;
 
             // 2. Версия
-            const string HARDCODED_VERSION = "1.1.0";
+            const string HARDCODED_VERSION = "1.2.5";
 
             lblVersion = new Label
             {
