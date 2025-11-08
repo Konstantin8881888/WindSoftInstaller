@@ -189,7 +189,335 @@ namespace WindSoftInstaller.Services
                 }
             }
 
+            // Удаляем пустые папки для приложений, которые устанавливаются в системные расположения
+            await DeleteEmptyFolderForSystemAppsAsync(app, appDir);
+
             CleanupTemp(tempDir);
+        }
+
+        private async Task DeleteEmptyFolderForSystemAppsAsync(InstallableApp app, string appDir)
+        {
+            // Список приложений, которые устанавливаются в системные расположения
+            var systemApps = new[]
+            {
+            "Google Chrome",
+            "Microsoft VC++ 2015-2022 Redistributable (x64)",
+            "Microsoft VC++ 2015-2022 Redistributable (x86)",
+            "VC++ 2013 Redistributable (x64)",
+            "VC++ 2013 Redistributable (x86)"
+        };
+
+            // Проверяем, является ли приложение системным (устанавливается в стандартное расположение)
+            bool isSystemApp = systemApps.Contains(app.Name, StringComparer.OrdinalIgnoreCase) ||
+                              app.Name.Contains("VC++", StringComparison.OrdinalIgnoreCase);
+
+            if (isSystemApp && !string.IsNullOrEmpty(appDir))
+            {
+                await DeleteEmptyFolderAsync(appDir, app.Name);
+            }
+        }
+
+        private async Task DeleteEmptyFolderAsync(string folderPath, string appName)
+        {
+            try
+            {
+                // Даем время системе завершить все операции с папкой
+                await Task.Delay(1500);
+
+                if (Directory.Exists(folderPath))
+                {
+                    // Проверяем, пуста ли папка
+                    var files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+                    var directories = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories);
+
+                    // Если папка пуста (нет файлов и подпапок)
+                    if (files.Length == 0 && directories.Length == 0)
+                    {
+                        Directory.Delete(folderPath, recursive: true);
+                        _logger.LogInformation("Пустая папка {App} удалена: {Path}", appName, folderPath);
+                        return;
+                    }
+
+                    _logger.LogDebug("Папка {App} не пуста: {Path} (файлов: {Files}, папок: {Dirs})",
+                        appName, folderPath, files.Length, directories.Length);
+
+                    // Проверяем, можно ли удалить папку с временными файлами
+                    await TryCleanTemporaryFolderAsync(folderPath, appName, files);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось удалить папку {App}: {Path}", appName, folderPath);
+
+                // Планируем отложенное удаление
+                ScheduleDeferredFolderCleanup(folderPath);
+            }
+        }
+
+        private async Task TryCleanTemporaryFolderAsync(string folderPath, string appName, string[] files)
+        {
+            try
+            {
+                bool allFilesAreSmall = true;
+                long totalSize = 0;
+                var smallFileExtensions = new[] { ".tmp", ".log", ".txt", ".bak" };
+
+                // Проверяем размер и тип файлов
+                foreach (var file in files)
+                {
+                    var fileInfo = new FileInfo(file);
+                    totalSize += fileInfo.Length;
+
+                    var extension = Path.GetExtension(file).ToLowerInvariant();
+
+                    // Если файл больше 2 МБ ИЛИ не является временным файлом, считаем что это не временный файл
+                    if (fileInfo.Length > 2 * 1024 * 1024 || !smallFileExtensions.Contains(extension))
+                    {
+                        allFilesAreSmall = false;
+                        _logger.LogDebug("Файл {File} не считается временным (размер: {Size}, расширение: {Ext})",
+                            file, fileInfo.Length, extension);
+                        break;
+                    }
+                }
+
+                // Если все файлы маленькие, временные и общий размер меньше 10 МБ, удаляем их
+                if (allFilesAreSmall && totalSize < 10 * 1024 * 1024)
+                {
+                    _logger.LogInformation("Удаляем временные файлы {App} (файлов: {Count}, размер: {Size} байт)",
+                        appName, files.Length, totalSize);
+
+                    foreach (var file in files)
+                    {
+                        try
+                        {
+                            File.Delete(file);
+                            _logger.LogDebug("Удален временный файл: {File}", file);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug("Не удалось удалить файл {File}: {Error}", file, ex.Message);
+                        }
+                    }
+
+                    // Даем время системе
+                    await Task.Delay(1000);
+
+                    // Проверяем, остались ли файлы
+                    var remainingFiles = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+                    var remainingDirs = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories);
+
+                    if (remainingFiles.Length == 0 && remainingDirs.Length == 0)
+                    {
+                        Directory.Delete(folderPath, recursive: true);
+                        _logger.LogInformation("Папка {App} очищена от временных файлов и удалена: {Path}", appName, folderPath);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("После очистки в папке {App} остались файлы: {Files}, папки: {Dirs}",
+                            appName, remainingFiles.Length, remainingDirs.Length);
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("Папка {App} содержит нетemporary файлы, оставляем: {Path}", appName, folderPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось очистить папку {App}: {Path}", appName, folderPath);
+            }
+        }
+
+        private async Task DeleteEmptyChromeFolderAsync(string appDir, string appName)
+        {
+            try
+            {
+                // Даем время системе завершить все операции с папкой
+                await Task.Delay(1000);
+
+                if (Directory.Exists(appDir))
+                {
+                    // Проверяем, пуста ли папка
+                    var files = Directory.GetFiles(appDir, "*", SearchOption.AllDirectories);
+                    var directories = Directory.GetDirectories(appDir, "*", SearchOption.AllDirectories);
+
+                    // Если папка пуста (нет файлов и подпапок) или содержит только временные/служебные файлы
+                    if (files.Length == 0 && directories.Length == 0)
+                    {
+                        Directory.Delete(appDir, recursive: true);
+                        _logger.LogInformation("Пустая папка {App} удалена: {Path}", appName, appDir);
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Папка {App} не пуста, оставляем: {Path} (файлов: {Files}, папок: {Dirs})",
+                            appName, appDir, files.Length, directories.Length);
+
+                        // Если есть файлы, но их мало и они маленькие - возможно, это временные файлы
+                        // Можно попробовать удалить их и затем папку
+                        await TryCleanChromeFolderAsync(appDir, appName, files);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось удалить папку {App}: {Path}", appName, appDir);
+
+                // Планируем отложенное удаление
+                ScheduleDeferredFolderCleanup(appDir);
+            }
+        }
+
+        private async Task TryCleanChromeFolderAsync(string folderPath, string appName, string[] files)
+        {
+            try
+            {
+                bool allFilesAreSmall = true;
+                long totalSize = 0;
+
+                // Проверяем размер файлов
+                foreach (var file in files)
+                {
+                    var fileInfo = new FileInfo(file);
+                    totalSize += fileInfo.Length;
+
+                    // Если файл больше 1 МБ, считаем что это не временный файл
+                    if (fileInfo.Length > 1024 * 1024)
+                    {
+                        allFilesAreSmall = false;
+                        break;
+                    }
+                }
+
+                // Если все файлы маленькие и общий размер меньше 5 МБ, удаляем их
+                if (allFilesAreSmall && totalSize < 5 * 1024 * 1024)
+                {
+                    _logger.LogInformation("Удаляем временные файлы {App} (размер: {Size} байт)", appName, totalSize);
+
+                    foreach (var file in files)
+                    {
+                        try
+                        {
+                            File.Delete(file);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug("Не удалось удалить файл {File}: {Error}", file, ex.Message);
+                        }
+                    }
+
+                    // Даем время системе
+                    await Task.Delay(500);
+
+                    // Проверяем, остались ли файлы
+                    var remainingFiles = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+                    var remainingDirs = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories);
+
+                    if (remainingFiles.Length == 0 && remainingDirs.Length == 0)
+                    {
+                        Directory.Delete(folderPath, recursive: true);
+                        _logger.LogInformation("Папка {App} очищена и удалена: {Path}", appName, folderPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось очистить папку {App}: {Path}", appName, folderPath);
+            }
+        }
+
+        private void ScheduleDeferredFolderCleanup(string folderPath)
+        {
+            try
+            {
+                string cleanupBat = Path.Combine(Path.GetTempPath(), $"cleanup_folder_{Guid.NewGuid()}.bat");
+                string batchContent = $@"
+@echo off
+chcp 65001 >nul
+echo Запланированное удаление папки...
+echo Папка: {folderPath}
+timeout /t 5 /nobreak >nul
+
+:: Несколько попыток удалить папку с увеличением задержки
+set retry_count=0
+:retry_folder
+if exist ""{folderPath}"" (
+    set /a retry_count+=1
+    echo Попытка %retry_count% удалить папку: {folderPath}
+    rmdir /s /q ""{folderPath}"" 2>nul
+    if exist ""{folderPath}"" (
+        echo Папка все еще заблокирована, повтор через 3 секунды...
+        timeout /t 3 /nobreak >nul
+        if %retry_count% lss 5 (
+            goto retry_folder
+        ) else (
+            echo Не удалось удалить папку после 5 попыток.
+        )
+    ) else (
+        echo Папка успешно удалена.
+    )
+) else (
+    echo Папка уже удалена.
+)
+
+:: Удаляем сам bat-файл
+del /f /q ""%~f0"" 2>nul
+
+echo Очистка папки завершена.
+";
+
+                File.WriteAllText(cleanupBat, batchContent, Encoding.UTF8);
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c start /min \"\" \"{cleanupBat}\"",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+
+                _logger.LogInformation("Запланировано отложенное удаление папки: {Path}", folderPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Не удалось запланировать отложенное удаление папки");
+            }
+        }
+
+        public async Task FinalCleanupAsync(string installRoot)
+        {
+            try
+            {
+                _logger.LogInformation("Начинаем финальную очистку пустых папок в: {Path}", installRoot);
+
+                if (!Directory.Exists(installRoot))
+                    return;
+
+                // Список папок, которые могут быть пустыми
+                var potentialEmptyFolders = new[]
+                {
+                "Google Chrome",
+                "Microsoft VC++ 2015-2022 Redistributable (x64)",
+                "Microsoft VC++ 2015-2022 Redistributable (x86)",
+                "VC++ 2013 Redistributable (x64)",
+                "VC++ 2013 Redistributable (x86)"
+            };
+
+                foreach (var folderName in potentialEmptyFolders)
+                {
+                    string folderPath = Path.Combine(installRoot, folderName);
+                    if (Directory.Exists(folderPath))
+                    {
+                        await DeleteEmptyFolderAsync(folderPath, folderName);
+                    }
+                }
+
+                _logger.LogInformation("Финальная очистка завершена");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при финальной очистке");
+            }
         }
 
         private async Task CopyFileWithRetryAsync(string sourcePath, string destPath, string appName, int maxRetries = 3)
