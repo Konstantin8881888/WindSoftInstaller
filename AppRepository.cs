@@ -34,11 +34,11 @@ namespace WindSoftInstaller
             {
                 new InstallableApp()
                 {
-                    Name = "vlc-3.0.21",
+                    Name = "vlc-3.0.23",
                     DescriptionKey = "app.vlc.Description",
-                    ExecutablePath = "vlc-3.0.21.exe",
+                    ExecutablePath = "vlc-3.0.23.exe",
                     SizeMB = 182,
-                    //SizeMB = Math.Round(fileSizes["vlc-3.0.21.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["vlc-3.0.23.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.videolan.org/legal.html",
                     PathParameterKey = "/D=",
                     CustomParameters =
@@ -106,9 +106,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Paint.NET",
                     DescriptionKey = "app.paintnet.Description",
-                    ExecutablePath = "paint.net.5.1.9.install.x64.exe",
+                    ExecutablePath = "paint.net.5.1.11.install.x64.exe",
                     SizeMB = 616,
-                    //SizeMB = Math.Round(fileSizes["paint.net.5.1.9.install.x64.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["paint.net.5.1.11.install.x64.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.getpaint.net/license.html",
                     PathParameterKey = "TARGETDIR=",
                     CustomParameters =
@@ -125,9 +125,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Shotcut",
                     DescriptionKey = "app.shotcut.Description",
-                    ExecutablePath = "shotcut-win64-251031.exe",
+                    ExecutablePath = "shotcut-win64-25.12.31.exe",
                     SizeMB = 489,
-                    //SizeMB = Math.Round(fileSizes["shotcut-win64-251031.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["shotcut-win64-25.12.31.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://github.com/mltframework/shotcut/blob/master/COPYING",
                     PathParameterKey = "/DIR=",
                     CustomParameters =
@@ -173,15 +173,10 @@ namespace WindSoftInstaller
                     DescriptionKey = "app.firefox.Description",
                     // Динамически выбираем файл в зависимости от языка
                     ExecutablePath = GetLocalizedExecutableName(
-                        "Firefox Setup 144.0.2.msi",          // Английская версия
-                        "Firefox Setup 144.0.2ru.msi"         // Русская версия
+                        "Firefox Setup 147.0.msi",          // Английская версия
+                        "Firefox Setup 147.0ru.msi"         // Русская версия
                     ),
                     SizeMB = 309,
-                    // Размер тоже нужно вычислять динамически, так как файлы могут быть разного размера
-                    //SizeMB = Math.Round(fileSizes[GetLocalizedExecutableName(
-                    //    "Firefox Setup 144.0.2.msi",
-                    //    "Firefox Setup 144.0.2ru.msi"
-                    //)] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.mozilla.org/en-US/MPL/2.0/",
                     CustomParameters = new Dictionary<string, string>
                     {
@@ -193,9 +188,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Opera",
                     DescriptionKey = "app.opera.Description",
-                    ExecutablePath = "Opera_123.0.5669.47_Setup_x64.exe",
+                    ExecutablePath = "Opera_126.0.5750.18_Setup_x64.exe",
                     SizeMB = 451,
-                    //SizeMB = Math.Round(fileSizes["Opera_123.0.5669.47_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["Opera_126.0.5750.18_Setup_x64.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.opera.com/legal",
                     PathParameterKey = "--installfolder=",
                     CustomParameters =
@@ -216,9 +211,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Audacity",
                     DescriptionKey = "app.audacity.Description",
-                    ExecutablePath = "audacity-win-3.7.5-64bit.exe",
+                    ExecutablePath = "audacity-win-3.7.7-64bit.exe",
                     SizeMB = 88,
-                    //SizeMB = Math.Round(fileSizes["audacity-win-3.7.5-64bit.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["audacity-win-3.7.7-64bit.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.audacityteam.org/about/license/",
                     PathParameterKey = "/DIR=",
                     CustomParameters =
@@ -285,9 +280,9 @@ namespace WindSoftInstaller
                 {
                     Name = "OpenShot",
                     DescriptionKey = "app.openshot.Description",
-                    ExecutablePath = "OpenShot-v3.3.0-x86_64.exe",
+                    ExecutablePath = "OpenShot-v3.4.0-x86_64.exe",
                     SizeMB = 653,
-                    //SizeMB = Math.Round(fileSizes["OpenShot-v3.3.0-x86_64.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["OpenShot-v3.4.0-x86_64.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html",
                     PathParameterKey = "/DIR=",
                     CustomParameters =
@@ -301,9 +296,9 @@ namespace WindSoftInstaller
                 {
                     Name = "AIMP",
                     DescriptionKey = "app.aimp.Description",
-                    ExecutablePath = "aimp_5.40.2696_w64.exe",
+                    ExecutablePath = "aimp_5.40.2703_w64.exe",
                     SizeMB = 115,
-                    //SizeMB = Math.Round(fileSizes["aimp_5.40.2696_w64.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["aimp_5.40.2703_w64.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.aimp.ru/?do=eula&os=windows",
                     PathParameterKey = "/AUTO=",
                     CustomParameters =
@@ -426,9 +421,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Cryptomator",
                     DescriptionKey = "app.cryptomator.Description",
-                    ExecutablePath = "Cryptomator-1.17.1-x64.msi",
+                    ExecutablePath = "Cryptomator-1.18.0-x64.msi",
                     SizeMB = 124,
-                    //SizeMB = Math.Round(fileSizes["Cryptomator-1.17.1-x64.msi"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["Cryptomator-1.18.0-x64.msi"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://github.com/cryptomator/cryptomator/blob/master/LICENSE",
                     PathParameterKey = "",
                     CustomParameters =
@@ -464,9 +459,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Bitwarden",
                     DescriptionKey = "app.bitwarden.Description",
-                    ExecutablePath = "Bitwarden-Portable-2025.10.0.exe",
+                    ExecutablePath = "Bitwarden-Portable-2025.12.1.exe",
                     SizeMB = 244,
-                    //SizeMB = Math.Round(fileSizes["Bitwarden-Portable-2025.10.0.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["Bitwarden-Portable-2025.12.1.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://github.com/bitwarden/clients/blob/main/LICENSE_BITWARDEN.txt",
                     IsPortable = true,
                     ShortcutName = "Bitwarden",
@@ -479,9 +474,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Wise Disk Cleaner",
                     DescriptionKey = "app.wisedisk.Description",
-                    ExecutablePath = "WDCFree_11.2.7.847.exe",
+                    ExecutablePath = "WDCFree_11.3.1.851.exe",
                     SizeMB = 22,
-                    //SizeMB = Math.Round(fileSizes["WDCFree_11.2.7.847.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["WDCFree_11.3.1.851.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.wisecleaner.com/eula.html",
                     PathParameterKey = "/DIR=",
                     CustomParameters =
@@ -536,9 +531,9 @@ namespace WindSoftInstaller
                 {
                     Name = "PCSX2",
                     DescriptionKey = "app.pcsx2.Description",
-                    ExecutablePath = "pcsx2-v2.4.0-windows-x64-Qt.7z",
+                    ExecutablePath = "pcsx2-v2.6.2-windows-x64-Qt.7z",
                     SizeMB = 96,
-                    //SizeMB = Math.Round(fileSizes["pcsx2-v2.4.0-windows-x64-Qt.7z"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["pcsx2-v2.6.2-windows-x64-Qt.7z"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://github.com/PCSX2/pcsx2/blob/master/pcsx2/Docs/License.txt",
                     IsPortable = true,
                     ShortcutRelativePath = "pcsx2-qt.exe",
@@ -632,9 +627,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Calibre",
                     DescriptionKey = "app.calibre.Description",
-                    ExecutablePath = "calibre-64bit-8.14.0.msi",
+                    ExecutablePath = "calibre-64bit-8.16.2.msi",
                     SizeMB = 561,
-                    //SizeMB = Math.Round(fileSizes["calibre-64bit-8.14.0.msi"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["calibre-64bit-8.16.2.msi"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://calibre-ebook.com/license",
                     PathParameterKey = "",
                     CustomParameters = new Dictionary<string, string>
@@ -650,9 +645,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Zotero",
                     DescriptionKey = "app.zotero.Description",
-                    ExecutablePath = "Zotero-7.0.27_x64_setup.exe",
+                    ExecutablePath = "Zotero-7.0.32_x64_setup.exe",
                     SizeMB = 202,
-                    //SizeMB = Math.Round(fileSizes["Zotero-7.0.27_x64_setup.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["Zotero-7.0.32_x64_setup.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.zotero.org/license/",
                     PathParameterKey = "/D=",
                     CustomParameters = new Dictionary<string, string>
@@ -683,9 +678,9 @@ namespace WindSoftInstaller
                 {
                     Name = "PDF24 Creator",
                     DescriptionKey = "app.pdf24.Description",
-                    ExecutablePath = "pdf24-creator-11.28.2-x64.msi",
+                    ExecutablePath = "pdf24-creator-11.29.0-x64.msi",
                     SizeMB = 1010,
-                    //SizeMB = Math.Round(fileSizes["pdf24-creator-11.28.2-x64.msi"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["pdf24-creator-11.29.0-x64.msi"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.pdf24.org/en/terms-of-use",
                     PathParameterKey = "",
                     CustomParameters = new Dictionary<string, string>
@@ -719,9 +714,9 @@ namespace WindSoftInstaller
                 {
                     Name = "FastStone Image Viewer",
                     DescriptionKey = "app.faststone.Description",
-                    ExecutablePath = "FSViewerSetup81.exe",
+                    ExecutablePath = "FSViewerSetup83.exe",
                     SizeMB = 22,
-                    //SizeMB = Math.Round(fileSizes["FSViewerSetup81.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["FSViewerSetup83.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://documentation.help/FastStone-Image-Viewer-ru/License.htm",
                     CustomParameters = new Dictionary<string, string>
                     {
@@ -774,9 +769,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Notepad++",
                     DescriptionKey = "app.notepadpp.Description",
-                    ExecutablePath = "npp.8.8.7.Installer.x64.exe",
+                    ExecutablePath = "npp.8.9.Installer.x64.exe",
                     SizeMB = 17,
-                    //SizeMB = Math.Round(fileSizes["npp.8.8.7.Installer.x64.exe"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["npp.8.9.Installer.x64.exe"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE",
                     PathParameterKey = "/D=",
                     CustomParameters = new Dictionary<string, string>
@@ -825,9 +820,9 @@ namespace WindSoftInstaller
                 {
                     Name = "Double Commander",
                     DescriptionKey = "app.doublecmd.Description",
-                    ExecutablePath = "doublecmd-1.1.29.x86_64-win64.zip",
+                    ExecutablePath = "doublecmd-1.1.32.x86_64-win64.zip",
                     SizeMB = 44,
-                    //SizeMB = Math.Round(fileSizes["doublecmd-1.1.29.x86_64-win64.zip"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["doublecmd-1.1.32.x86_64-win64.zip"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://doublecmd.sourceforge.io/license.html",
                     IsPortable = true,
                     ShortcutName = "Double Commander",
@@ -837,9 +832,9 @@ namespace WindSoftInstaller
                 {
                     Name = "LibreOffice",
                     DescriptionKey = "app.libreoffice.Description",
-                    ExecutablePath = "LibreOffice_25.8.2_Win_x86-64.msi",
+                    ExecutablePath = "LibreOffice_25.8.4_Win_x86-64.msi",
                     SizeMB = 1300,
-                    //SizeMB = Math.Round(fileSizes["LibreOffice_25.8.2_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
+                    //SizeMB = Math.Round(fileSizes["LibreOffice_25.8.4_Win_x86-64.msi"] / (1024.0 * 1024.0), 2),
                     LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
                     PathParameterKey = "",
                     CustomParameters = new Dictionary<string, string>
