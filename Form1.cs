@@ -701,6 +701,7 @@ namespace WindSoftInstaller
         private async void BtnInstall_Click(object sender, EventArgs e)
         {
             _logger.LogInformation("Нажата кнопка «Установить»");
+            string installPath = "";
             // Блокируем кнопки: Запустить и Снять выделение
             btnInstall.Enabled = false;
             btnToggleSelection.Enabled = false;
@@ -713,7 +714,7 @@ namespace WindSoftInstaller
             try
             {
 
-                string installPath = txtInstallPath.Text.Trim();
+                installPath = txtInstallPath.Text.Trim();
                 _logger.LogInformation("Путь установки: {Path}", installPath);
                 if (string.IsNullOrWhiteSpace(installPath))
                 {
@@ -834,6 +835,8 @@ namespace WindSoftInstaller
             finally
             {
                 _logger.LogInformation("Процесс установки завершён");
+                // Финальная проверка и очистка пустых папок
+                await installationManager.FinalCleanupAsync(installPath);
                 // Сброс состояний
                 btnInstall.Enabled = true;
                 btnToggleSelection.Enabled = true;

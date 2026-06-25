@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 # Игнорировать архив Installers
 Installers.7z
+/create_snapshot.py
+/project_csharp_snapshot.txt

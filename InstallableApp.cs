@@ -24,10 +24,14 @@
         // Метод для получения правильного архива в зависимости от языка
         public string GetLocalizedArchivePath()
         {
+            // Если задан локализованный архив для текущего языка – используем его
             if (Localization.Current == "ru" && !string.IsNullOrEmpty(ArchivePathRu))
                 return ArchivePathRu;
-            else
+            else if (!string.IsNullOrEmpty(ArchivePathEn))
                 return ArchivePathEn;
+            else
+                // Если архивы не заданы – возвращаем ExecutablePath как запасной вариант
+                return ExecutablePath;
         }
     }
 }
