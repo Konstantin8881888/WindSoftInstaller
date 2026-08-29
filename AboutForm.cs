@@ -8,23 +8,23 @@ namespace WindSoftInstaller
     [SupportedOSPlatform("windows")]
     public class AboutForm : Form
     {
-        private Panel mainPanel;
-        private Panel contentPanel;
-        private Label lblTitle;
-        private Label lblVersion;
-        private TextBox txtDescription;
-        private LinkLabel linkSupport;
-        private LinkLabel linkCopyright;
-        private LinkLabel linkEmail;
-        private Label lblSupport;
-        private Label lblBtc;
-        private TextBox txtBtc;
-        private Button btnCopyBtc;
-        private Label lblEth;
-        private TextBox txtEth;
-        private Button btnCopyEth;
-        private Button btnSysReport;
-        private Button btnClose;
+        private Panel mainPanel = null!;
+        private Panel contentPanel = null!;
+        private Label lblTitle = null!;
+        private Label lblVersion = null!;
+        private TextBox txtDescription = null!;
+        private LinkLabel linkSupport = null!;
+        private LinkLabel linkCopyright = null!;
+        private LinkLabel linkEmail = null!;
+        private Label lblSupport = null!;
+        private Label lblBtc = null!;
+        private TextBox txtBtc = null!;
+        private Button btnCopyBtc = null!;
+        private Label lblEth = null!;
+        private TextBox txtEth = null!;
+        private Button btnCopyEth = null!;
+        private Button btnSysReport = null!;
+        private Button btnClose = null!;
 
         public AboutForm()
         {
@@ -330,7 +330,7 @@ namespace WindSoftInstaller
         }
 
         // Обработчик для кнопки системного отчета
-        private void BtnSysReport_Click(object sender, EventArgs e)
+        private void BtnSysReport_Click(object? sender, EventArgs e)
         {
             // Собираем информацию об ОС и .NET
             string os = RuntimeInformation.OSDescription;

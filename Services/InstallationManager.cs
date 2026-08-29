@@ -43,7 +43,7 @@ namespace WindSoftInstaller.Services
                 string fileToExtract = app.IsPortable ? app.GetLocalizedArchivePath() : app.ExecutablePath;
 
                 var entry = archive.Entries
-                                   .FirstOrDefault(e => e.Key.Equals(fileToExtract, StringComparison.OrdinalIgnoreCase))
+                                   .FirstOrDefault(e => e.Key?.Equals(fileToExtract, StringComparison.OrdinalIgnoreCase) == true)
                            ?? throw new FileNotFoundException($"В архиве нет {fileToExtract}");
 
                 sourcePath = Path.Combine(extractDir, fileToExtract);
@@ -59,7 +59,7 @@ namespace WindSoftInstaller.Services
                     foreach (var additionalFile in app.AdditionalFiles)
                     {
                         var entry = archive.Entries.FirstOrDefault(e =>
-                            e.Key.Equals(additionalFile, StringComparison.OrdinalIgnoreCase));
+                            e.Key?.Equals(additionalFile, StringComparison.OrdinalIgnoreCase) == true);
 
                         if (entry != null)
                         {
@@ -702,7 +702,7 @@ echo Очистка завершена.
             }
         }
 
-        private async Task HandlePortableAsync(InstallableApp app, string installRoot, string sourcePath, string tempDir, CancellationToken token)
+        private Task HandlePortableAsync(InstallableApp app, string installRoot, string sourcePath, string tempDir, CancellationToken token)
         {
             string targetDir = Path.Combine(installRoot, app.Name);
             Directory.CreateDirectory(targetDir);
@@ -719,7 +719,7 @@ echo Очистка завершена.
                     using (var archive = ArchiveFactory.Open(archivesPath))
                     {
                         var localizedEntry = archive.Entries
-                            .FirstOrDefault(e => e.Key.Equals(localizedArchivePath, StringComparison.OrdinalIgnoreCase));
+                            .FirstOrDefault(e => e.Key?.Equals(localizedArchivePath, StringComparison.OrdinalIgnoreCase) == true);
                 
                         if (localizedEntry != null)
                         {
@@ -743,7 +743,7 @@ echo Очистка завершена.
                 using var arc = ArchiveFactory.Open(archiveToExtract);
                 foreach (var entry in arc.Entries.Where(e => !e.IsDirectory))
                 {
-                    string outPath = Path.Combine(targetDir, entry.Key);
+                    string outPath = Path.Combine(targetDir, entry.Key!);
                     Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                     entry.WriteToFile(outPath,
                         new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
@@ -769,7 +769,7 @@ echo Очистка завершена.
                     CreateDesktopShortcut(exe, $"{app.ShortcutName} {name}");
                 }
 
-                return;
+                return Task.CompletedTask;
             }
 
             // Bitwarden special
@@ -777,16 +777,18 @@ echo Очистка завершена.
             {
                 var exe = Path.Combine(targetDir, Path.GetFileName(sourcePath));
                 CreateDesktopShortcut(exe, app.ShortcutName!);
-                return;
+                return Task.CompletedTask;
             }
 
             // общая portable‑логика
-            string candidate = app.ShortcutRelativePath != null
+            string? candidate = app.ShortcutRelativePath != null
                 ? Directory.GetFiles(targetDir, app.ShortcutRelativePath, SearchOption.AllDirectories).FirstOrDefault()
                 : Directory.GetFiles(targetDir, "*.exe", SearchOption.AllDirectories).FirstOrDefault();
 
             if (!string.IsNullOrEmpty(candidate))
                 CreateDesktopShortcut(candidate, app.ShortcutName!);
+
+            return Task.CompletedTask;
         }
 
         private void WriteVlcRegistry(string appDir)

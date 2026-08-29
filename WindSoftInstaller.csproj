@@ -32,18 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <COMReference Include="IWshRuntimeLibrary">
-      <WrapperTool>tlbimp</WrapperTool>
-      <VersionMinor>0</VersionMinor>
-      <VersionMajor>1</VersionMajor>
-      <Guid>f935dc20-1cf0-11d0-adb9-00c04fd58a0b</Guid>
-      <Lcid>0</Lcid>
-      <Isolated>false</Isolated>
-      <EmbedInteropTypes>true</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="Installers.7z">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -61,7 +49,14 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="SharpCompress" Version="0.39.0" />
+    <PackageReference Include="SharpCompress" Version="0.39.0">
+      <!-- NU1902 (GHSA-6c8g-7p36-r338, CVE-2026-44788): уязвимость в archive.WriteToDirectory,
+           которую этот проект НЕ использует — извлечение только через safe entry.WriteToFile
+           из собственного доверенного Installers.7z (не из недоверенных источников).
+           Обновление до >=0.48.0 удаляет ArchiveFactory.Open и требует рискованной переделки API,
+           поэтому оставляем 0.39.0 и точечно гасим предупреждение. -->
+      <NoWarn>$(NoWarn);NU1902</NoWarn>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -94,6 +89,12 @@
 
   <ItemGroup>
     <Folder Include="Docs\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="WindSoftInstaller.Tests\**" />
+    <EmbeddedResource Remove="WindSoftInstaller.Tests\**" />
+    <None Remove="WindSoftInstaller.Tests\**" />
+    <Content Remove="WindSoftInstaller.Tests\**" />
   </ItemGroup>
 
 </Project>

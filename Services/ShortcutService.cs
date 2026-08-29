@@ -30,7 +30,7 @@ namespace WindSoftInstaller.Services
             }
 
             string shortcutPath = Path.Combine(desktopPath, $"{shortcutName}.lnk");
-            object shellObject = null, shortcutObject = null;
+            object? shellObject = null, shortcutObject = null;
 
             try
             {

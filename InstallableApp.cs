@@ -3,7 +3,7 @@
     public class InstallableApp
     {
         public required string Name { get; set; }
-        public string DescriptionKey { get; set; }
+        public string DescriptionKey { get; set; } = "";
         public string Description => Localization.T(DescriptionKey);
         public required string ExecutablePath { get; set; }
         public bool IsPortable { get; set; } // True для портативных программ
@@ -19,8 +19,8 @@
         public string? LanguageConfig { get; set; } // Свойство для дополнительных языковых файлов, не включённых в основной инсталятор/архив
         public Dictionary<string, string> AdditionalFilesDestinations { get; set; } = [];// Свойство для дополнительных языковых файлов, не включённых в основной инсталятор/архив
         // Новые свойства для локализованных архивов
-        public string ArchivePathEn { get; set; }
-        public string ArchivePathRu { get; set; }
+        public string ArchivePathEn { get; set; } = "";
+        public string ArchivePathRu { get; set; } = "";
         // Метод для получения правильного архива в зависимости от языка
         public string GetLocalizedArchivePath()
         {

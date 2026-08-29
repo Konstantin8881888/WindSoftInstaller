@@ -21,10 +21,9 @@ namespace WindSoftInstaller
         private readonly ILogger<Form1> _logger;
         // Список приложений, для которых не удалось записать ключ в реестр
         private readonly List<string> _registryFailedApps = [];
-        int exitCode = -1; // Инициализируем код выхода значением по умолчанию
         private readonly ShortcutService shortcutService;
         private readonly InstallationManager installationManager;
-        private MenuStrip menuStrip;
+        private MenuStrip menuStrip = null!;
 
         public Form1(ILogger<Form1> logger)
         {
@@ -361,17 +360,17 @@ namespace WindSoftInstaller
 
             foreach (ToolStripMenuItem top in menuStrip.Items.OfType<ToolStripMenuItem>())
             {
-                top.Text = Localization.T(top.Name);
+                top.Text = Localization.T(top.Name!);
 
                 // Обновляем подпункты
                 foreach (ToolStripMenuItem sub in top.DropDownItems.OfType<ToolStripMenuItem>())
                 {
-                    sub.Text = Localization.T(sub.Name);
+                    sub.Text = Localization.T(sub.Name!);
 
                     // Для подпунктов тем обновляем текст из самой темы
                     foreach (ToolStripMenuItem themeSub in sub.DropDownItems.OfType<ToolStripMenuItem>())
                     {
-                        if (themeSub.Name.StartsWith("menu.Theme."))
+                        if (themeSub.Name!.StartsWith("menu.Theme."))
                         {
                             string themeKey = themeSub.Name.Replace("menu.Theme.", "");
                             var theme = ThemeManager.GetAvailableThemes().FirstOrDefault(t => t.Key == themeKey);
@@ -730,7 +729,7 @@ namespace WindSoftInstaller
                     .ToList();
 
 
-                if (checkedApps.Any(a => a.Name == "Marble"))
+                if (checkedApps.Any(a => a?.Name == "Marble"))
                 {
                     if (appLookup.TryGetValue("VC++ 2013 Redistributable (x86)", out var vc2013x86)
                         && !checkedApps.Contains(vc2013x86))
@@ -744,7 +743,7 @@ namespace WindSoftInstaller
                     }
                 }
 
-                if (checkedApps.Any(a => a.Name == "MSI Afterburner") || checkedApps.Any(a => a.Name == "RivaTuner Statistics Server") || checkedApps.Any(a => a.Name == "XMedia Recode"))
+                if (checkedApps.Any(a => a?.Name == "MSI Afterburner") || checkedApps.Any(a => a?.Name == "RivaTuner Statistics Server") || checkedApps.Any(a => a?.Name == "XMedia Recode"))
                 {
                     if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x86)", out var vc2015x86)
                      && !checkedApps.Contains(vc2015x86))

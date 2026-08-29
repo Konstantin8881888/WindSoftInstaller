@@ -884,7 +884,7 @@ namespace WindSoftInstaller
             string archivePath = Path.Combine(Application.StartupPath, "Installers.7z");
             using var archive = ArchiveFactory.Open(archivePath);
             var entry = archive.Entries
-                .FirstOrDefault(e => e.Key.Equals(templateName, StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefault(e => e.Key?.Equals(templateName, StringComparison.OrdinalIgnoreCase) == true)
                 ?? throw new FileNotFoundException($"Шаблон {templateName} не найден в архиве");
 
             string outPath = Path.Combine(tempDir, Path.GetFileName(templateName));
