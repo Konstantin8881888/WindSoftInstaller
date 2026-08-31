@@ -1,6 +1,7 @@
 ﻿using System.Runtime.Versioning;
 using SharpCompress.Archives;
 using static Localization;
+using WindSoftInstaller.Services;
 
 namespace WindSoftInstaller
 {
@@ -32,7 +33,7 @@ namespace WindSoftInstaller
 
             var apps = new List<InstallableApp>
             {
-                new InstallableApp()
+                new()
                 {
                     Name = "vlc-3.0.23",
                     DescriptionKey = "app.vlc.Description",
@@ -47,7 +48,7 @@ namespace WindSoftInstaller
                             "/L=" + (Current == "ru" ? "ru" : "en") }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "MPC-HC",
                     DescriptionKey = "app.mpc.Description",
@@ -65,7 +66,7 @@ namespace WindSoftInstaller
                     : "/LANG=English" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "SMPlayer",
                     DescriptionKey = "app.smplayer.Description",
@@ -78,7 +79,7 @@ namespace WindSoftInstaller
                         { "param.SilentInstall", "/S" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "GIMP",
                     DescriptionKey = "app.gimp.Description",
@@ -98,7 +99,7 @@ namespace WindSoftInstaller
                     : "/LANG=english" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Paint.NET",
                     DescriptionKey = "app.paintnet.Description",
@@ -116,7 +117,7 @@ namespace WindSoftInstaller
                     : "/language=en" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Shotcut",
                     DescriptionKey = "app.shotcut.Description",
@@ -132,7 +133,7 @@ namespace WindSoftInstaller
                         { "param.DesktopShortcut", "/MERGETASKS=desktopicon" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "VSDC Free Video Editor",
                     DescriptionKey = "app.vsdc.Description",
@@ -146,7 +147,7 @@ namespace WindSoftInstaller
                         { "param.NoRestart", "/NORESTART" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Google Chrome",
                     DescriptionKey = "app.chrome.Description",
@@ -159,24 +160,25 @@ namespace WindSoftInstaller
                         { "param.SilentInstall", "/qn" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Mozilla Firefox",
                     DescriptionKey = "app.firefox.Description",
                     // Динамически выбираем файл в зависимости от языка
-                    ExecutablePath = GetLocalizedExecutableName(
+                    ExecutablePath = AppDataRules.GetLocalizedFileName(
+                        Current,
                         "Firefox Setup 154.0.1.msi",          // Английская версия
                         "Firefox Setup 154.0.1ru.msi"         // Русская версия
                     ),
                     SizeMB = 309,
                     LicenseUrl = "https://www.mozilla.org/en-US/MPL/2.0/",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/qn" },
                         { "param.InstallPath", "INSTALL_DIRECTORY_PATH=\"{InstallDir}\"" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Opera",
                     DescriptionKey = "app.opera.Description",
@@ -198,7 +200,7 @@ namespace WindSoftInstaller
                         //{ "param.DisableAutoUpdate", "--no-update" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Audacity",
                     DescriptionKey = "app.audacity.Description",
@@ -214,7 +216,7 @@ namespace WindSoftInstaller
                         { "param.DisableAssociations", "/ASSOCIATE=0" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "LMMS",
                     DescriptionKey = "app.lmms.Description",
@@ -227,7 +229,7 @@ namespace WindSoftInstaller
                         { "param.SilentInstall", "/S" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "HandBrake",
                     DescriptionKey = "app.handbrake.Description",
@@ -240,7 +242,7 @@ namespace WindSoftInstaller
                         { "param.SilentInstall", "/S" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "XMedia Recode",
                     DescriptionKey = "app.xmedia.Description",
@@ -256,9 +258,9 @@ namespace WindSoftInstaller
                         { "param.CreateDesktopShortcut", "/MERGETASKS=desktopicon" }
                     },
                         // Новые свойства для языкового файла
-                        AdditionalFiles = new List<string> { "XMediaRecode.json", "Fav.ini" }
+                        AdditionalFiles = ["XMediaRecode.json", "Fav.ini"]
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "OpenShot",
                     DescriptionKey = "app.openshot.Description",
@@ -273,7 +275,7 @@ namespace WindSoftInstaller
                         { "param.CreateDesktopShortcut", "/MERGETASKS=desktopicon" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "AIMP",
                     DescriptionKey = "app.aimp.Description",
@@ -286,7 +288,7 @@ namespace WindSoftInstaller
                         { "param.SilentInstall", "/SILENT" },
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Clementine",
                     DescriptionKey = "app.clementine.Description",
@@ -299,7 +301,7 @@ namespace WindSoftInstaller
                         { "param.InstallMode", "/S" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "7-Zip",
                     DescriptionKey = "app.7zip.Description",
@@ -314,7 +316,7 @@ namespace WindSoftInstaller
                     ShortcutRelativePath = "7zFM.exe",
                     ShortcutName = "7-Zip"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "qBittorrent",
                     DescriptionKey = "app.qbittorrent.Description",
@@ -331,12 +333,12 @@ namespace WindSoftInstaller
                     ShortcutName = "qBittorrent",
                     ShortcutRelativePath = "qbittorrent.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "HWiNFO64",
                     DescriptionKey = "app.hwinfo64.Description",
                     ExecutablePath = "hwi64_832.exe",
-                    SizeMB = Math.Round(fileSizes["hwi64_832.exe"] / (1024.0 * 1024.0), 2),
+                    SizeMB = AppDataRules.ToMegaBytes(fileSizes["hwi64_832.exe"]),
                     LicenseUrl = "https://www.hwinfo.com/licenses/",
                     PathParameterKey = "/DIR=",
                     CustomParameters =
@@ -348,7 +350,7 @@ namespace WindSoftInstaller
                     ShortcutRelativePath = "HWiNFO64.exe",
                     ShortcutName = "HWiNFO64"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "PDF‑XChange Editor",
                     DescriptionKey = "app.pdfxchange.Description",
@@ -364,7 +366,7 @@ namespace WindSoftInstaller
                         { "param.InstallPath", "INSTALLLOCATION=\"{InstallDir}\"" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "ClamWin",
                     DescriptionKey = "app.clamwin.Description",
@@ -380,7 +382,7 @@ namespace WindSoftInstaller
                         { "param.DisableSmartScreen", "/SP-" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Emsisoft Emergency Kit",
                     DescriptionKey = "app.emsisoft.Description",
@@ -393,7 +395,7 @@ namespace WindSoftInstaller
                     ArchivePathEn = "EmsisoftEmergencyKit.zip",
                     ArchivePathRu = "EmsisoftEmergencyKit.zip" // Временно одинаково
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Cryptomator",
                     DescriptionKey = "app.cryptomator.Description",
@@ -408,7 +410,7 @@ namespace WindSoftInstaller
                         { "param.InstallPath", "INSTALLDIR=\"{InstallDir}\"" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "KeePass",
                     DescriptionKey = "app.keepass.Description",
@@ -423,7 +425,7 @@ namespace WindSoftInstaller
                     },
                     AdditionalFiles = ["Russian.lngx", "KeePass.config.xml"],
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Bitwarden",
                     DescriptionKey = "app.bitwarden.Description",
@@ -435,7 +437,7 @@ namespace WindSoftInstaller
                     ArchivePathEn = "Bitwarden-Portable-2026.8.0.exe",
                     ArchivePathRu = "Bitwarden-Portable-2026.8.0.exe",    // Временно
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Wise Disk Cleaner",
                     DescriptionKey = "app.wisedisk.Description",
@@ -449,7 +451,7 @@ namespace WindSoftInstaller
                     },
                     ShortcutName = "Wise Disk Cleaner"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "BleachBit",
                     DescriptionKey = "app.bleachbit.Description",
@@ -464,7 +466,7 @@ namespace WindSoftInstaller
                     },
                     ShortcutName = "BleachBit"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "UltraDefrag",
                     DescriptionKey = "app.ultradefrag.Description",
@@ -477,7 +479,7 @@ namespace WindSoftInstaller
                         { "param.SilentInstall", "/S" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "RetroArch",
                     DescriptionKey = "app.retroarch.Description",
@@ -488,7 +490,7 @@ namespace WindSoftInstaller
                     ShortcutRelativePath = "retroarch.exe",
                     ShortcutName = "RetroArch"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "PCSX2",
                     DescriptionKey = "app.pcsx2.Description",
@@ -499,35 +501,35 @@ namespace WindSoftInstaller
                     ShortcutRelativePath = "pcsx2-qt.exe",
                     ShortcutName = "PCSX2"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Microsoft VC++ 2015-2022 Redistributable (x64)",
                     DescriptionKey = "app.vcredist.x64.Description",
-                    SizeMB = Math.Round(fileSizes["vc_redist.x64.exe"] / (1024.0 * 1024.0), 2),
+                    SizeMB = AppDataRules.ToMegaBytes(fileSizes["vc_redist.x64.exe"]),
                     LicenseUrl = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
                     ExecutablePath = "vc_redist.x64.exe",
                     PathParameterKey = "",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/install /quiet /norestart" }
                     },
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Microsoft VC++ 2015-2022 Redistributable (x86)",
                     DescriptionKey = "app.vcredist.x86.Description",
                     ExecutablePath = "vc_redist.x86.exe",
-                    SizeMB = Math.Round(fileSizes["vc_redist.x86.exe"] / (1024.0 * 1024.0), 2),
+                    SizeMB = AppDataRules.ToMegaBytes(fileSizes["vc_redist.x86.exe"]),
                     LicenseUrl = "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
                     PathParameterKey = "",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/quiet /norestart" }
                     },
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "MSI Afterburner",
                     DescriptionKey = "app.afterburner.Description",
@@ -540,7 +542,7 @@ namespace WindSoftInstaller
                     ShortcutName = "MSI Afterburner",
                     ShortcutRelativePath = "MSIAfterburner.exe",
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "RivaTuner Statistics Server",
                     DescriptionKey = "app.rivatuner.Description",
@@ -548,12 +550,12 @@ namespace WindSoftInstaller
                     SizeMB = 97,
                     LicenseUrl = "https://www.msi.com/page/eula",
                     PathParameterKey = "/D=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/S" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Anki",
                     DescriptionKey = "app.anki.Description",
@@ -561,14 +563,14 @@ namespace WindSoftInstaller
                     SizeMB = 504,
                     LicenseUrl = "https://github.com/ankitects/anki/blob/main/LICENSE",
                     PathParameterKey = "/D=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/qn" }
                     },
                     ShortcutName = "Anki",
                     ShortcutRelativePath = "anki.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Kiwix Desktop",
                     DescriptionKey = "app.kiwix.Description",
@@ -579,7 +581,7 @@ namespace WindSoftInstaller
                     ShortcutName = "Kiwix Desktop",
                     ShortcutRelativePath = "kiwix-desktop.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Calibre",
                     DescriptionKey = "app.calibre.Description",
@@ -587,7 +589,7 @@ namespace WindSoftInstaller
                     SizeMB = 561,
                     LicenseUrl = "https://calibre-ebook.com/license",
                     PathParameterKey = "",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/quiet" },
                         { "param.NoRestart", "/norestart" },
@@ -596,7 +598,7 @@ namespace WindSoftInstaller
                     ShortcutName = "Calibre",
                     ShortcutRelativePath = "PFiles64\\Calibre2\\calibre.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Zotero",
                     DescriptionKey = "app.zotero.Description",
@@ -604,13 +606,13 @@ namespace WindSoftInstaller
                     SizeMB = 202,
                     LicenseUrl = "https://www.zotero.org/license/",
                     PathParameterKey = "/D=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/S" }
                     },
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "PDFsam Basic",
                     DescriptionKey = "app.pdfsam.Description",
@@ -627,7 +629,7 @@ namespace WindSoftInstaller
                     ShortcutName = "PDFsam Basic",
                     ShortcutRelativePath = "PFiles\\PDFsam Basic\\pdfsam.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "PDF24 Creator",
                     DescriptionKey = "app.pdf24.Description",
@@ -635,7 +637,7 @@ namespace WindSoftInstaller
                     SizeMB = 1010,
                     LicenseUrl = "https://www.pdf24.org/en/terms-of-use",
                     PathParameterKey = "",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/quiet" },
                         { "param.NoRestart", "/norestart" },
@@ -644,7 +646,7 @@ namespace WindSoftInstaller
                     ShortcutName = "PDF24 Creator",
                     ShortcutRelativePath = "pdf24-creator.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "XnView MP",
                     DescriptionKey = "app.xnview.Description",
@@ -652,23 +654,23 @@ namespace WindSoftInstaller
                     SizeMB = 156,
                     LicenseUrl = "https://www.xnview.com/en/license/",
                     PathParameterKey = "/dir=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/verysilent" },
                         { "param.NoRestart", "/norestart" },
                         { "param.InstallPath", "/dir=\"{InstallDir}\"" }
-                    },
-                    ShortcutName = "XnView MP",
-                    ShortcutRelativePath = "xnviewmp.exe"
+                    }
+                    // Ярлык не создаём сами: установщик XnView MP сам кладёт его на рабочий стол,
+                    // иначе получаются два дублирующих ярлыка.
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "FastStone Image Viewer",
                     DescriptionKey = "app.faststone.Description",
                     ExecutablePath = "FSViewerSetup85.exe",
                     SizeMB = 22,
                     LicenseUrl = "https://documentation.help/FastStone-Image-Viewer-ru/License.htm",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/S" },
                         { "param.DisableSmartScreen", "/SP-" },
@@ -676,29 +678,29 @@ namespace WindSoftInstaller
                     },
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "VC++ 2013 Redistributable (x86)",
                     DescriptionKey = "app.vcredist2013.x86.Description",
                     ExecutablePath = "vcredist_x86.exe",
-                    SizeMB = Math.Round(fileSizes["vcredist_x86.exe"] / (1024.0 * 1024.0), 2),
+                    SizeMB = AppDataRules.ToMegaBytes(fileSizes["vcredist_x86.exe"]),
                     LicenseUrl = "https://support.microsoft.com/kb/40784",
                     PathParameterKey = "/install /quiet /norestart",
                     CustomParameters = [],
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "VC++ 2013 Redistributable (x64)",
                     DescriptionKey = "app.vcredist2013.x64.Description",
                     ExecutablePath = "vcredist_x64.exe",
-                    SizeMB = Math.Round(fileSizes["vcredist_x64.exe"] / (1024.0 * 1024.0), 2),
+                    SizeMB = AppDataRules.ToMegaBytes(fileSizes["vcredist_x64.exe"]),
                     LicenseUrl = "https://support.microsoft.com/kb/40784",
                     PathParameterKey = "/install /quiet /norestart",
                     CustomParameters = [],
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Marble",
                     DescriptionKey = "app.marble.Description",
@@ -706,7 +708,7 @@ namespace WindSoftInstaller
                     SizeMB = 88,
                     LicenseUrl = "https://invent.kde.org/education/marble/-/blob/master/LICENSE.txt",
                     PathParameterKey = "/DIR=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/VERYSILENT" },
                         { "param.NoRestart", "/NORESTART" }
@@ -714,7 +716,7 @@ namespace WindSoftInstaller
                     ShortcutName = "Marble Globe",
                     ShortcutRelativePath = "marble-qt.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Notepad++",
                     DescriptionKey = "app.notepadpp.Description",
@@ -722,7 +724,7 @@ namespace WindSoftInstaller
                     SizeMB = 17,
                     LicenseUrl = "https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE",
                     PathParameterKey = "/D=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/S" },
                         { "param.DisableAutoUpdate", "/noUpdater" },
@@ -731,7 +733,7 @@ namespace WindSoftInstaller
                     ShortcutName = "Notepad++",
                     ShortcutRelativePath = "notepad++.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Geany",
                     DescriptionKey = "app.geany.Description",
@@ -739,14 +741,14 @@ namespace WindSoftInstaller
                     SizeMB = 121,
                     LicenseUrl = "https://creativecommons.org/licenses/by-sa/4.0/",
                     PathParameterKey = "/D=",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/S" },
                         { "param.Language", "/LANG=Russian" }
                     },
                     ShortcutName = "Geany"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "muCommander",
                     DescriptionKey = "app.mucommander.Description",
@@ -754,7 +756,7 @@ namespace WindSoftInstaller
                     SizeMB = 180,
                     LicenseUrl = "https://github.com/mucommander/mucommander/blob/master/LICENSE",
                     PathParameterKey = "",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/quiet" },
                         { "param.NoRestart", "/norestart" },
@@ -762,7 +764,7 @@ namespace WindSoftInstaller
                     },
                     ShortcutName = null
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Double Commander",
                     DescriptionKey = "app.doublecmd.Description",
@@ -773,7 +775,7 @@ namespace WindSoftInstaller
                     ShortcutName = "Double Commander",
                     ShortcutRelativePath = "doublecmd.exe"
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "LibreOffice",
                     DescriptionKey = "app.libreoffice.Description",
@@ -781,14 +783,14 @@ namespace WindSoftInstaller
                     SizeMB = 1300,
                     LicenseUrl = "https://www.libreoffice.org/about-us/licenses/",
                     PathParameterKey = "",
-                    CustomParameters = new Dictionary<string, string>
+                    CustomParameters = new()
                     {
                         { "param.SilentInstall", "/qn" },
                         { "param.Components", "ADDLOCAL=ALL" },
                         { "param.InstallPath", "INSTALLLOCATION=\"{InstallDir}\"" }
                     }
                 },
-                new InstallableApp()
+                new()
                 {
                     Name = "Apache OpenOffice Portable",
                     DescriptionKey = "app.openoffice.Description",
@@ -800,13 +802,10 @@ namespace WindSoftInstaller
                     ShortcutRelativePath = "OpenOfficeBasePortable.exe"
                 }
             };
-            if (Localization.Current != "ru")
+            foreach (var app in apps)
             {
-                foreach (var app in apps)
-                {
-                    // Если в CustomParameters есть param.Language — убираем его
-                    app.CustomParameters.Remove("param.Language");
-                }
+                // Если в CustomParameters есть param.Language и язык не русский — убираем его
+                AppDataRules.RemoveLanguageParamIfNotRussian(Localization.Current, app.CustomParameters);
             }
 
             //возвращаем изменённый список
@@ -835,11 +834,6 @@ namespace WindSoftInstaller
             string outPath = Path.Combine(tempDir, Path.GetFileName(templateName));
             entry.WriteToFile(outPath);
             return outPath;
-        }
-        //вспомогательный метод для выбора правильного имени файла в зависимости от языка
-        private static string GetLocalizedExecutableName(string baseNameEn, string baseNameRu)
-        {
-            return Localization.Current == "ru" ? baseNameRu : baseNameEn;
         }
     }
 }

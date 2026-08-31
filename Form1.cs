@@ -30,9 +30,14 @@ namespace WindSoftInstaller
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             installationManager = new InstallationManager(_logger);
             // Строим словарь для быстрого поиска по имени
-            appLookup = apps
-                .Where(a => !string.IsNullOrWhiteSpace(a.Name))
-                .ToDictionary(a => a.Name, StringComparer.OrdinalIgnoreCase);
+            appLookup = new Dictionary<string, InstallableApp>(StringComparer.OrdinalIgnoreCase);
+            foreach (var app in apps)
+            {
+                if (string.IsNullOrWhiteSpace(app.Name))
+                    continue;
+                if (!appLookup.TryAdd(app.Name, app))
+                    _logger.LogWarning("Дублирующееся имя приложения в репозитории: {Name}", app.Name);
+            }
 
             _logger.LogInformation("Form1 constructor: старт");
 
@@ -267,7 +272,7 @@ namespace WindSoftInstaller
 
             // Фильтруем скрытые
             var visibleApps = allApps
-                .Where(a => !HiddenApps.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                .Where(a => !UiLogic.IsHidden(a.Name))
                 .ToList();
 
             // Привязываем к DataGridView
@@ -282,8 +287,7 @@ namespace WindSoftInstaller
             {
                 try
                 {
-                    string icoName = Path.ChangeExtension(app.ExecutablePath, ".ico");
-                    string icoPath = Path.Combine(iconsFolder, icoName);
+                    string icoPath = UiLogic.GetIconPath(iconsFolder, app.ExecutablePath);
 
                     if (File.Exists(icoPath))
                     {
@@ -415,14 +419,6 @@ namespace WindSoftInstaller
 
         }
 
-        private static readonly string[] HiddenApps = new[]
-        {
-            "Microsoft VC++ 2015-2022 Redistributable (x64)",
-            "Microsoft VC++ 2015-2022 Redistributable (x86)",
-            "VC++ 2013 Redistributable (x86)",
-            "VC++ 2013 Redistributable (x64)"
-        };
-
         private void Form1_Load(object sender, EventArgs e)
         {
             // Применяем тему сразу после загрузки
@@ -448,7 +444,7 @@ namespace WindSoftInstaller
 
             dataGridViewPrograms.AutoGenerateColumns = false;
             var visibleApps = apps
-                .Where(a => !HiddenApps.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                .Where(a => !UiLogic.IsHidden(a.Name))
                 .ToList();
 
             var bindingList = new BindingList<InstallableApp>(visibleApps);
@@ -535,7 +531,7 @@ namespace WindSoftInstaller
 
                 // 2) Проверяем зависимости перед тем, как ставить галочку
                 if (selectingAll
-                    && AppDependencies.TryGetValue(app.Name, out var deps))
+                    && UiLogic.Dependencies.TryGetValue(app.Name, out var deps))
                 {
                     string depList = string.Join(Environment.NewLine, deps);
                     var dr = MessageBox.Show( // новый вариант объединения строк
@@ -589,18 +585,15 @@ namespace WindSoftInstaller
 
         private void CalculateAndShowTotalSize()
         {
-            double totalSize = 0;
+            var selectedSizes = dataGridViewPrograms.Rows
+                .Cast<DataGridViewRow>()
+                .Where(r => !r.IsNewRow
+                            && r.Cells["colSelect"].Value != null
+                            && Convert.ToBoolean(r.Cells["colSelect"].Value)
+                            && r.DataBoundItem is InstallableApp)
+                .Select(r => ((InstallableApp)r.DataBoundItem!).SizeMB);
 
-            foreach (DataGridViewRow row in dataGridViewPrograms.Rows)
-            {
-                if (!row.IsNewRow &&
-                    row.Cells["colSelect"].Value != null &&
-                    Convert.ToBoolean(row.Cells["colSelect"].Value) &&
-                    row.DataBoundItem is InstallableApp app)
-                {
-                    totalSize += app.SizeMB;
-                }
-            }
+            double totalSize = UiLogic.SumSelectedSizes(selectedSizes);
 
             // Локализованный формат
             lblTotalSize.Text = string.Format(
@@ -625,7 +618,7 @@ namespace WindSoftInstaller
                 // если пытаемся включить и у этого app есть записи в AppDependencies —
                 // спрашиваем пользователя, и при Cancel снимаем флажок и выходим
                 if (!currentValue
-                    && AppDependencies.TryGetValue(app.Name, out var deps))
+                    && UiLogic.Dependencies.TryGetValue(app.Name, out var deps))
                 {
                     string depList = string.Join(Environment.NewLine, deps);
                     var dr = MessageBox.Show( // новый вариант объединения строк
@@ -727,44 +720,22 @@ namespace WindSoftInstaller
                 // Собираем из грида список выбранных приложений
                 var checkedApps = dataGridViewPrograms.Rows
                     .Cast<DataGridViewRow>()
-                    .Where(r => Convert.ToBoolean(r.Cells["colSelect"].Value))
+                    .Where(r => !r.IsNewRow
+                                && r.Cells["colSelect"].Value != null
+                                && Convert.ToBoolean(r.Cells["colSelect"].Value))
                     .Select(r => r.DataBoundItem as InstallableApp)
                     .ToList();
 
-
-                if (checkedApps.Any(a => a?.Name == "Marble"))
-                {
-                    if (appLookup.TryGetValue("VC++ 2013 Redistributable (x86)", out var vc2013x86)
-                        && !checkedApps.Contains(vc2013x86))
-                    {
-                        checkedApps.Insert(0, vc2013x86);
-                    }
-                    if (appLookup.TryGetValue("VC++ 2013 Redistributable (x64)", out var vc2013x64)
-                        && !checkedApps.Contains(vc2013x64))
-                    {
-                        checkedApps.Insert(vc2013x86 != null ? 1 : 0, vc2013x64);
-                    }
-                }
-
-                if (checkedApps.Any(a => a?.Name == "MSI Afterburner") || checkedApps.Any(a => a?.Name == "RivaTuner Statistics Server") || checkedApps.Any(a => a?.Name == "XMedia Recode"))
-                {
-                    if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x86)", out var vc2015x86)
-                     && !checkedApps.Contains(vc2015x86))
-                    {
-                        checkedApps.Insert(0, vc2015x86);
-                    }
-                    if (appLookup.TryGetValue("Microsoft VC++ 2015-2022 Redistributable (x64)", out var vc2015x64)
-                     && !checkedApps.Contains(vc2015x64))
-                    {
-                        checkedApps.Insert(vc2015x86 != null ? 1 : 0, vc2015x64);
-                    }
-                }
 
                 if (checkedApps.Count == 0)
                 {
                     MessageBox.Show(Localization.T("selectedError"), Localization.T("errorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
+
+                // Добавляем недостающие пререквизиты (VC++ 2013/2015-2022) для Marble,
+                // MSI Afterburner, RivaTuner и XMedia Recode.
+                checkedApps = UiLogic.AddMissingPrerequisites(checkedApps, appLookup);
 
                 int total = checkedApps.Count;
                 _logger.LogInformation("Начинаем установку {Count} приложений", total);
@@ -850,32 +821,6 @@ namespace WindSoftInstaller
             }
             lblStatus.Text = Localization.T("lblStatus.Ready");
         }
-
-        private static readonly Dictionary<string, string[]> AppDependencies = new()
-        {
-            // Marble требует VC++ 2013 x86 и x64
-            ["Marble"] = new[]
-        {
-            "VC++ 2013 Redistributable (x86)",
-            "VC++ 2013 Redistributable (x64)"
-        },
-            // MSI Afterburner XMedia Recode и RivaTuner требуют VC++ 2015–2022 x86 и x64
-            ["MSI Afterburner"] = new[]
-        {
-            "Microsoft VC++ 2015-2022 Redistributable (x86)",
-            "Microsoft VC++ 2015-2022 Redistributable (x64)"
-        },
-            ["XMedia Recode"] = new[]
-        {
-            "Microsoft VC++ 2015-2022 Redistributable (x86)",
-            "Microsoft VC++ 2015-2022 Redistributable (x64)"
-        },
-            ["RivaTuner Statistics Server"] = new[]
-        {
-            "Microsoft VC++ 2015-2022 Redistributable (x86)",
-            "Microsoft VC++ 2015-2022 Redistributable (x64)"
-        }
-        };
 
         private void BtnCancelInstall_Click(object sender, EventArgs e)
         {

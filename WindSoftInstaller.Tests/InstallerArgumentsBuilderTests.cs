@@ -65,6 +65,29 @@ namespace WindSoftInstaller.Tests
         }
 
         [Fact]
+        public void BuildArguments_UsesSpecialPathKey_ForFastStone()
+        {
+            var app = MakeApp("FastStone Image Viewer", pathKey: "/DIR=");
+            var builder = new InstallerArgumentsBuilder(app, "C:\\fs\\setup.exe", "C:\\FSViewer");
+
+            var result = builder.BuildArguments();
+
+            Assert.Equal("/DIR=C:\\FSViewer", result);
+        }
+
+        [Fact]
+        public void BuildArguments_DoesNotAddPathArg_ForVlc_WithSpacesInInstallDir()
+        {
+            var app = MakeApp("VLC Media Player");
+            var builder = new InstallerArgumentsBuilder(app, "C:\\vlc\\setup.exe", "C:\\My Apps\\VLC");
+
+            var result = builder.BuildArguments();
+
+            Assert.DoesNotContain("/D=", result);
+            Assert.Equal("", result);
+        }
+
+        [Fact]
         public void BuildArguments_ReplacesInstallDirToken_InCustomParameter()
         {
             var app = MakeApp("App", "/D=", new Dictionary<string, string>
@@ -118,6 +141,64 @@ namespace WindSoftInstaller.Tests
 
             Assert.Equal("C:\\setup.exe", startInfo.FileName);
             Assert.Contains("/D=C:\\App", startInfo.Arguments);
+        }
+
+        [Fact]
+        public void BuildStartInfo_DoesNotAppendPathArg_ForMsi_WhenNotSpecialAdmin()
+        {
+            var app = MakeApp("Some MSI App", "/DIR=", new Dictionary<string, string>
+            {
+                { "Silent", "/qn" }
+            });
+            var builder = new InstallerArgumentsBuilder(app, "C:\\setup.msi", "C:\\Apps\\Program Files\\X");
+
+            var result = builder.BuildArguments();
+
+            // MSI не входит в спец-список -> pathArg не добавляется
+            Assert.Equal("/qn", result);
+        }
+
+        [Fact]
+        public void BuildStartInfo_UsesInstallSwitch_ForMsi_WhenNotCalibrePdfsam()
+        {
+            var app = MakeApp("muCommander", "/D=", new Dictionary<string, string>
+            {
+                { "Silent", "/quiet" }
+            });
+            var builder = new InstallerArgumentsBuilder(app, "C:\\mu.msi", "C:\\App");
+
+            var startInfo = builder.BuildStartInfo();
+
+            Assert.Equal("msiexec.exe", startInfo.FileName);
+            Assert.StartsWith("/i \"C:\\mu.msi\" /quiet", startInfo.Arguments);
+        }
+
+        [Fact]
+        public void Constructor_Throws_WhenSourcePathIsNull()
+        {
+            var app = MakeApp("App");
+            Assert.Throws<ArgumentNullException>(() =>
+                new InstallerArgumentsBuilder(app, null!, "C:\\App"));
+        }
+
+        [Fact]
+        public void Constructor_Throws_WhenInstallDirIsNull()
+        {
+            var app = MakeApp("App");
+            Assert.Throws<ArgumentNullException>(() =>
+                new InstallerArgumentsBuilder(app, "C:\\setup.exe", null!));
+        }
+
+        [Fact]
+        public void BuildStartInfo_QuotesInstallDir_InsidePathArg_ForNonMsi()
+        {
+            var app = MakeApp("Notepad++", "/D=");
+            var builder = new InstallerArgumentsBuilder(app, "C:\\npp.exe", "C:\\Program Files\\Notepad++");
+
+            var startInfo = builder.BuildStartInfo();
+
+            Assert.Equal("C:\\npp.exe", startInfo.FileName);
+            Assert.Equal("/D=\"C:\\Program Files\\Notepad++\"", startInfo.Arguments);
         }
 
         [Fact]
