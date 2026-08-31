@@ -706,6 +706,7 @@ echo Очистка завершена.
         {
             string targetDir = Path.Combine(installRoot, app.Name);
             Directory.CreateDirectory(targetDir);
+            token.ThrowIfCancellationRequested();
 
             // Для MSI Afterburner используем локализованный архив
             string archiveToExtract = sourcePath;
@@ -743,6 +744,7 @@ echo Очистка завершена.
                 using var arc = ArchiveFactory.Open(archiveToExtract);
                 foreach (var entry in arc.Entries.Where(e => !e.IsDirectory))
                 {
+                    token.ThrowIfCancellationRequested();
                     string outPath = Path.Combine(targetDir, entry.Key!);
                     Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
                     entry.WriteToFile(outPath,

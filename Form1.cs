@@ -21,7 +21,6 @@ namespace WindSoftInstaller
         private readonly ILogger<Form1> _logger;
         // Список приложений, для которых не удалось записать ключ в реестр
         private readonly List<string> _registryFailedApps = [];
-        private readonly ShortcutService shortcutService;
         private readonly InstallationManager installationManager;
         private MenuStrip menuStrip = null!;
 
@@ -29,7 +28,6 @@ namespace WindSoftInstaller
         {
             // Сначала инициализируем логгер
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            shortcutService = new ShortcutService(_logger);
             installationManager = new InstallationManager(_logger);
             // Строим словарь для быстрого поиска по имени
             appLookup = apps
@@ -257,7 +255,12 @@ namespace WindSoftInstaller
 
         private void PopulateAppsGrid()
         {
-            var allApps = AppRepository.LoadApps();
+            var allApps = apps;
+
+            // Повторно применяем логику LoadApps: для не-ru убираем param.Language
+            if (Localization.Current != "ru")
+                foreach (var app in allApps)
+                    app.CustomParameters.Remove("param.Language");
 
             // Загружаем иконки для вновь созданных объектов
             LoadIcons(allApps);
@@ -886,7 +889,7 @@ namespace WindSoftInstaller
             // dotCount циклически принимает значения 0,1,2,3
             dotCount = (dotCount + 1) % 4;
             // Формируем строку: "Установка", "Установка.", "Установка..", "Установка..."
-            lblStatus.Text = "Установка" + new string('.', dotCount);
+            lblStatus.Text = Localization.T("lblStatus.InstallingAnim") + new string('.', dotCount);
         }
 
         private void DataGridViewPrograms_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)

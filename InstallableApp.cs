@@ -16,8 +16,6 @@
         public required string LicenseUrl { get; set; } // Ссылка на лицензию
         public string? ShortcutRelativePath { get; set; }  // путь к EXE внутри папки портативки, например "Start Scanner.exe"
         public List<string> AdditionalFiles { get; set; } = []; // Свойство для дополнительных файлов, не включённых в основной инсталятор/архив
-        public string? LanguageConfig { get; set; } // Свойство для дополнительных языковых файлов, не включённых в основной инсталятор/архив
-        public Dictionary<string, string> AdditionalFilesDestinations { get; set; } = [];// Свойство для дополнительных языковых файлов, не включённых в основной инсталятор/архив
         // Новые свойства для локализованных архивов
         public string ArchivePathEn { get; set; } = "";
         public string ArchivePathRu { get; set; } = "";
