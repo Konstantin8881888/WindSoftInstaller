@@ -4,7 +4,7 @@ namespace WindSoftInstaller.Services
 {
     public class Theme
     {
-        public string Key { get; set; }  // Ключ для локализации вместо прямого имени
+        public string Key { get; set; } = "";  // Ключ для локализации вместо прямого имени
         public string Name => Localization.T($"theme.{Key}");  // Локализованное имя
         public Color FormBackColor { get; set; }
         public Color ControlBackColor { get; set; }
@@ -27,7 +27,7 @@ namespace WindSoftInstaller.Services
 
     public static class ThemeManager
     {
-        public static event Action<Theme> ThemeChanged;
+        public static event Action<Theme> ThemeChanged = delegate { };
         public static Theme CurrentTheme { get; private set; }
 
         // Стандартная тема (существующий стиль)
