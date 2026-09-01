@@ -158,7 +158,7 @@ namespace WindSoftInstaller
             currentY += lblVersion.Height + 20;
 
             // 3. Описание
-            txtDescription = new TextBox
+            txtDescription = new()
             {
                 Text = Localization.T("AboutForm.txtDescription"),
                 Multiline = true,
@@ -167,12 +167,13 @@ namespace WindSoftInstaller
                 ScrollBars = ScrollBars.Vertical,
                 Location = new Point(0, currentY),
                 Width = contentPanel.Width - 40,
-                Height = 80
+                Height = 80,
+                // Отключаем получение фокуса через Tab
+                TabStop = false,
+                SelectionLength = 0
             };
 
-            // Сбрасываем выделение текста
-            txtDescription.SelectionStart = 0;
-            txtDescription.SelectionLength = 0;
+            // Ставим курсор в конец текста (зависит от Text, поэтому отдельно)
             txtDescription.SelectionStart = txtDescription.Text.Length;
 
             // Предотвращаем выделение при фокусе
@@ -180,9 +181,6 @@ namespace WindSoftInstaller
                 txtDescription.SelectionStart = txtDescription.Text.Length;
                 txtDescription.SelectionLength = 0;
             };
-
-            // Отключаем получение фокуса через Tab
-            txtDescription.TabStop = false;
 
             contentPanel.Controls.Add(txtDescription);
             currentY += txtDescription.Height + 20;
@@ -348,7 +346,7 @@ namespace WindSoftInstaller
             );
         }
 
-        private void CopyToClipboard(string text)
+        private static void CopyToClipboard(string text)
         {
             try
             {

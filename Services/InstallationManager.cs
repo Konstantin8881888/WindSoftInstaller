@@ -90,23 +90,19 @@ namespace WindSoftInstaller.Services
             Directory.CreateDirectory(appDir);
             _logger.LogInformation("InstallDir = {Dir}", appDir);
 
-            bool isVlc = app.Name.StartsWith("vlc", StringComparison.OrdinalIgnoreCase);
+            bool isVlc = InstallPlanRules.IsVlc(app.Name);
             if (isVlc)
                 WriteVlcRegistry(appDir);
 
             // Для VC++ 2015-2022 и других проблемных установщиков: копируем установщик в папку установки
-            bool shouldCopyInstaller =
-                app.Name.Equals("Opera", StringComparison.OrdinalIgnoreCase) ||
-                app.Name.Contains("VC++ 2013", StringComparison.OrdinalIgnoreCase) ||
-                app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase) ||
-                app.Name.Equals("LMMS", StringComparison.OrdinalIgnoreCase);
+            bool shouldCopyInstaller = InstallPlanRules.ShouldCopyInstaller(app.Name);
 
             if (shouldCopyInstaller)
             {
                 string newSourcePath = Path.Combine(appDir, Path.GetFileName(sourcePath));
 
                 // Добавляем задержку и повторные попытки для VC++ 2015-2022
-                if (app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase))
+                if (InstallPlanRules.IsVcRedist2015_2022(app.Name))
                 {
                     await CopyFileWithRetryAsync(sourcePath, newSourcePath, app.Name);
                 }
@@ -124,7 +120,7 @@ namespace WindSoftInstaller.Services
             _logger.LogDebug("Запуск: {File} {Args}", psi.FileName, psi.Arguments);
 
             // Для VC++ 2015-2022 добавляем дополнительную обработку
-            if (app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase))
+            if (InstallPlanRules.IsVcRedist2015_2022(app.Name))
             {
                 await InstallVcRedistWithRetryAsync(psi, app.Name, token);
             }
@@ -169,7 +165,7 @@ namespace WindSoftInstaller.Services
                 try
                 {
                     // Для VC++ 2015-2022 добавляем задержку перед удалением
-                    if (app.Name.Contains("VC++ 2015-2022", StringComparison.OrdinalIgnoreCase))
+                    if (InstallPlanRules.IsVcRedist2015_2022(app.Name))
                     {
                         await Task.Delay(2000, token); // Задержка 2 секунды
                     }
@@ -197,19 +193,8 @@ namespace WindSoftInstaller.Services
 
         private async Task DeleteEmptyFolderForSystemAppsAsync(InstallableApp app, string appDir)
         {
-            // Список приложений, которые устанавливаются в системные расположения
-            var systemApps = new[]
-            {
-            "Google Chrome",
-            "Microsoft VC++ 2015-2022 Redistributable (x64)",
-            "Microsoft VC++ 2015-2022 Redistributable (x86)",
-            "VC++ 2013 Redistributable (x64)",
-            "VC++ 2013 Redistributable (x86)"
-        };
-
             // Проверяем, является ли приложение системным (устанавливается в стандартное расположение)
-            bool isSystemApp = systemApps.Contains(app.Name, StringComparer.OrdinalIgnoreCase) ||
-                              app.Name.Contains("VC++", StringComparison.OrdinalIgnoreCase);
+            bool isSystemApp = InstallPlanRules.IsSystemApp(app.Name);
 
             if (isSystemApp && !string.IsNullOrEmpty(appDir))
             {
@@ -258,30 +243,25 @@ namespace WindSoftInstaller.Services
         {
             try
             {
-                bool allFilesAreSmall = true;
                 long totalSize = 0;
-                var smallFileExtensions = new[] { ".tmp", ".log", ".txt", ".bak" };
+                var fileInfos = new List<FileSizeInfo>(files.Length);
 
-                // Проверяем размер и тип файлов
                 foreach (var file in files)
                 {
                     var fileInfo = new FileInfo(file);
                     totalSize += fileInfo.Length;
+                    fileInfos.Add(new FileSizeInfo(fileInfo.Length, Path.GetExtension(file)));
 
-                    var extension = Path.GetExtension(file).ToLowerInvariant();
-
-                    // Если файл больше 2 МБ ИЛИ не является временным файлом, считаем что это не временный файл
-                    if (fileInfo.Length > 2 * 1024 * 1024 || !smallFileExtensions.Contains(extension))
+                    if (fileInfo.Length > InstallPlanRules.TemporaryFileMaxBytes
+                        || !InstallPlanRules.IsTemporaryExtension(Path.GetExtension(file)))
                     {
-                        allFilesAreSmall = false;
                         _logger.LogDebug("Файл {File} не считается временным (размер: {Size}, расширение: {Ext})",
-                            file, fileInfo.Length, extension);
-                        break;
+                            file, fileInfo.Length, Path.GetExtension(file));
                     }
                 }
 
                 // Если все файлы маленькие, временные и общий размер меньше 10 МБ, удаляем их
-                if (allFilesAreSmall && totalSize < 10 * 1024 * 1024)
+                if (InstallPlanRules.IsTemporaryFolder(totalSize, fileInfos))
                 {
                     _logger.LogInformation("Удаляем временные файлы {App} (файлов: {Count}, размер: {Size} байт)",
                         appName, files.Length, totalSize);
@@ -319,7 +299,7 @@ namespace WindSoftInstaller.Services
                 }
                 else
                 {
-                    _logger.LogInformation("Папка {App} содержит нетemporary файлы, оставляем: {Path}", appName, folderPath);
+                    _logger.LogInformation("Папка {App} содержит не временные файлы, оставляем: {Path}", appName, folderPath);
                 }
             }
             catch (Exception ex)
@@ -371,25 +351,25 @@ namespace WindSoftInstaller.Services
         {
             try
             {
-                bool allFilesAreSmall = true;
                 long totalSize = 0;
+                var lengths = new List<long>(files.Length);
 
                 // Проверяем размер файлов
                 foreach (var file in files)
                 {
                     var fileInfo = new FileInfo(file);
                     totalSize += fileInfo.Length;
+                    lengths.Add(fileInfo.Length);
 
                     // Если файл больше 1 МБ, считаем что это не временный файл
-                    if (fileInfo.Length > 1024 * 1024)
+                    if (fileInfo.Length > InstallPlanRules.ChromeFileMaxBytes)
                     {
-                        allFilesAreSmall = false;
                         break;
                     }
                 }
 
                 // Если все файлы маленькие и общий размер меньше 5 МБ, удаляем их
-                if (allFilesAreSmall && totalSize < 5 * 1024 * 1024)
+                if (InstallPlanRules.IsChromeTemporaryFolder(totalSize, lengths))
                 {
                     _logger.LogInformation("Удаляем временные файлы {App} (размер: {Size} байт)", appName, totalSize);
 
@@ -493,17 +473,7 @@ echo Очистка папки завершена.
                 if (!Directory.Exists(installRoot))
                     return;
 
-                // Список папок, которые могут быть пустыми
-                var potentialEmptyFolders = new[]
-                {
-                "Google Chrome",
-                "Microsoft VC++ 2015-2022 Redistributable (x64)",
-                "Microsoft VC++ 2015-2022 Redistributable (x86)",
-                "VC++ 2013 Redistributable (x64)",
-                "VC++ 2013 Redistributable (x86)"
-            };
-
-                foreach (var folderName in potentialEmptyFolders)
+                foreach (var folderName in InstallPlanRules.PotentialEmptyFolders)
                 {
                     string folderPath = Path.Combine(installRoot, folderName);
                     if (Directory.Exists(folderPath))
@@ -556,7 +526,7 @@ echo Очистка папки завершена.
                         await proc.WaitForExitAsync(token);
                         _logger.LogDebug("{App} ExitCode={Code} (попытка {Attempt})", appName, proc.ExitCode, attempt);
 
-                        if (proc.ExitCode == 0 || proc.ExitCode == 1638 || proc.ExitCode == 3010)
+                        if (InstallPlanRules.IsVcRedistSuccessCode(proc.ExitCode))
                         {
                             // 0 - успех, 1638 - уже установлена более новая версия, 3010 - требуется перезагрузка
                             _logger.LogInformation("{App} установлен успешно (код: {Code})", appName, proc.ExitCode);
@@ -831,7 +801,7 @@ echo Очистка завершена.
 
         private void DeleteInstallerIfLeft(string sourcePath, string appDir)
         {
-            var left = Path.Combine(appDir, Path.GetFileName(sourcePath));
+            var left = InstallPlanRules.GetInstallerLeftPath(appDir, sourcePath);
             if (File.Exists(left))
             {
                 try

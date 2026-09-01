@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35919.96 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindSoftInstaller", "WindSoftInstaller.csproj", "{08DFCBDA-C658-46FE-854C-AE2614B39E24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindSoftInstaller.Tests", "WindSoftInstaller.Tests\WindSoftInstaller.Tests.csproj", "{17711F58-5CAD-45FD-92D6-97BB3E8835C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{08DFCBDA-C658-46FE-854C-AE2614B39E24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08DFCBDA-C658-46FE-854C-AE2614B39E24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08DFCBDA-C658-46FE-854C-AE2614B39E24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17711F58-5CAD-45FD-92D6-97BB3E8835C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17711F58-5CAD-45FD-92D6-97BB3E8835C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17711F58-5CAD-45FD-92D6-97BB3E8835C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17711F58-5CAD-45FD-92D6-97BB3E8835C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
